@@ -1,0 +1,2 @@
+School of Haskell
+=================
