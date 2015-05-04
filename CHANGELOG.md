@@ -1,0 +1,2 @@
+schoolofhaskell changelog
+=========================
