@@ -1,7 +1,18 @@
-name:              schoolofhaskell
-version:           0.0.0
-cabal-version:     >= 1.8
-build-type:        Simple
+name:                schoolofhaskell
+synopsis:            Interactive haskell as a service
+version:             0.0.1
+description:         FP Complete's service for interactive Haskell tutorials and documentation
+license:             MIT
+license-file:        LICENSE
+author:              Michael Sloan
+maintainer:          sloan@fpcomplete.com
+copyright:           2015 FP Complete Corporation
+category:            Development
+homepage:            https://github.com/fpco/school-of-haskell
+cabal-version:       >= 1.8
+build-type:          Simple
+extra-source-files:  README.md
+                     CHANGELOG.md
 
 Flag dev
     Description:   Turn on development settings, like auto-reload templates.
