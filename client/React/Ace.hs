@@ -5,18 +5,45 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 -- | React binding to Ace.
 
-module React.Ace where
+module React.Ace
+  ( -- * Type
+    Ace(..)
+  , Editor_
+  , Editor'
+  , getDef
+    -- * Construction
+  , new
+    -- * Properties
+  , defaultValue_
+  , selection_
+    -- * Events
+  , ChangeEvent(..)
+  , onChange
+  , SelectionEvent(..)
+  , onSelectionChange
+    -- * Positions and Ranges
+  , Pos(..)
+  , Range(..)
+  , Selection(..)
+    -- * Queries
+  , aceEditorOrError
+  , getValue
+  , getSelection
+  ) where
 
+import           Control.Applicative ((<$>), (<*>))
 import           Control.Concurrent.STM
 import           Control.Lens hiding (coerce)
-import           Control.Monad
+import           Control.Monad (join, when, (>=>))
+import           Control.Monad.Trans.Maybe (MaybeT(..))
+import           Data.Foldable (forM_)
+import           Data.Maybe (fromMaybe)
 import qualified Data.Text as T
-import           GHC.Exts
-import           GHCJS.Compat
 import           React hiding (onClick)
 import           React.Internal
 
@@ -24,13 +51,7 @@ import           React.Internal
 import           JavaScript.JQuery (JQuery)
 import           GHCJS.Types
 import           GHCJS.Marshal
-import           GHCJS.DOM.Types (Element (..), Event (..))
 import           GHCJS.Foreign
-import           GHCJS.Types
-import           GHCJS.Marshal
-import           GHCJS.DOM.Types (Element (..), Event (..))
-import           GHCJS.Foreign
-import           GHCJS.DOM
 #endif
 
 --------------------------------------------------------------------------------
@@ -66,133 +87,109 @@ new app =
 -- | Setup the ace editor.
 didMount :: App a m -> Traversal' a Ace -> JQuery -> JSRef this -> IO ()
 didMount app r el this =
-  do props <- getProp ("props" :: JSString) this
-     onClickFun <- getProp ("onClick" :: JSString) props
-     onDblClickFun <- getProp ("onDblClick" :: JSString) props
-     editor <- makeEditor el
-                          onClickFun
-                          onDblClickFun
+  do props <- expectProp this "props"
+     editor <- join $ makeEditor el
+       <$> getProp ("defaultValue" :: JSString) props
+       <*> getProp ("onChange" :: JSString) props
+       <*> getProp ("onSelectionChange" :: JSString) props
      atomically
        (modifyTVar (appState app)
                    (set r (Ace (Just editor))))
 
--- | New code attribute has been set, update the editor contents.
+-- | New value attribute has been set, update the editor contents.
 receivingProps :: App state m -> Traversal' state Ace -> JSRef a -> IO ()
 receivingProps app l props =
-  do codeRef <- getProp ("code" :: JSString) props
-     mcode <- fromJSRef codeRef
-     case mcode of
+  do meditor <- fmap (preview l)
+                     (atomically (readTVar (appState app)))
+     case meditor of
        Nothing -> return ()
-       Just (code :: JSString) ->
-         do meditor <- fmap (preview l)
-                            (atomically (readTVar (appState app)))
-            case meditor of
-              Nothing -> return ()
-              Just (Ace (Just editor)) ->
-                do code' <- getValue editor
-                   when (code /= code')
-                        (setValue editor code)
-                   --
-                   stateStartLine <- getStartLine props
-                   stateStartCol <- getStartCol props
-                   stateEndLine <- getEndLine props
-                   stateEndCol <- getEndCol props
-                   --
-                   range <- getSelectionRange editor
-                   curStartLine <- getStartLine range
-                   curStartCol <- getStartCol range
-                   curEndLine <- getEndLine range
-                   curEndCol <- getEndCol range
-                   --
-                   case (stateStartLine,stateStartCol,stateEndLine,stateEndCol) of
-                     (Just sl,Just sc,Just el,Just ec) ->
-                       when ((stateStartLine
-                             ,stateStartCol
-                             ,stateEndLine
-                             ,stateEndCol) /=
-                             (curStartLine
-                             ,curStartCol
-                             ,curEndLine
-                             ,curEndCol))
-                            (setRange editor (sl-1) (sc-1) (el-1) (ec-1))
-                     _ -> return ()
-              _ -> return ()
+       Just (Ace Nothing) -> return ()
+       Just (Ace (Just editor)) ->
+         do mcode <- prop props "code"
+            print (fmap (fromJSString) mcode :: Maybe String)
+            forM_ mcode $ \code ->
+              do code' <- getValueRef editor
+                 when (not (code `stringEq` code'))
+                      (setValueRef editor code)
+            mnewSel <- getSelectionFromObject props
+            moldSel <- getSelection editor
+            forM_ mnewSel $ \newSel -> when (Just newSel /= moldSel) $
+              setRange editor (row (anchor newSel))
+                              (column (anchor newSel))
+                              (row (lead newSel))
+                              (column (lead newSel))
 
 --------------------------------------------------------------------------------
 -- Properties
 
-startline_ :: (Monad m) => Int -> ReactT state m ()
-startline_ =
-  attr "startline" .
-  T.pack . show
+defaultValue_ :: Monad m => T.Text -> ReactT state m ()
+defaultValue_ = attr "defaultValue"
 
-startcol_ :: (Monad m) => Int -> ReactT state m ()
-startcol_ =
-  attr "startcol" .
-  T.pack . show
-
-endline_ :: (Monad m) => Int -> ReactT state m ()
-endline_ =
-  attr "endline" .
-  T.pack . show
-
-endcol_ :: (Monad m) => Int -> ReactT state m ()
-endcol_ = attr "endcol". T.pack . show
-
---------------------------------------------------------------------------------
--- Selection range accessors
-
-getStartLine :: JSRef a -> IO (Maybe Int)
-getStartLine props =
-  do r <- getProp ("start-line" :: JSString) props
-     fromJSRef r
-
-getEndLine :: JSRef a -> IO (Maybe Int)
-getEndLine props =
-  do r <- getProp ("end-line" :: JSString) props
-     fromJSRef r
-
-getStartCol :: JSRef a -> IO (Maybe Int)
-getStartCol props =
-  do r <- getProp ("start-col" :: JSString) props
-     fromJSRef r
-
-getEndCol :: JSRef a -> IO (Maybe Int)
-getEndCol props =
-  do r <- getProp ("end-col" :: JSString) props
-     fromJSRef r
+selection_ :: Monad m => Selection -> ReactT state m ()
+selection_ sel = do
+  setPropShow "anchor-row" (row (anchor sel))
+  setPropShow "anchor-column" (column (anchor sel))
+  setPropShow "anchor-row" (row (lead sel))
+  setPropShow "anchor-column" (column (lead sel))
 
 --------------------------------------------------------------------------------
 -- Component events
 
-newtype SelectEvent = SelectEvent ReactEvent
-instance IsReactEvent SelectEvent
+newtype ChangeEvent = ChangeEvent ReactEvent
+instance IsReactEvent ChangeEvent
 
--- | When the selection changes.
-onClick :: Monad m => (SelectEvent -> TVar state -> IO ()) -> ReactT state m ()
-onClick = onEvent (EventListener "click")
+onChange :: Monad m => (ChangeEvent -> TVar state -> IO ()) -> ReactT state m ()
+onChange = onEvent (EventListener "onChange")
 
--- | Extract the start line from the event.
-selectStartLine :: SelectEvent -> IO Int
-selectStartLine = getPropInt "startLine" . coerce
+newtype SelectionEvent = SelectionEvent ReactEvent
+instance IsReactEvent SelectionEvent
 
--- | Extract the start col from the event.
-selectStartCol :: SelectEvent -> IO Int
-selectStartCol = getPropInt "startCol" . coerce
+onSelectionChange :: Monad m => (SelectionEvent -> TVar state -> IO ()) -> ReactT state m ()
+onSelectionChange = onEvent (EventListener "onSelectionChange")
 
--- | Extract the end line from the event.
-selectEndLine :: SelectEvent -> IO Int
-selectEndLine = getPropInt "endLine" . coerce
+--------------------------------------------------------------------------------
+-- Positions and Ranges
 
--- | Extract the end col from the event.
-selectEndCol :: SelectEvent -> IO Int
-selectEndCol = getPropInt "endCol" . coerce
+data Pos = Pos
+    { row :: Int
+    , column :: Int
+    }
+    deriving (Show, Eq)
 
-clientX :: SelectEvent -> IO Int
-clientX = getPropInt "clientX" . coerce
+data Range = Range
+    { start :: Pos
+    , end :: Pos
+    }
+    deriving (Show, Eq)
 
-clientY :: SelectEvent -> IO Int
-clientY = getPropInt "clientY" . coerce
+data Selection = Selection
+    { anchor :: Pos
+    , lead :: Pos
+    }
+    deriving (Show, Eq)
+
+--------------------------------------------------------------------------------
+-- Editor state queries
+
+aceEditorOrError :: Ace -> Editor'
+aceEditorOrError (Ace Nothing) = error "getEditorOrFail: No editor."
+aceEditorOrError (Ace (Just x)) = x
+
+getSelection :: Editor' -> IO (Maybe Selection)
+getSelection = getSelectionRef >=> getSelectionFromObject
+
+getSelectionFromObject :: JSRef a -> IO (Maybe Selection)
+getSelectionFromObject obj = runMaybeT $ Selection
+  <$> (Pos <$> mtprop obj "anchor-row"
+           <*> mtprop obj "anchor-column")
+  <*> (Pos <$> mtprop obj "lead-row"
+           <*> mtprop obj "lead-column")
+
+getValue :: Editor' -> IO T.Text
+getValue e = fromJSString <$> getValueRef e
+
+setValue :: Editor' -> T.Text -> IO ()
+setValue e = setValueRef e . toJSString
 
 --------------------------------------------------------------------------------
 -- Foreign imports
@@ -200,30 +197,31 @@ clientY = getPropInt "clientY" . coerce
 #ifdef __GHCJS__
 
 foreign import javascript "makeEditor($1,$2,$3)"
-    makeEditor :: JQuery
-               -> JSFun (JSRef props -> IO ())
-               -> JSFun (JSRef props -> IO ())
-               -> IO Editor'
+  makeEditor :: JQuery
+             -> JSString
+             -> JSFun (JSRef props -> IO ())
+             -> JSFun (JSRef props -> JSRef props -> IO ())
+             -> IO Editor'
 
 foreign import javascript "($1).setValue($2,-1)"
-  setValue :: Editor' -> JSString -> IO ()
+  setValueRef :: Editor' -> JSString -> IO ()
 
-foreign import javascript "getSelectionRange($1)"
-  getSelectionRange :: Editor' -> IO (JSRef Int)
+foreign import javascript "getSelection($1)"
+  getSelectionRef :: Editor' -> IO (JSRef Selection)
 
 foreign import javascript "($1).selection.setSelectionRange(new AceRange($2,$3,$4,$5))"
   setRange :: Editor' -> Int -> Int -> Int -> Int -> IO ()
 
 foreign import javascript "($1).getValue()"
-  getValue :: Editor' -> IO JSString
+  getValueRef :: Editor' -> IO JSString
 
 foreign import javascript "$1===$2"
   stringEq :: JSString -> JSString -> Bool
 
 #else
 
-getSelectionRange :: Editor' -> IO (JSRef Int)
-getSelectionRange = undefined
+getSelectionRef :: Editor' -> IO (JSRef Selection)
+getSelectionRef = undefined
 
 setRange :: Editor' -> Int -> Int -> Int -> Int -> IO ()
 setRange = undefined
@@ -234,19 +232,16 @@ makeEditor :: JQuery
            -> IO Editor'
 makeEditor = undefined
 
-setValue :: Editor' -> JSString -> IO ()
-setValue = undefined
+setValueRef :: Editor' -> JSString -> IO ()
+setValueRef = undefined
 
-getValue :: Editor' -> IO JSString
-getValue = undefined
+getValueRef :: Editor' -> IO JSString
+getValueRef = undefined
 
 stringEq :: JSString -> JSString -> Bool
 stringEq = undefined
 
 #endif
-
-instance Eq JSString where
-    (==) = stringEq
 
 --------------------------------------------------------------------------------
 -- Instances
@@ -261,3 +256,26 @@ instance Eq Ace where
     Ace Nothing == Ace Nothing = True
     Ace (Just{}) == Ace (Just {}) = True
     _ == _ = False
+
+--------------------------------------------------------------------------------
+-- Misc Util
+
+prop :: FromJSRef a => JSRef obj -> JSString -> IO (Maybe a)
+prop obj n = do
+  ref <- getProp n obj
+  if isUndefined ref || isNull ref
+    then return Nothing
+    else fromJSRef ref
+
+mtprop :: FromJSRef a => JSRef obj -> JSString -> MaybeT IO a
+mtprop obj n = MaybeT $ prop obj n
+
+expectProp :: FromJSRef a => JSRef obj -> JSString -> IO a
+expectProp obj n = do
+  mx <- prop obj n
+  case mx of
+    Nothing -> fail $ "Couldn't find expected property " ++ fromJSString n
+    Just x -> return x
+
+setPropShow :: (Monad m, Show a) => T.Text -> a -> ReactT state m ()
+setPropShow n = attr n . T.pack . show
