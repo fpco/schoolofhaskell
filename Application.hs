@@ -56,12 +56,13 @@ makeFoundation appSettings = do
         logFunc = messageLoggerSource tempFoundation appLogger
 
     -- Create the database connection pool
-    pool <- flip runLoggingT logFunc $ createPostgresqlPool
-        (pgConnStr  $ appDatabaseConf appSettings)
-        (pgPoolSize $ appDatabaseConf appSettings)
+    let pool = error "Tried to use database"
+    -- pool <- flip runLoggingT logFunc $ createPostgresqlPool
+    --     (pgConnStr  $ appDatabaseConf appSettings)
+    --     (pgPoolSize $ appDatabaseConf appSettings)
 
-    -- Perform database migration using our application's logging settings.
-    runLoggingT (runSqlPool (runMigration migrateAll) pool) logFunc
+    -- -- Perform database migration using our application's logging settings.
+    -- runLoggingT (runSqlPool (runMigration migrateAll) pool) logFunc
 
     -- Return the foundation
     return $ mkFoundation pool
