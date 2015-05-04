@@ -8,4 +8,4 @@
 
 set -x
 
-fpbuild exec -- $PWD/scripts/build-ghcjs-deps-internal.sh
+fpbuild exec -- $PWD/dev-scripts/build-ghcjs-deps-internal.sh
