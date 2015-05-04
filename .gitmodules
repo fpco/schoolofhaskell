@@ -16,3 +16,6 @@
 [submodule "deps/ghcjs-react"]
 	path = deps/ghcjs-react
 	url = git@github.com:fpco/ghcjs-react.git
+[submodule "deps/ghcjs-websockets"]
+	path = deps/ghcjs-websockets
+	url = git://github.com/mstksg/ghcjs-websockets.git
