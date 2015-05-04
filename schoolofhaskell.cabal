@@ -33,6 +33,7 @@ library
                      Settings.StaticFiles
                      Handler.Common
                      Handler.Home
+                     Yesod.GHCJS
 
     if flag(dev) || flag(library-only)
         cpp-options:   -DDEVELOPMENT
@@ -92,6 +93,9 @@ library
                  , containers
                  , vector
                  , time
+                 -- project specific
+                 , temporary
+                 , conduit-extra >= 1.1.4
 
 executable         schoolofhaskell
     if flag(library-only)
