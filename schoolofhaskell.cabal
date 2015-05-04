@@ -32,6 +32,7 @@ library
                      Settings
                      Settings.StaticFiles
                      Handler.Common
+                     Handler.Editor
                      Handler.Home
                      Yesod.GHCJS
 
@@ -93,12 +94,16 @@ library
                  , containers
                  , vector
                  , time
-                 -- project specific
-                 , temporary
+                 --
+                 , conduit-combinators
                  , conduit-extra >= 1.1.4
+                 , ide-backend >= 0.9.0
+                 , ide-backend-client
                  , resourcet
                  , system-filepath >= 0.4.12
-                 , conduit-combinators
+                 , temporary
+                 , transformers
+                 , yesod-websockets >= 0.2
 
 executable         schoolofhaskell
     if flag(library-only)

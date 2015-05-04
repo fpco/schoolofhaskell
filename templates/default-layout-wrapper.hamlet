@@ -14,6 +14,8 @@ $newline never
 
         <meta name="viewport" content="width=device-width,initial-scale=1">
 
+        <link href="//fonts.googleapis.com/css?family=Lato:400,700" rel="stylesheet" type="text/css">
+
         ^{pageHead pc}
 
         \<!--[if lt IE 9]>
@@ -23,12 +25,12 @@ $newline never
         <script>
           document.documentElement.className = document.documentElement.className.replace(/\bno-js\b/,'js');
     <body>
-        <div class="container">
-            <header>
-            <div id="main" role="main">
-              ^{pageBody pc}
-            <footer>
-                #{appCopyright $ appSettings master}
+        <script src=@{StaticR js_es5_shim_min_js}></script>
+        <script src=@{StaticR js_es5_sham_min_js}></script>
+        <script src=@{StaticR js_console_polyfill_js}></script>
+        <script src=@{StaticR js_react_js}></script>
+
+        ^{pageBody pc}
 
         $maybe analytics <- appAnalytics $ appSettings master
             <script>

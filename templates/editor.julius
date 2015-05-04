@@ -1,0 +1,35 @@
+// FIXME: Replace this with pure GHCJS. It's just more laborious to do
+// so.
+var editor;
+var AceRange = ace.require('ace/range').Range;
+function makeEditor(q,defaultValue,onChange,onSelectionChange){
+  editor = ace.edit(q.get(0));
+  editor.setTheme("ace/theme/tomorrow");
+  editor.getSession().setMode("ace/mode/haskell");
+  if(defaultValue) {
+    editor.setValue(defaultValue);
+  }
+  // editor.setReadOnly(true);
+  if(onChange) {
+    editor.on("change", function() {
+      val = editor.getValue();
+      onChange(val);
+    });
+  }
+  if(onSelectionChange) {
+    editor.on("changeSelection", function() {
+      onSelectionChange({});
+    });
+  }
+  return editor;
+}
+
+function getSelection(editor){
+  var selection = editor.getSelection();
+  var anchor = selection.getSelectionAnchor();
+  var lead = selection.getSelectionLead();
+  return {"anchor-column": anchor.column,
+          "anchor-row": anchor.row,
+          "lead-column": lead.column,
+          "lead-row": lead.row};
+}

@@ -1,0 +1,160 @@
+body {
+  font-family: "Lato", sans-serif;
+}
+
+#react-container > div {
+  margin-left: auto;
+  margin-right: auto;
+  width: 800px;
+}
+
+.snippet {
+  font-family: 'Ubuntu', sans-serif;
+  width: 800px;
+  background: #f9f9f9;
+  border: 1px solid #d1d1d1;
+  position: relative;
+  border-radius: 0.2em;
+  margin: 0.25em 0 0.75em 0;
+/*  min-height: 2.5em; */
+  > .ace_editor {
+    margin: 0.25em;
+    height: 300px;
+    font-size: 15px !important;
+  }
+  > .controls {
+    width: 100%;
+    margin-top: -0.25em;
+  }
+  .controls-bar {
+    background-color: #dedede;
+  }
+  .run {
+    cursor: pointer;
+    color: #655;
+  }
+  /* glyphicon-play */
+  .run:before {
+    content: "\e072";
+  }
+  .run:hover {
+    background-color: #eee;
+  }
+  /*
+  .run:hover {
+    color: #a55;
+  }
+  .run:active {
+    color: #c33;
+    text-shadow: 0px 0px 7px #CB413D;
+  }
+  */
+  .tab {
+    cursor: pointer;
+    display: block;
+    float: left;
+    height: 100%;
+    color: #655;
+  }
+  .tab:hover {
+    background-color: #eee;
+  }
+  .tab.tab-focused {
+    background-color: #ccc;
+  }
+  /* TODO: make it resizable */
+  .tab-content {
+    height: 10em;
+    overflow: auto;
+  }
+}
+
+.snippet.never-built {
+  .run {
+    -webkit-transition: opacity 0.5s ease-in-out;
+    -moz-transition: opacity 0.5s ease-in-out;
+    -o-transition: opacity 0.5s ease-in-out;
+    transition: opacity 0.5s ease-in-out;
+    opacity: 0.5;
+    position: relative;
+    top: -1.5em;
+  }
+}
+
+.snippet.never-built:hover {
+  .run {
+    opacity: 1;
+  }
+}
+
+.snippet.building {
+  .run:hover, .run:active {
+    text-shadow: none;
+  }
+  /* glyphicon-cog */
+  .run:before {
+    content: "\e019";
+  }
+}
+
+/* Sizing + positioning of run button and tabs */
+.snippet {
+  .build-tab {
+    float: right;
+  }
+  .run {
+    float: right;
+    height: 100%;
+    font-size: 150%;
+    padding: 0.3em;
+    /* glyphicon sets to 1px, unset */
+    top: 0;
+  }
+  .tab {
+    font-size: 120%;
+    padding: 0.2em 0.7em;
+  }
+  .controls-bar {
+    height:  2.3em;
+  }
+}
+
+.build-tab-content {
+  .message {
+    padding: 0.25em 0.25em 0.25em 0.5em;
+    border-bottom: 0.05em solid #ccc;
+    min-height: 1.5em;
+  }
+  .kind-error {
+    color: #b94a48;
+  }
+  .kind-warning {
+    color: #9a7a43;
+    background: #fcf8e3;
+    border-bottom: 0.05em solid #efeace;
+  }
+  .kind-warning {
+    background: #f1eed9;
+  }
+  .error-span {
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  .error-msg {
+    padding-left: 0.5em;
+    white-space: pre-wrap;
+    font-family: 'Ubuntu Mono', monospace;
+  }
+}
+
+.console-tab-content {
+  white-space: pre;
+ }
+
+.tab, .run {
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+}
