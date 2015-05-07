@@ -30,15 +30,18 @@ getEditorR = webSockets $ do
 getEditorScriptR :: Handler TypedContent
 getEditorScriptR = $(ghcjsFileDev
 #if DEVELOPMENT
-                True
+    True
 #else
-                False
+    False
 #endif
     (["-XCPP"
     ,"-XTemplateHaskell"
+    ,"-XOverloadedStrings"
+    ,"-XViewPatterns"
+    ,"-XRankNTypes"
     ,"-Wall"
     ,"-hide-all-packages"] ++ concatMap (\pkg -> ["-package", pkg])
-        ["aeson-0.8.0.0"
+        ["aeson"
         ,"JsonGrammar"
         ,"base"
         ,"bytestring"

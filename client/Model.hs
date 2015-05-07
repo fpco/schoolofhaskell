@@ -1,7 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE RankNTypes #-}
-
 module Model where
 
 import           Control.Concurrent (threadDelay)
@@ -21,8 +17,6 @@ import           Language.JsonGrammar (Json)
 import           React.Ace (Ace)
 import qualified React.Ace as Ace
 import           React.Internal (appState)
-
-$(makePrisms ''Response)
 
 getApp :: IO App
 getApp = do
