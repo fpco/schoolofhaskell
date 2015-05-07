@@ -139,13 +139,13 @@ newtype ChangeEvent = ChangeEvent ReactEvent
 instance IsReactEvent ChangeEvent
 
 onChange :: Monad m => (ChangeEvent -> TVar state -> IO ()) -> ReactT state m ()
-onChange = onEvent (EventListener "onChange")
+onChange = onEvent (EventListener "change")
 
 newtype SelectionEvent = SelectionEvent ReactEvent
 instance IsReactEvent SelectionEvent
 
 onSelectionChange :: Monad m => (SelectionEvent -> TVar state -> IO ()) -> ReactT state m ()
-onSelectionChange = onEvent (EventListener "onSelectionChange")
+onSelectionChange = onEvent (EventListener "selectionChange")
 
 --------------------------------------------------------------------------------
 -- Positions and Ranges
@@ -196,11 +196,11 @@ setValue e = setValueRef e . toJSString
 
 #ifdef __GHCJS__
 
-foreign import javascript "makeEditor($1,$2,$3)"
+foreign import javascript "makeEditor($1,$2,$3,$4)"
   makeEditor :: JQuery
              -> JSString
-             -> JSFun (JSRef props -> IO ())
-             -> JSFun (JSRef props -> JSRef props -> IO ())
+             -> JSFun (JSRef props0 -> IO ())
+             -> JSFun (JSRef props1 -> IO ())
              -> IO Editor'
 
 foreign import javascript "($1).setValue($2,-1)"
@@ -227,8 +227,9 @@ setRange :: Editor' -> Int -> Int -> Int -> Int -> IO ()
 setRange = undefined
 
 makeEditor :: JQuery
-           -> (JSRef props -> IO ())
-           -> (JSRef props -> IO ())
+           -> JSString
+           -> (JSRef props0 -> IO ())
+           -> (JSRef props1 -> IO ())
            -> IO Editor'
 makeEditor = undefined
 

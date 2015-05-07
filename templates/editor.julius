@@ -17,7 +17,7 @@ function makeEditor(q,defaultValue,onChange,onSelectionChange){
     });
   }
   if(onSelectionChange) {
-    editor.on("changeSelection", function() {
+    editor.getSelection().on("changeSelection", function() {
       onSelectionChange({});
     });
   }
