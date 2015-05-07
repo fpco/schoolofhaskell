@@ -12,3 +12,10 @@ yesod-devel/
 cabal.sandbox.config
 .DS_Store
 *.swp
+session.*/
+.docker-sandbox/
+.shake.database
+.ssh/
+cabal-ghcjs-config
+*.js_hi
+*.js_o
