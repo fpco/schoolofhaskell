@@ -1,13 +1,15 @@
 module Import.Util where
 
-import           Control.Concurrent.STM
-import           Control.Lens
-import           Control.Monad (unless)
-import           Data.IORef
-import           Data.Monoid
-import           Data.Text (Text, pack, unpack)
-import           IdeSession.Client.JsonAPI (Response)
-import           React hiding (App, Component)
+import Control.Concurrent.STM
+import Control.Exception (SomeException, catch, throwIO)
+import Control.Lens
+import Control.Monad (unless)
+import Data.IORef
+import Data.Monoid
+import Data.Text (Text, pack)
+import GHCJS.Foreign (toJSString)
+import GHCJS.Prim (JSRef)
+import IdeSession.Client.JsonAPI (Response)
 
 addWhen :: Bool -> Text -> Text -> Text
 addWhen True x y = y <> " " <> x
@@ -50,5 +52,14 @@ viewTVarIO g v =
   atomically
     (fmap (view g)
           (readTVar v))
+
+foreign import javascript "console.log($1)" consoleLog :: JSRef a -> IO ()
+
+foreign import javascript "console.error($1)" consoleError :: JSRef a -> IO ()
+
+showExceptions :: Text -> IO a -> IO a
+showExceptions msg f = f `catch` \ex -> do
+  consoleError $ toJSString (msg <> tshow (ex :: SomeException))
+  throwIO ex
 
 $(makePrisms ''Response)
