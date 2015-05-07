@@ -1,13 +1,8 @@
 module View where
 
-import GHCJS.Types (JSRef)
 import Import
-import JavaScript.JQuery (JQuery)
 import Model (runCode, runQuery, switchTab)
 import qualified React.Ace as Ace
-import Control.Monad.Trans (lift)
-import React.Internal (internalLiftIOReact)
-import GHCJS.Foreign (fromJSString)
 
 render :: Component Ace.Ace -> State -> React ()
 render ace state = div_ $ do
@@ -117,7 +112,7 @@ mkTab state tab f = div_ $ do
   class_ $
     addWhen (state ^. stateTab == tab) "tab-focused"
     ("tab " <> tabClass tab)
-  onClick (\_ state -> switchTab state tab)
+  onClick (\_ -> flip switchTab tab)
   f
 
 tabClass :: Tab -> Text
@@ -133,9 +128,7 @@ handleSelectionChange state = do
   mss <- fmap (aceSelectionToSourceSpan "main.hs") <$> Ace.getSelection editor
   tab <- viewTVarIO stateTab state
   case (tab, mss) of
-    (InfoTab, Just ss) -> do
-      print ("running query", ss)
-      runQuery state (QueryInfo ss)
+    (InfoTab, Just ss) -> runQuery state (QueryInfo ss)
     _ -> return ()
 
 aceSelectionToSourceSpan :: FilePath -> Ace.Selection -> SourceSpan

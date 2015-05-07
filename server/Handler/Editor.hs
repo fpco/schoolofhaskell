@@ -1,6 +1,6 @@
 module Handler.Editor where
 
-import Data.Aeson (encode, eitherDecode, toJSON)
+import Data.Aeson (encode, eitherDecode)
 import IdeSession (defaultSessionInitParams, defaultSessionConfig)
 import IdeSession.Client (ClientIO(..), startEmptySession)
 import IdeSession.Client.CmdLine

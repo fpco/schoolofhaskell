@@ -40,14 +40,14 @@ modifyTVarIO v l f =
     (modifyTVar v
                 (over l f))
 
--- waitForTVarIO :: TVar s -> APrism' s a -> IO a
+waitForTVarIO :: TVar s -> (s -> Maybe a) -> IO a
 waitForTVarIO v f = atomically $ do
   x <- readTVar v
   case f x of
     Just y -> return y
     Nothing -> retry
 
--- viewTVarIO :: Getting a s a -> TVar s -> IO a
+viewTVarIO :: Getting a s a -> TVar s -> IO a
 viewTVarIO g v =
   atomically
     (fmap (view g)

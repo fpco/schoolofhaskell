@@ -1,9 +1,7 @@
 module Types where
 
-import           Control.Lens (Prism')
 import qualified Control.Lens as Lens
 import           Data.Text (Text)
-import           IdeSession.Client.JsonAPI
 import           IdeSession.Types.Progress
 import           IdeSession.Types.Public
 import           React.Ace (Ace)

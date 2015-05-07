@@ -6,9 +6,7 @@ import           View
 
 import           Control.Concurrent
 import           Import hiding (children)
-import           JavaScript.JQuery (select, children, remove)
 import qualified React.Ace as Ace
-import           React.Internal (App(appState))
 
 -- | Grab the container element used for rendering into and start the
 -- rendering loop.

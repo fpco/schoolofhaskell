@@ -1,16 +1,13 @@
 module Model where
 
 import           Communication
-import           Control.Concurrent (threadDelay, forkIO, killThread)
-import           Control.Concurrent.Async (race)
+import           Control.Concurrent (forkIO, killThread)
 import           Control.Exception (catch, throwIO, SomeException)
-import           Control.Monad (forever, when, void)
+import           Control.Monad (forever, when)
 import           Data.Aeson (eitherDecodeStrict, encode)
 import           Data.ByteString.Lazy (toStrict)
 import qualified Data.ByteString.Lazy as BL
-import           Data.Foldable (forM_)
 import           Data.Function (fix)
-import           Data.IORef
 import           Data.List (partition)
 import           Data.Maybe (isJust)
 import qualified Data.Text as T
@@ -18,7 +15,6 @@ import           Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import           GHCJS.Foreign (toJSString)
 import           Import
 import           Language.JsonGrammar (Json)
-import           React.Ace (Ace)
 import qualified React.Ace as Ace
 import           React.Internal (appState)
 
@@ -126,37 +122,34 @@ runQueries conn state rh = do
 
 getSourceErrors :: BackendConnection -> ResponseHandler -> IO [SourceError]
 getSourceErrors conn rh =
-  query conn rh
-        RequestGetSourceErrors
-        _ResponseGetSourceErrors
-        "ResponseGetSourceErrors"
+  queryBackend conn rh
+               RequestGetSourceErrors
+               _ResponseGetSourceErrors
+               "ResponseGetSourceErrors"
 
 getSpanInfo :: BackendConnection -> ResponseHandler -> SourceSpan -> IO [ResponseSpanInfo]
 getSpanInfo conn rh ss =
-  query conn rh
-        (RequestGetSpanInfo ss)
-        _ResponseGetSpanInfo
-        "ResponseGetSpanInfo"
+  queryBackend conn rh
+               (RequestGetSpanInfo ss)
+               _ResponseGetSpanInfo
+               "ResponseGetSpanInfo"
 
 getExpTypes :: BackendConnection -> ResponseHandler -> SourceSpan -> IO [ResponseExpType]
 getExpTypes conn rh ss =
-  query conn rh
-        (RequestGetExpTypes ss)
-        _ResponseGetExpTypes
-        "ResponseGetExpTypes"
+  queryBackend conn rh
+               (RequestGetExpTypes ss)
+               _ResponseGetExpTypes
+               "ResponseGetExpTypes"
 
-query :: BackendConnection
-      -> ResponseHandler
-      -> Request
-      -> Prism' Response a
-      -> String
-      -> IO a
-query conn rh request prism expected = do
+queryBackend :: BackendConnection
+             -> ResponseHandler
+             -> Request
+             -> Prism' Response a
+             -> String
+             -> IO a
+queryBackend conn rh request p expected = do
   sendRequest conn request
-  putStrLn "Waiting for response"
-  resp <- receiveResponse conn rh prism expected
-  putStrLn "Got response"
-  return resp
+  receiveResponse conn rh p expected
 
 --------------------------------------------------------------------------------
 -- Functions for sending and receiving ide-backend-client requests / responses
@@ -207,7 +200,7 @@ receiveJson :: (Json r, Show r)
             -> Prism' r a
             -> String
             -> IO a
-receiveJson conn rh prism expected = do
+receiveJson conn rh p expected = do
   t <- receiveText conn
   case eitherDecodeStrict (encodeUtf8 t) of
     Left err -> fail $ "Protocol error: " ++ err
@@ -217,9 +210,9 @@ receiveJson conn rh prism expected = do
         Right response -> do
           handled <- rh response
           case handled of
-            HandledResponse -> receiveJson conn rh prism expected
+            HandledResponse -> receiveJson conn rh p expected
             Didn'tHandleResponse ->
-              case response ^? prism of
+              case response ^? p of
                 Just x -> return x
                 Nothing ->
                   fail $

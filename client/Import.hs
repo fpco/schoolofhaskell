@@ -21,16 +21,14 @@ module Import
 import           Control.Applicative ((<$>), (<*>))
 import           Control.Concurrent.STM
 import           Control.Lens
-import           Control.Monad (unless)
 import           Data.Foldable (forM_)
-import           Data.IORef
 import           Data.Monoid
-import           Data.Text (Text, pack, unpack)
-import           IdeSession.Client.JsonAPI hiding (iso)
+import           Data.Text (Text)
+import           IdeSession.Client.JsonAPI
 import           IdeSession.Types.Progress
 import           IdeSession.Types.Public
 import           Import.Util
-import           React hiding (App, Component)
+import           React hiding (App)
 import qualified React.Internal
 import           React.Lucid
 import           Types

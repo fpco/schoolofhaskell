@@ -35,6 +35,8 @@ module React.Ace
   , getValue
   , getSelection
   , selectionToRange
+    -- * Mutations
+  , setValue
   ) where
 
 import           Control.Applicative ((<$>), (<*>))
@@ -43,7 +45,6 @@ import           Control.Lens hiding (coerce)
 import           Control.Monad (join, when, (>=>))
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 import           Data.Foldable (forM_)
-import           Data.Maybe (fromMaybe)
 import qualified Data.Text as T
 import           React hiding (onClick)
 import           React.Internal
