@@ -34,6 +34,7 @@ module React.Ace
   , aceEditorOrError
   , getValue
   , getSelection
+  , selectionToRange
   ) where
 
 import           Control.Applicative ((<$>), (<*>))
@@ -154,7 +155,7 @@ data Pos = Pos
     { row :: Int
     , column :: Int
     }
-    deriving (Show, Eq)
+    deriving (Show, Eq, Ord)
 
 data Range = Range
     { start :: Pos
@@ -184,6 +185,12 @@ getSelectionFromObject obj = runMaybeT $ Selection
            <*> mtprop obj "anchor-column")
   <*> (Pos <$> mtprop obj "lead-row"
            <*> mtprop obj "lead-column")
+
+selectionToRange :: Selection -> Range
+selectionToRange sel =
+  if anchor sel < lead sel
+    then Range (anchor sel) (lead sel)
+    else Range (lead sel) (anchor sel)
 
 getValue :: Editor' -> IO T.Text
 getValue e = fromJSString <$> getValueRef e
