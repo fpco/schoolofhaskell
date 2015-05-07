@@ -1,29 +1,28 @@
 module Types where
 
+import           Control.Lens (Prism')
 import qualified Control.Lens as Lens
 import           Data.Text (Text)
 import           IdeSession.Client.JsonAPI
 import           IdeSession.Types.Progress
 import           IdeSession.Types.Public
-import           JavaScript.WebSockets (Connection)
 import           React.Ace (Ace)
-
-newtype BackendConnection =
-  BackendConnection { unBackendConnection :: Connection }
 
 data State = State
   { _stateAce :: Ace
-  , _stateStatus :: Maybe BuildStatus
+  , _stateStatus :: Maybe Status
   , _stateRunning :: Running
   , _stateTab :: Tab
+  , _stateInfo :: Text
   -- FIXME: this will be removed once a real terminal is used.
   , _stateConsole :: [Text]
   } deriving (Eq, Show)
 
-data BuildStatus
+data Status
   = BuildRequested [(FilePath, Text)]
   | Building (Maybe Progress)
   | Built BuildInfo
+  | QueryRequested BuildInfo Query
   deriving (Eq, Show)
 
 data BuildInfo = BuildInfo
@@ -31,6 +30,10 @@ data BuildInfo = BuildInfo
   , buildWarnings :: [SourceError]
   , buildServerDieds :: [SourceError]
   }
+  deriving (Eq, Show)
+
+data Query
+  = QueryInfo SourceSpan
   deriving (Eq, Show)
 
 data Running
@@ -41,9 +44,8 @@ data Running
 data Tab
   = BuildTab
   | ConsoleTab
-  | DocsTab
-  -- | InfoTab
+  | InfoTab
   deriving (Eq, Show)
 
 $(Lens.makeLenses ''State)
-$(Lens.makePrisms ''BuildStatus)
+$(Lens.makePrisms ''Status)

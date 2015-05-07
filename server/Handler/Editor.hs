@@ -39,15 +39,18 @@ getEditorScriptR = $(ghcjsFileDev
     ,"-XOverloadedStrings"
     ,"-XViewPatterns"
     ,"-XRankNTypes"
+    ,"-XRecordWildCards"
     ,"-Wall"
     ,"-hide-all-packages"] ++ concatMap (\pkg -> ["-package", pkg])
         ["aeson"
+        ,"async"
         ,"JsonGrammar"
         ,"base"
         ,"bytestring"
         ,"ghcjs-base"
         ,"ghcjs-dom"
         ,"ghcjs-jquery"
+        ,"ghcjs-prim"
         ,"ghcjs-react"
         ,"ghcjs-websockets"
         ,"ghcjs-websockets"
@@ -60,6 +63,7 @@ getEditorScriptR = $(ghcjsFileDev
         ,"stm"
         ,"text"
         ,"transformers"
+        ,"void"
         ])
     ["client"]
     "client/main.hs")

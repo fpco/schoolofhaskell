@@ -41,11 +41,11 @@ modifyTVarIO v l f =
                 (over l f))
 
 -- waitForTVarIO :: TVar s -> APrism' s a -> IO a
-waitForTVarIO v p = atomically $ do
-    x <- readTVar v
-    case x ^? p of
-        Just y -> return y
-        Nothing -> retry
+waitForTVarIO v f = atomically $ do
+  x <- readTVar v
+  case f x of
+    Just y -> return y
+    Nothing -> retry
 
 -- viewTVarIO :: Getting a s a -> TVar s -> IO a
 viewTVarIO g v =
