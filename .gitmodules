@@ -9,7 +9,7 @@
 	url = git://github.com/MedeaMelana/stack-prism.git
 [submodule "deps/JsonGrammar2"]
 	path = deps/JsonGrammar2
-	url = git://github.com/MedeaMelana/JsonGrammar2.git
+	url = git://github.com/mgsloan/JsonGrammar2.git
 [submodule "deps/language-typescript"]
 	path = deps/language-typescript
 	url = git://github.com/paf31/language-typescript.git
