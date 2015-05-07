@@ -33,13 +33,13 @@ import           Yesod.Core
 ghcjsFileDev :: Bool -> [String] -> [FilePath] -> FilePath -> Q Exp
 ghcjsFileDev development args folders fp = do
     let args' = map (\folder -> "-i" ++ folder) folders ++ args
-    genfp <- runIO $ runGhcjs fp args'
     if development
         then [| liftIO $ do
-            runGhcjs fp args'
+            genfp <- runGhcjs fp args'
             content <- BS.readFile genfp
             return $ TypedContent typeJavascript $ toContent content |]
         else do
+            genfp <- runIO $ runGhcjs fp args'
             sourceFiles <- runIO $ runResourceT $
               mapM_ (CL.sourceDirectoryDeep False . fromString) folders $=
               CL.filter (`hasExtension` "hs") $$
