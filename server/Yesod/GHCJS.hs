@@ -89,5 +89,5 @@ runGhcJSAll args fp cont =
           (proc path (mkArgs tmpdir)) {close_fds = True
                                              ,std_in = CreatePipe}
         mkArgs tmpdir =
-          [fp,"-o",tmpdir] ++
+          [fp,"-outputdir","dist/ghcjs","-o",tmpdir] ++
           args
