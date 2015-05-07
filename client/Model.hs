@@ -44,13 +44,16 @@ runApp app = withUrl "ws://localhost:3000/editor" $ \conn' -> do
       "Exited mainLoop with exception " ++ show (ex :: SomeException)
     throwIO ex
 
-mainLoop :: BackendConnection -> TVar State -> [(FilePath, Text)] -> IO void
+mainLoop :: BackendConnection -> TVar State -> Files -> IO void
 mainLoop conn state files = do
   success <- compileCode conn state files
-  rh <- if success then runConsole conn state else return ignoreConsoleOutput
-  mainLoop conn state =<< runQueries conn state rh
+  rh <- if success
+    then runConsole conn state
+    else return ignoreConsoleOutput
+  files' <- runQueries conn state rh
+  mainLoop conn state files'
 
-compileCode :: BackendConnection -> TVar State -> [(FilePath, Text)] -> IO Bool
+compileCode :: BackendConnection -> TVar State -> Files -> IO Bool
 compileCode conn state files = do
   --TODO: clear ide-backend state before the rest of the updates.
   let requestUpdate (fp, txt) = RequestUpdateSourceFile fp $
@@ -92,30 +95,36 @@ runConsole conn state = do
 
 -- killRunningProcess :: BackendConnection -> TVar State ->
 
-runQueries :: BackendConnection -> TVar State -> ResponseHandler -> IO [(FilePath, Text)]
+runQueries :: BackendConnection -> TVar State -> ResponseHandler -> IO Files
 runQueries conn state rh = do
-  let receiveConsole = forever $
-        receiveResponse conn rh (error "expected nothing") "nothing"
-      userRequest = waitForTVarIO state $ \s -> case s ^. stateStatus of
+    -- FIXME: I tried to do this with 'race' initially, but it
+    -- erroneously threw thread killed exceptions.  Check if newer
+    -- GHCJS resolves this.
+    tid <- forkIO receiveConsoleMessages
+    req <- waitForUserRequest
+    killThread tid
+    case req of
+      Left files -> return files
+      Right (QueryInfo ss) -> do
+        infos <- getSpanInfo conn rh ss
+        updateAndLoop $ set stateInfo (tshow infos)
+  where
+    receiveConsoleMessages :: IO ()
+    receiveConsoleMessages =
+      forever $ receiveResponse conn rh (error "expected nothing") "nothing"
+    waitForUserRequest :: IO (Either Files Query)
+    waitForUserRequest = waitForTVarIO state $ \s ->
+      case s ^. stateStatus of
         Just (BuildRequested files) -> Just (Left files)
         Just (QueryRequested _ query) -> Just (Right query)
         _ -> Nothing
-  -- FIXME: I tried to do this with 'race' initially, but it
-  -- erroneously threw thread killed exceptions.  Check if newer GHCJS
-  -- resolves this.
-  tid <- forkIO receiveConsole
-  res <- userRequest
-  killThread tid
-  case res of
-    Left files -> return files
-    Right (QueryInfo ss) -> do
-      infos <- getSpanInfo conn rh ss
-      let backToIdle (Just (QueryRequested info _)) = Just (Built info)
-          backToIdle x = x
-      modifyTVarIO state id $
-        over stateStatus backToIdle .
-        set stateInfo (tshow infos)
+    updateAndLoop :: (State -> State) -> IO Files
+    updateAndLoop f = do
+      modifyTVarIO state id $ over stateStatus backToIdle . f
       runQueries conn state rh
+    backToIdle :: Maybe Status -> Maybe Status
+    backToIdle (Just (QueryRequested info _)) = Just (Built info)
+    backToIdle x = x
 
 --------------------------------------------------------------------------------
 -- Queries

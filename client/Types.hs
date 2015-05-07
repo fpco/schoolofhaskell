@@ -17,7 +17,7 @@ data State = State
   } deriving (Eq, Show)
 
 data Status
-  = BuildRequested [(FilePath, Text)]
+  = BuildRequested Files
   | Building (Maybe Progress)
   | Built BuildInfo
   | QueryRequested BuildInfo Query
@@ -44,6 +44,8 @@ data Tab
   | ConsoleTab
   | InfoTab
   deriving (Eq, Show)
+
+type Files = [(FilePath, Text)]
 
 $(Lens.makeLenses ''State)
 $(Lens.makePrisms ''Status)
