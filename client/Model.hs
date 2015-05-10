@@ -9,7 +9,6 @@ import           Data.ByteString.Lazy (toStrict)
 import qualified Data.ByteString.Lazy as BL
 import           Data.Function (fix)
 import           Data.List (partition)
-import           Data.Maybe (isJust)
 import qualified Data.Text as T
 import           Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import           GHCJS.Foreign (toJSString)
@@ -26,7 +25,7 @@ getApp = do
         , _stateStatus = Nothing
         , _stateRunning = NotRunning
         , _stateTab = BuildTab
-        , _stateInfo = ""
+        , _stateDocs = Nothing
         , _stateConsole = []
         }
   makeApp state id
@@ -107,7 +106,7 @@ runQueries conn state rh = do
       Left files -> return files
       Right (QueryInfo ss) -> do
         infos <- getSpanInfo conn rh ss
-        updateAndLoop $ set stateInfo (tshow infos)
+        updateAndLoop $ set stateDocs (listToMaybe infos)
   where
     receiveConsoleMessages :: IO ()
     receiveConsoleMessages =

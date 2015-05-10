@@ -1,7 +1,10 @@
 module View where
 
-import Import
-import Model (runCode, runQuery, switchTab)
+import           Data.Function
+import           Data.List (groupBy)
+import qualified Data.Text as T
+import           Import
+import           Model (runCode, runQuery, switchTab)
 import qualified React.Ace as Ace
 
 render :: Component Ace.Ace -> State -> React ()
@@ -16,22 +19,23 @@ render ace state = div_ $ do
       Just Built {} -> "snippet built"
       Just QueryRequested {} -> "snippet built"
     buildComponent ace stateAce $ do
-      Ace.defaultValue_ "main = putStrLn \"world\""
+      Ace.defaultValue_
+        "import Control.Concurrent.Async (race)\n\nmain = putStrLn \"hello\" `race` putStrLn \"world\""
       Ace.onSelectionChange (const handleSelectionChange)
     case mstatus of
       Nothing -> runButton state
       Just status -> div_ $ do
         class_ "controls"
-        runButton state
         div_ $ do
           class_ "controls-bar"
+          runButton state
           mkTab state BuildTab $ text (buildStatusText status)
           mkTab state ConsoleTab "Console"
-          mkTab state InfoTab "Info"
+          mkTab state DocsTab "Docs"
         case state ^. stateTab of
           BuildTab -> buildTab status
           ConsoleTab -> consoleTab state
-          InfoTab -> infoTab state
+          DocsTab -> docsTab state
 
 runButton :: State -> React ()
 runButton state = div_ $ do
@@ -80,6 +84,8 @@ buildTab status = div_ $ do
 buildInfo :: BuildInfo -> React ()
 buildInfo info =
   forM_ (sourceErrors info) $ \err -> div_ $ do
+    --FIXME: have some explanatory text or victory picture when there
+    --are no errors or warnings.
     class_ $ "message " <> case errorKind err of
       KindError -> "kind-error"
       KindServerDied -> "kind-error"
@@ -102,10 +108,41 @@ consoleTab state = div_ $ do
   class_ "tab-content console-tab-content"
   mapM_ (span_ . text) (state ^. stateConsole)
 
-infoTab :: State -> React ()
-infoTab state = div_ $ do
+docsTab :: State -> React ()
+docsTab state = div_ $ do
   class_ "tab-content docs-tab-content"
-  span_ $ text $ state ^. stateInfo
+  case state ^. stateDocs of
+    Nothing -> span_ (text "FIXME: explanatory content")
+    Just (ResponseSpanInfo info _) ->
+       build "iframe" $ src_ (hackageLink (getIdInfo info))
+      where
+        getIdInfo (SpanId x) = x
+        getIdInfo (SpanQQ x) = x
+
+hackageLink :: IdInfo -> Text
+hackageLink (IdInfo IdProp{..} idScope) =
+  case idScope of
+    Imported{idImportedFrom = ModuleId{..}} ->
+       "http://hackage.haskell.org/package/" <>
+       packageName <>
+       maybe "" ("-" <>) packageVersion <>
+       "/docs/" <>
+       dotToDash moduleName <>
+       ".html#" <>
+       haddockSpaceMarks idSpace <>
+       ":" <>
+       idName
+      where
+        PackageId {..} = modulePackage
+        dotToDash = T.map (\c -> if c == '.' then '-' else c)
+    _ -> "<local identifier>"
+
+-- | Show approximately what Haddock adds to documentation URLs.
+haddockSpaceMarks :: IdNameSpace -> Text
+haddockSpaceMarks VarName   = "v"
+haddockSpaceMarks DataName  = "v"
+haddockSpaceMarks TvName    = "t"
+haddockSpaceMarks TcClsName = "t"
 
 mkTab :: State -> Tab -> React () -> React ()
 mkTab state tab f = div_ $ do
@@ -118,7 +155,7 @@ mkTab state tab f = div_ $ do
 tabClass :: Tab -> Text
 tabClass BuildTab = "build-tab"
 tabClass ConsoleTab = "console-tab"
-tabClass InfoTab = "info-tab"
+tabClass DocsTab = "docs-tab"
 
 -- Queries
 
@@ -128,7 +165,7 @@ handleSelectionChange state = do
   mss <- fmap (aceSelectionToSourceSpan "main.hs") <$> Ace.getSelection editor
   tab <- viewTVarIO stateTab state
   case (tab, mss) of
-    (InfoTab, Just ss) -> runQuery state (QueryInfo ss)
+    (DocsTab, Just ss) -> runQuery state (QueryInfo ss)
     _ -> return ()
 
 aceSelectionToSourceSpan :: FilePath -> Ace.Selection -> SourceSpan

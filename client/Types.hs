@@ -4,6 +4,7 @@ import qualified Control.Lens as Lens
 import           Data.Text (Text)
 import           IdeSession.Types.Progress
 import           IdeSession.Types.Public
+import           IdeSession.Client.JsonAPI
 import           React.Ace (Ace)
 
 data State = State
@@ -11,7 +12,7 @@ data State = State
   , _stateStatus :: Maybe Status
   , _stateRunning :: Running
   , _stateTab :: Tab
-  , _stateInfo :: Text
+  , _stateDocs :: Maybe ResponseSpanInfo
   -- FIXME: this will be removed once a real terminal is used.
   , _stateConsole :: [Text]
   } deriving (Eq, Show)
@@ -42,7 +43,7 @@ data Running
 data Tab
   = BuildTab
   | ConsoleTab
-  | InfoTab
+  | DocsTab
   deriving (Eq, Show)
 
 type Files = [(FilePath, Text)]

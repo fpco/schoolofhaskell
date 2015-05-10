@@ -3,6 +3,7 @@ module Import
     , module Control.Concurrent.STM
     , module Control.Lens
     , module Data.Foldable
+    , module Data.Maybe
     , module Data.Monoid
     , module IdeSession.Client.JsonAPI
     , module IdeSession.Types.Progress
@@ -22,6 +23,7 @@ import           Control.Applicative ((<$>), (<*>))
 import           Control.Concurrent.STM
 import           Control.Lens
 import           Data.Foldable (forM_)
+import           Data.Maybe
 import           Data.Monoid
 import           Data.Text (Text)
 import           IdeSession.Client.JsonAPI
