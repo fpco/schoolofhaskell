@@ -11,7 +11,8 @@ body {
 .snippet {
   font-family: 'Ubuntu', sans-serif;
   width: 800px;
-  background: #f9f9f9;
+  /* same background color as the editor theme */
+  background: #fff;
   border: 1px solid #d1d1d1;
   position: relative;
   border-radius: 0.2em;
@@ -27,11 +28,12 @@ body {
     margin-top: -0.25em;
   }
   .controls-bar {
-    background-color: #dedede;
+    border-top: 1px solid #d1d1d1;
+    border-bottom: 1px solid #d1d1d1;
+    overflow: hidden;
   }
   .run {
     cursor: pointer;
-    color: #655;
   }
   /* glyphicon-play */
   .run:before {
@@ -57,10 +59,19 @@ body {
     color: #655;
   }
   .tab:hover {
-    background-color: #eee;
+    background-color: #f1f1f1;
   }
   .tab.tab-focused {
-    background-color: #ccc;
+    background-color: #e1e1e1;
+    /* rounded tab?
+    background-color: white;
+    border-bottom: 1px solid white;
+    border-left: 1px solid #d1d1d1;
+    border-right: 1px solid #d1d1d1;
+    position: relative;
+    top: 1px;
+    border-radius: 0.5em 0.5em 0 0;
+     */
   }
   /* TODO: make it resizable */
   .tab-content {
@@ -76,7 +87,13 @@ body {
     transition: opacity 0.5s ease-in-out;
     opacity: 0.5;
     position: relative;
-    top: -1.5em;
+    top: -1.6em;
+  }
+}
+
+.snippet.built {
+  .run {
+    padding-top: 0.2em;
   }
 }
 
@@ -105,7 +122,7 @@ body {
     float: right;
     height: 100%;
     font-size: 150%;
-    padding: 0.3em;
+    padding: 0.3em 0.3em 0.3em 0.4em;
     /* glyphicon sets to 1px, unset */
     top: 0;
   }
