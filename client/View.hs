@@ -3,9 +3,13 @@ module View where
 import           Data.Function
 import           Data.List (groupBy)
 import qualified Data.Text as T
+import           GHCJS.Foreign
+import           GHCJS.Types
 import           Import
 import           Model (runCode, runQuery, switchTab)
 import qualified React.Ace as Ace
+import           React.Builder (refAttr)
+import           System.IO.Unsafe (unsafePerformIO)
 
 render :: Component Ace.Ace -> State -> React ()
 render ace state = div_ $ do
@@ -36,6 +40,8 @@ render ace state = div_ $ do
           BuildTab -> buildTab status
           ConsoleTab -> consoleTab state
           DocsTab -> docsTab state
+    forM_ (state ^. stateTypes) $ \typs ->
+      typePopup typs 300 100
 
 runButton :: State -> React ()
 runButton state = div_ $ do
@@ -163,10 +169,7 @@ handleSelectionChange :: TVar State -> IO ()
 handleSelectionChange state = do
   editor <- Ace.aceEditorOrError <$> viewTVarIO stateAce state
   mss <- fmap (aceSelectionToSourceSpan "main.hs") <$> Ace.getSelection editor
-  tab <- viewTVarIO stateTab state
-  case (tab, mss) of
-    (DocsTab, Just ss) -> runQuery state (QueryInfo ss)
-    _ -> return ()
+  forM_ mss $ runQuery state . QueryInfo
 
 aceSelectionToSourceSpan :: FilePath -> Ace.Selection -> SourceSpan
 aceSelectionToSourceSpan fp = aceRangeToSourceSpan fp . Ace.selectionToRange
@@ -179,3 +182,20 @@ aceRangeToSourceSpan fp range = SourceSpan
   , spanToLine = Ace.row (Ace.end range) + 1
   , spanToColumn = Ace.column (Ace.end range) + 1
   }
+
+-- | Show the type popup.
+typePopup :: Monad m => [ResponseExpType] -> Int -> Int -> ReactT State m ()
+typePopup typs x y = div_ $ do
+  class_ "type-popup"
+  style "top" $ T.pack (show (y + 14)) <> "px"
+  style "left" $ T.pack (show x) <> "px"
+  div_ $ do
+    class_ "display"
+    forM_ typs $ \(ResponseExpType t _) -> div_ $
+      refAttr "dangerouslySetInnerHTML" $ unsafePerformIO $ do
+        obj <- newObj
+        setProp ("__html" :: JSString) (highlightHaskell (toJSString t)) obj
+        return obj
+
+foreign import javascript interruptible "highlightHaskell($1, function(html) { $c(html) });"
+  highlightHaskell :: JSString -> JSString

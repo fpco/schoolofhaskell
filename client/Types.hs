@@ -13,6 +13,7 @@ data State = State
   , _stateRunning :: Running
   , _stateTab :: Tab
   , _stateDocs :: Maybe ResponseSpanInfo
+  , _stateTypes :: Maybe [ResponseExpType]
   -- FIXME: this will be removed once a real terminal is used.
   , _stateConsole :: [Text]
   } deriving (Eq, Show)

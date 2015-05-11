@@ -40,6 +40,8 @@ getEditorScriptR = $(ghcjsFileDev
     ,"-XViewPatterns"
     ,"-XRankNTypes"
     ,"-XRecordWildCards"
+    ,"-XForeignFunctionInterface"
+    ,"-XJavaScriptFFI"
     ,"-Wall"
     ,"-hide-all-packages"] ++ concatMap (\pkg -> ["-package", pkg])
         ["aeson"

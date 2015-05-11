@@ -77,6 +77,12 @@ body {
   .tab-content {
     height: 10em;
   }
+  .type-popup {
+    position: absolute;
+    border: 1px solid #d1d1d1;
+    border-radius: 0.4em;
+    padding: 0.4em;
+  }
 }
 
 .snippet.never-built {

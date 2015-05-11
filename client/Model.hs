@@ -8,7 +8,9 @@ import           Data.Aeson (eitherDecodeStrict, encode)
 import           Data.ByteString.Lazy (toStrict)
 import qualified Data.ByteString.Lazy as BL
 import           Data.Function (fix)
+import           Data.Function (on)
 import           Data.List (partition)
+import qualified Data.List as L
 import qualified Data.Text as T
 import           Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import           GHCJS.Foreign (toJSString)
@@ -26,6 +28,7 @@ getApp = do
         , _stateRunning = NotRunning
         , _stateTab = BuildTab
         , _stateDocs = Nothing
+        , _stateTypes = Nothing
         , _stateConsole = []
         }
   makeApp state id
@@ -106,7 +109,12 @@ runQueries conn state rh = do
       Left files -> return files
       Right (QueryInfo ss) -> do
         infos <- getSpanInfo conn rh ss
-        updateAndLoop $ set stateDocs (listToMaybe infos)
+        update $ set stateDocs (listToMaybe infos)
+        tys <- getExpTypes conn rh ss
+        update $ set stateTypes $
+          listToMaybe $
+          L.groupBy ((==) `on` (\(ResponseExpType _ ss) -> ss)) tys
+        runQueries conn state rh
   where
     receiveConsoleMessages :: IO ()
     receiveConsoleMessages =
@@ -117,10 +125,8 @@ runQueries conn state rh = do
         Just (BuildRequested files) -> Just (Left files)
         Just (QueryRequested _ query) -> Just (Right query)
         _ -> Nothing
-    updateAndLoop :: (State -> State) -> IO Files
-    updateAndLoop f = do
-      modifyTVarIO state id $ over stateStatus backToIdle . f
-      runQueries conn state rh
+    update :: (State -> State) -> IO ()
+    update f = modifyTVarIO state id $ over stateStatus backToIdle . f
     backToIdle :: Maybe Status -> Maybe Status
     backToIdle (Just (QueryRequested info _)) = Just (Built info)
     backToIdle x = x
@@ -245,5 +251,4 @@ runQuery state query =
       _ -> oldStatus
 
 switchTab :: TVar State -> Tab -> IO ()
-switchTab state tab =
-  setTVarIO state stateTab tab
+switchTab state = setTVarIO state stateTab

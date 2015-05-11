@@ -1,11 +1,10 @@
 // FIXME: Replace this with pure GHCJS. It's just more laborious to do
 // so.
-var editor;
-var AceRange = ace.require('ace/range').Range;
 function makeEditor(q,defaultValue,onChange,onSelectionChange){
-  editor = ace.edit(q.get(0));
+  var editor = ace.edit(q.get(0));
   editor.setTheme("ace/theme/tomorrow");
-  editor.getSession().setMode("ace/mode/haskell");
+  editor.session.setMode("ace/mode/haskell");
+  editor.renderer.setShowGutter(false);
   if(defaultValue) {
     editor.setValue(defaultValue);
   }
@@ -32,4 +31,12 @@ function getSelection(editor){
           "anchor-row": anchor.row,
           "lead-column": lead.column,
           "lead-row": lead.row};
+}
+
+var staticHighlight = ace.require("ace/ext/static_highlight");
+
+function highlightHaskell(input, callback) {
+  staticHighlight.highlight.render(input, "ace/mode/haskell", "ace/theme/tomorrow", 0, true, function(highlighted) {
+    callback(highlighted.html);
+  });
 }
