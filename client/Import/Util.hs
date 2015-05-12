@@ -1,15 +1,21 @@
 module Import.Util where
 
-import Control.Concurrent.STM
-import Control.Exception (SomeException, catch, throwIO)
-import Control.Lens
-import Control.Monad (unless)
-import Data.IORef
-import Data.Monoid
-import Data.Text (Text, pack)
-import GHCJS.Foreign (toJSString)
-import GHCJS.Prim (JSRef)
-import IdeSession.Client.JsonAPI (Response)
+import           Control.Concurrent.STM
+import           Control.Exception (SomeException, catch, throwIO)
+import           Control.Lens
+import           Control.Monad (unless)
+import           Data.IORef
+import           Data.Monoid
+import           Data.Text (Text, pack)
+import qualified Data.Text as T
+import           GHCJS.Foreign
+import           GHCJS.Foreign (toJSString)
+import           GHCJS.Marshal
+import           GHCJS.Prim (JSRef)
+import           GHCJS.Types
+import           IdeSession.Client.JsonAPI (Response)
+import           Control.Monad.Trans.Maybe (MaybeT(..))
+import           React
 
 addWhen :: Bool -> Text -> Text -> Text
 addWhen True x y = y <> " " <> x
@@ -24,6 +30,29 @@ once runAction = do
   return $ do
     alreadyCalled <- readIORef alreadyCalledRef
     unless alreadyCalled runAction
+
+--------------------------------------------------------------------------------
+-- Misc React utils
+
+prop :: FromJSRef a => JSRef obj -> JSString -> IO (Maybe a)
+prop obj n = do
+  ref <- getProp n obj
+  if isUndefined ref || isNull ref
+    then return Nothing
+    else fromJSRef ref
+
+mtprop :: FromJSRef a => JSRef obj -> JSString -> MaybeT IO a
+mtprop obj n = MaybeT $ prop obj n
+
+expectProp :: FromJSRef a => JSRef obj -> JSString -> IO a
+expectProp obj n = do
+  mx <- prop obj n
+  case mx of
+    Nothing -> fail $ "Couldn't find expected property " ++ fromJSString n
+    Just x -> return x
+
+setPropShow :: (Monad m, Show a) => T.Text -> a -> ReactT state m ()
+setPropShow n = attr n . T.pack . show
 
 --------------------------------------------------------------------------------
 -- Tvar/lens helpers

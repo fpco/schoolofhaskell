@@ -41,11 +41,12 @@ module React.Ace
 
 import           Control.Applicative ((<$>), (<*>))
 import           Control.Concurrent.STM
-import           Control.Lens hiding (coerce)
+import           Control.Lens
 import           Control.Monad (join, when, (>=>))
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 import           Data.Foldable (forM_)
 import qualified Data.Text as T
+import           Import.Util (prop, mtprop, expectProp, setPropShow)
 import           React hiding (onClick)
 import           React.Internal
 
@@ -265,26 +266,3 @@ instance Eq Ace where
     Ace Nothing == Ace Nothing = True
     Ace (Just{}) == Ace (Just {}) = True
     _ == _ = False
-
---------------------------------------------------------------------------------
--- Misc Util
-
-prop :: FromJSRef a => JSRef obj -> JSString -> IO (Maybe a)
-prop obj n = do
-  ref <- getProp n obj
-  if isUndefined ref || isNull ref
-    then return Nothing
-    else fromJSRef ref
-
-mtprop :: FromJSRef a => JSRef obj -> JSString -> MaybeT IO a
-mtprop obj n = MaybeT $ prop obj n
-
-expectProp :: FromJSRef a => JSRef obj -> JSString -> IO a
-expectProp obj n = do
-  mx <- prop obj n
-  case mx of
-    Nothing -> fail $ "Couldn't find expected property " ++ fromJSString n
-    Just x -> return x
-
-setPropShow :: (Monad m, Show a) => T.Text -> a -> ReactT state m ()
-setPropShow n = attr n . T.pack . show
