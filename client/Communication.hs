@@ -30,18 +30,6 @@ import           Import
 import qualified JavaScript.WebSockets as WS
 import           Language.JsonGrammar (Json)
 
-data Backend = Backend
-  { backendRequestChan :: TChan Request
-  , backendResponseChan :: TChan Response
-  , backendProcessHandler :: IORef (Either RunResult ByteString -> IO ())
-  }
-
-instance Eq Backend where
-  _ == _ = True
-
-instance Show Backend where
-  showsPrec _ _ = showString "Backend conn waiter"
-
 withUrl :: Text -> (Backend -> IO a) -> IO a
 withUrl url f = WS.withUrl url $ \conn -> do
   backendRequestChan <- newTChanIO

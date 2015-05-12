@@ -1,6 +1,9 @@
 module Types where
 
+import Control.Concurrent.STM (TChan)
 import Control.Lens (makeLenses, makePrisms)
+import Data.ByteString (ByteString)
+import Data.IORef (IORef)
 import Data.Text (Text)
 import IdeSession.Client.JsonAPI
 import IdeSession.Types.Progress
@@ -48,6 +51,18 @@ data Tab
   deriving (Eq, Show)
 
 type Files = [(FilePath, Text)]
+
+data Backend = Backend
+  { backendRequestChan :: TChan Request
+  , backendResponseChan :: TChan Response
+  , backendProcessHandler :: IORef (Either RunResult ByteString -> IO ())
+  }
+
+instance Eq Backend where
+  _ == _ = True
+
+instance Show Backend where
+  showsPrec _ _ = showString "Backend conn waiter"
 
 $(makeLenses ''State)
 $(makePrisms ''Status)
