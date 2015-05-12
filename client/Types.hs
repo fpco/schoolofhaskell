@@ -1,11 +1,11 @@
 module Types where
 
-import qualified Control.Lens as Lens
-import           Data.Text (Text)
-import           IdeSession.Types.Progress
-import           IdeSession.Types.Public
-import           IdeSession.Client.JsonAPI
-import           React.Ace (Ace)
+import Control.Lens (makeLenses, makePrisms)
+import Data.Text (Text)
+import IdeSession.Client.JsonAPI
+import IdeSession.Types.Progress
+import IdeSession.Types.Public
+import React.Ace (Ace)
 
 data State = State
   { _stateAce :: Ace
@@ -49,5 +49,5 @@ data Tab
 
 type Files = [(FilePath, Text)]
 
-$(Lens.makeLenses ''State)
-$(Lens.makePrisms ''Status)
+$(makeLenses ''State)
+$(makePrisms ''Status)
