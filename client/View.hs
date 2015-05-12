@@ -167,7 +167,7 @@ tabClass DocsTab = "docs-tab"
 
 handleSelectionChange :: TVar State -> IO ()
 handleSelectionChange state = do
-  editor <- Ace.aceEditorOrError <$> viewTVarIO stateAce state
+  editor <- Ace.aceEditorOrError <$> viewTVarIO state stateAce
   mss <- fmap (aceSelectionToSourceSpan "main.hs") <$> Ace.getSelection editor
   forM_ mss $ runQuery state . QueryInfo
 
