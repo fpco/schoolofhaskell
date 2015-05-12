@@ -1,15 +1,7 @@
-{-# LANGUAGE NoMonomorphismRestriction #-}
-{-# LANGUAGE Rank2Types #-}
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE ViewPatterns #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 -- | React binding to Ace.
-
 module React.Ace
   ( -- * Type
     Ace(..)
@@ -39,23 +31,19 @@ module React.Ace
   , setValue
   ) where
 
-import           Control.Applicative ((<$>), (<*>))
-import           Control.Concurrent.STM
-import           Control.Lens
-import           Control.Monad (join, when, (>=>))
-import           Control.Monad.Trans.Maybe (MaybeT(..))
-import           Data.Foldable (forM_)
-import qualified Data.Text as T
-import           Import.Util (prop, mtprop, expectProp, setPropShow)
-import           React hiding (onClick)
-import           React.Internal
-
-#ifdef __GHCJS__
-import           JavaScript.JQuery (JQuery)
-import           GHCJS.Types
-import           GHCJS.Marshal
-import           GHCJS.Foreign
-#endif
+import Control.Applicative ((<$>), (<*>))
+import Control.Concurrent.STM
+import Control.Lens
+import Control.Monad (join, when, (>=>))
+import Control.Monad.Trans.Maybe (MaybeT(..))
+import Data.Foldable (forM_)
+import Data.Text (Text)
+import GHCJS.Foreign
+import GHCJS.Types
+import Import.Util (prop, mtprop, expectProp, setPropShow)
+import JavaScript.JQuery (JQuery)
+import React hiding (onClick)
+import React.Internal
 
 --------------------------------------------------------------------------------
 -- Types
@@ -125,7 +113,7 @@ receivingProps app l props =
 --------------------------------------------------------------------------------
 -- Properties
 
-defaultValue_ :: Monad m => T.Text -> ReactT state m ()
+defaultValue_ :: Monad m => Text -> ReactT state m ()
 defaultValue_ = attr "defaultValue"
 
 selection_ :: Monad m => Selection -> ReactT state m ()
@@ -194,16 +182,14 @@ selectionToRange sel =
     then Range (anchor sel) (lead sel)
     else Range (lead sel) (anchor sel)
 
-getValue :: Editor' -> IO T.Text
+getValue :: Editor' -> IO Text
 getValue e = fromJSString <$> getValueRef e
 
-setValue :: Editor' -> T.Text -> IO ()
+setValue :: Editor' -> Text -> IO ()
 setValue e = setValueRef e . toJSString
 
 --------------------------------------------------------------------------------
 -- Foreign imports
-
-#ifdef __GHCJS__
 
 foreign import javascript "makeEditor($1,$2,$3,$4)"
   makeEditor :: JQuery
@@ -226,32 +212,6 @@ foreign import javascript "($1).getValue()"
 
 foreign import javascript "$1===$2"
   stringEq :: JSString -> JSString -> Bool
-
-#else
-
-getSelectionRef :: Editor' -> IO (JSRef Selection)
-getSelectionRef = undefined
-
-setRange :: Editor' -> Int -> Int -> Int -> Int -> IO ()
-setRange = undefined
-
-makeEditor :: JQuery
-           -> JSString
-           -> (JSRef props0 -> IO ())
-           -> (JSRef props1 -> IO ())
-           -> IO Editor'
-makeEditor = undefined
-
-setValueRef :: Editor' -> JSString -> IO ()
-setValueRef = undefined
-
-getValueRef :: Editor' -> IO JSString
-getValueRef = undefined
-
-stringEq :: JSString -> JSString -> Bool
-stringEq = undefined
-
-#endif
 
 --------------------------------------------------------------------------------
 -- Instances
