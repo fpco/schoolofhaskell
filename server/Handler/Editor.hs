@@ -42,6 +42,7 @@ getEditorScriptR = $(ghcjsFileDev
     ,"-XRecordWildCards"
     ,"-XForeignFunctionInterface"
     ,"-XJavaScriptFFI"
+    ,"-XLambdaCase"
     ,"-Wall"
     ,"-hide-all-packages"] ++ concatMap (\pkg -> ["-package", pkg])
         ["aeson"
@@ -54,7 +55,6 @@ getEditorScriptR = $(ghcjsFileDev
         ,"ghcjs-jquery"
         ,"ghcjs-prim"
         ,"ghcjs-react"
-        ,"ghcjs-websockets"
         ,"ghcjs-websockets"
         ,"ide-backend-common"
         ,"ide-backend-json"

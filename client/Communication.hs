@@ -1,52 +1,166 @@
--- | Wrapper around JavaScript.WebSockets which has safely interruptible
--- sending and receiving of messages.
---
--- Originally attempted with vanilla Chan, but I ran into what I
--- believe to be an erroneous "thread blocked indefinitely in an MVar
--- operation".
---
--- This may be the issue documented here:
--- https://github.com/ghcjs/ghcjs/issues/320
---
--- (I am using a slighty older GHCJS, and don't have time to test HEAD)
-module Communication where
+module Communication
+  ( Backend
+  , withUrl
+  -- * Commands
+  , updateSession
+  , requestRun
+  -- * Queries
+  , getSourceErrors
+  , getSpanInfo
+  , getExpTypes
+  -- * Process IO
+  , setProcessHandler
+  , sendProcessInput
+  , sendProcessKill
+  -- * Misc
+  , expectWelcome
+  ) where
 
 import           Control.Concurrent.Async (race)
-import           Control.Concurrent.STM (atomically)
-import           Control.Concurrent.STM.TChan
-import           Control.Monad (forever)
-import           Data.Text (Text)
+import           Control.Concurrent.STM
+import           Control.Monad (when, forever)
+import           Data.Aeson (eitherDecodeStrict, encode)
+import           Data.ByteString.Lazy (toStrict)
+import           Data.Function (fix)
+import           Data.IORef
+import           Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import           Data.Void (absurd)
+import           GHCJS.Types (JSString)
+import           Import
 import qualified JavaScript.WebSockets as WS
+import           Language.JsonGrammar (Json)
 
-data Connection = Connection
-  { receiveTChan :: TChan Text
-  , sendTChan :: TChan Text
-  , connection :: WS.Connection
+data Backend = Backend
+  { backendRequestChan :: TChan Request
+  , backendResponseChan :: TChan Response
+  , backendProcessHandler :: IORef (Either RunResult ByteString -> IO ())
   }
 
--- NOTE: if the websocket disconnects, the inner function is killed.
--- This is due to using the unsafe functions in JavaScript.WebSockets
-withUrl :: Text -> (Connection -> IO a) -> IO a
-withUrl url f = do
-    receiveTChan <- newTChanIO
-    sendTChan <- newTChanIO
-    result <- WS.withUrl url $ \connection ->
-      receiveThread connection receiveTChan `race`
-      sendThread connection sendTChan `race`
-      f Connection {..}
-    case result of
-      Left (Left x) -> absurd x
-      Left (Right x) -> absurd x
-      Right x -> return x
-  where
-    receiveThread conn chan =
-      forever $ WS.receiveText_ conn >>= atomically . writeTChan chan
-    sendThread conn chan =
-      forever $ atomically (readTChan chan) >>= WS.sendText_ conn
+instance Eq Backend where
+  _ == _ = True
 
-receiveText :: Connection -> IO Text
-receiveText = atomically . readTChan . receiveTChan
+instance Show Backend where
+  showsPrec _ _ = showString "Backend conn waiter"
 
-sendText :: Connection -> Text -> IO ()
-sendText conn = atomically . writeTChan (sendTChan conn)
+withUrl :: Text -> (Backend -> IO a) -> IO a
+withUrl url f = WS.withUrl url $ \conn -> do
+  backendRequestChan <- newTChanIO
+  backendResponseChan <- newTChanIO
+  backendProcessHandler <- newIORef $ \_ ->
+    consoleWarn ("backendProcessHandler not yet set" :: JSString)
+  let sendThread = forever $
+        atomically (readTChan backendRequestChan) >>= sendJson conn
+      receiveThread = forever $ do
+        response <- receiveJson conn
+        case response of
+          ResponseProcessOutput bs ->
+            readIORef backendProcessHandler >>= ($ Right bs)
+          ResponseProcessDone rr ->
+            readIORef backendProcessHandler >>= ($ Left rr)
+          _ -> atomically (writeTChan backendResponseChan response)
+  result <- receiveThread `race` sendThread `race` f Backend {..}
+  case result of
+    Left (Left x) -> absurd x
+    Left (Right x) -> absurd x
+    Right x -> return x
+
+--------------------------------------------------------------------------------
+-- Commands
+
+updateSession :: Backend -> [RequestSessionUpdate] -> (Maybe Progress -> IO ()) -> IO ()
+updateSession backend updates f = do
+  sendRequest backend (RequestUpdateSession updates)
+  fix $ \loop -> do
+    mx <- expectResponse backend
+                         (^? _ResponseUpdateSession)
+                         "ResponseUpdateSession"
+    f mx
+    when (isJust mx) loop
+
+requestRun :: Backend -> ModuleName -> Identifier -> IO ()
+requestRun backend mn ident = sendRequest backend $ RequestRun mn ident
+
+--------------------------------------------------------------------------------
+-- Queries
+
+getSourceErrors :: Backend -> IO [SourceError]
+getSourceErrors backend =
+  queryBackend backend
+               RequestGetSourceErrors
+               _ResponseGetSourceErrors
+               "ResponseGetSourceErrors"
+
+getSpanInfo :: Backend -> SourceSpan -> IO [ResponseSpanInfo]
+getSpanInfo backend ss =
+  queryBackend backend
+               (RequestGetSpanInfo ss)
+               _ResponseGetSpanInfo
+               "ResponseGetSpanInfo"
+
+getExpTypes :: Backend -> SourceSpan -> IO [ResponseExpType]
+getExpTypes backend ss =
+  queryBackend backend
+               (RequestGetExpTypes ss)
+               _ResponseGetExpTypes
+               "ResponseGetExpTypes"
+
+queryBackend :: Backend -> Request -> Prism' Response a -> String -> IO a
+queryBackend backend request p expected = do
+  sendRequest backend request
+  expectResponse backend (^? p) expected
+
+--------------------------------------------------------------------------------
+-- Process IO
+
+setProcessHandler :: Backend -> ((Either RunResult ByteString) -> IO ()) -> IO ()
+setProcessHandler = atomicWriteIORef . backendProcessHandler
+
+sendProcessInput :: Backend -> ByteString -> IO ()
+sendProcessInput backend = sendRequest backend . RequestProcessInput
+
+sendProcessKill :: Backend -> IO ()
+sendProcessKill backend = sendRequest backend RequestProcessKill
+
+--------------------------------------------------------------------------------
+-- Misc
+
+expectWelcome :: Backend -> IO VersionInfo
+expectWelcome backend =
+  expectResponse backend (^? _ResponseWelcome) "ResponseWelcome"
+
+--------------------------------------------------------------------------------
+-- Backend IO
+
+sendRequest :: Backend -> Request -> IO ()
+sendRequest backend = atomically . writeTChan (backendRequestChan backend)
+
+receiveResponse :: Backend -> IO Response
+receiveResponse = atomically . readTChan . backendResponseChan
+
+expectResponse :: Backend -> (Response -> Maybe a) -> String -> IO a
+expectResponse backend f expected = do
+  response <- receiveResponse backend
+  case f response of
+    Nothing -> fail $
+      "Protocol error: expected " ++ expected ++
+      " instead of " ++ show response
+    Just x -> return x
+
+--------------------------------------------------------------------------------
+-- Sending and receiving JSON
+
+sendJson :: Json a => WS.Connection -> a -> IO ()
+sendJson conn req = do
+  --FIXME: fewer conversions...
+  connected <- WS.sendText conn (decodeUtf8 (toStrict (encode (toJSON req))))
+  when (not connected) $ fail "Websocket disconnected"
+
+receiveJson :: Json a => WS.Connection -> IO a
+receiveJson conn = do
+  t <- WS.receiveText conn
+  case eitherDecodeStrict (encodeUtf8 t) of
+    Left err -> fail $ "JSON decode error: " ++ err
+    Right json ->
+      case fromJSON json of
+        Left err -> fail $ "JSON deserialization error: " ++ err
+        Right x -> return x

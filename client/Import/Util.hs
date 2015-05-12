@@ -84,6 +84,8 @@ viewTVarIO v g =
 
 foreign import javascript "console.log($1)" consoleLog :: JSRef a -> IO ()
 
+foreign import javascript "console.warn($1)" consoleWarn :: JSRef a -> IO ()
+
 foreign import javascript "console.error($1)" consoleError :: JSRef a -> IO ()
 
 showExceptions :: Text -> IO a -> IO a

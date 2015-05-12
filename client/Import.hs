@@ -12,6 +12,7 @@ module Import
     , module React
     , module React.Lucid
     , module Types
+    , ByteString
     , Text
     -- * Simplified types
     , React
@@ -22,6 +23,7 @@ module Import
 import           Control.Applicative ((<$>), (<*>))
 import           Control.Concurrent.STM
 import           Control.Lens
+import           Data.ByteString (ByteString)
 import           Data.Foldable (forM_)
 import           Data.Maybe
 import           Data.Monoid

@@ -1,7 +1,5 @@
 module View where
 
-import           Data.Function
-import           Data.List (groupBy)
 import qualified Data.Text as T
 import           GHCJS.Foreign
 import           GHCJS.Types
