@@ -9,6 +9,7 @@ import IdeSession.Client.JsonAPI
 import IdeSession.Types.Progress
 import IdeSession.Types.Public
 import React.Ace (Ace)
+import React.TermJs (TermJs)
 
 data State = State
   { _stateAce :: Ace
@@ -17,8 +18,8 @@ data State = State
   , _stateTab :: Tab
   , _stateDocs :: Maybe ResponseSpanInfo
   , _stateTypes :: Maybe [ResponseExpType]
-  -- FIXME: this will be removed once a real terminal is used.
-  , _stateConsole :: [Text]
+  , _stateConsole :: TermJs
+  , _stateBackend :: Maybe Backend
   } deriving (Eq, Show)
 
 data Status

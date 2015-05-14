@@ -9,9 +9,7 @@ import           Data.Monoid
 import           Data.Text (Text, pack)
 import qualified Data.Text as T
 import           GHCJS.Foreign
-import           GHCJS.Foreign (toJSString)
 import           GHCJS.Marshal
-import           GHCJS.Prim (JSRef)
 import           GHCJS.Types
 import           IdeSession.Client.JsonAPI (Response)
 import           Control.Monad.Trans.Maybe (MaybeT(..))
@@ -90,7 +88,11 @@ foreign import javascript "console.error($1)" consoleError :: JSRef a -> IO ()
 
 showExceptions :: Text -> IO a -> IO a
 showExceptions msg f = f `catch` \ex -> do
-  consoleError $ toJSString (msg <> tshow (ex :: SomeException))
+  consoleError $ toJSString ("Exception in " <> msg <> ": " <> tshow (ex :: SomeException))
   throwIO ex
+
+showAndIgnoreExceptions :: Text -> IO () -> IO ()
+showAndIgnoreExceptions msg f = f `catch` \ex ->
+  consoleError $ toJSString ("Exception ignored in " <> msg <> ": " <> tshow (ex :: SomeException))
 
 $(makePrisms ''Response)

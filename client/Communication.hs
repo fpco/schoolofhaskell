@@ -36,14 +36,14 @@ withUrl url f = WS.withUrl url $ \conn -> do
   backendResponseChan <- newTChanIO
   backendProcessHandler <- newIORef $ \_ ->
     consoleWarn ("backendProcessHandler not yet set" :: JSString)
-  let sendThread = forever $
+  let sendThread = showExceptions "sendThread" $ forever $
         atomically (readTChan backendRequestChan) >>= sendJson conn
-      receiveThread = forever $ do
+      receiveThread = showExceptions "receiveThread" $ forever $ do
         response <- receiveJson conn
         case response of
-          ResponseProcessOutput bs ->
+          ResponseProcessOutput bs -> showAndIgnoreExceptions "processOutput" $
             readIORef backendProcessHandler >>= ($ Right bs)
-          ResponseProcessDone rr ->
+          ResponseProcessDone rr -> showAndIgnoreExceptions "processDone" $
             readIORef backendProcessHandler >>= ($ Left rr)
           _ -> atomically (writeTChan backendResponseChan response)
   result <- receiveThread `race` sendThread `race` f Backend {..}
@@ -66,7 +66,7 @@ updateSession backend updates f = do
     when (isJust mx) loop
 
 requestRun :: Backend -> ModuleName -> Identifier -> IO ()
-requestRun backend mn ident = sendRequest backend $ RequestRun mn ident
+requestRun backend mn ident = sendRequest backend $ RequestRun True mn ident
 
 --------------------------------------------------------------------------------
 -- Queries

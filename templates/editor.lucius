@@ -75,7 +75,11 @@ body {
   }
   /* TODO: make it resizable */
   .tab-content {
-    height: 10em;
+    height: 20em;
+    display: none;
+  }
+  .tab-content-focused {
+    display: block;
   }
   .type-popup {
     position: absolute;
@@ -172,7 +176,6 @@ body {
 
 .console-tab-content {
   overflow: auto;
-  white-space: pre;
 }
 
 .docs-tab-content {

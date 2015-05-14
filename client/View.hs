@@ -1,16 +1,19 @@
 module View where
 
+import           Communication (sendProcessInput)
 import qualified Data.Text as T
+import           Data.Text.Encoding (encodeUtf8)
 import           GHCJS.Foreign
 import           GHCJS.Types
 import           Import
 import           Model (runCode, runQuery, switchTab)
 import qualified React.Ace as Ace
 import           React.Builder (refAttr)
+import qualified React.TermJs as TermJs
 import           System.IO.Unsafe (unsafePerformIO)
 
-render :: Component Ace.Ace -> State -> React ()
-render ace state = div_ $ do
+render :: Component Ace.Ace -> Component TermJs.TermJs -> State -> React ()
+render ace termjs state = div_ $ do
   let mstatus = state ^. stateStatus
   h1_ (text "SoH snippet demo")
   div_ $ do
@@ -22,7 +25,8 @@ render ace state = div_ $ do
       Just QueryRequested {} -> "snippet built"
     buildComponent ace stateAce $ do
       Ace.defaultValue_
-        "import Control.Concurrent.Async (race)\n\nmain = putStrLn \"hello\" `race` putStrLn \"world\""
+        "main = (readLn :: IO Int) >>= print"
+--        "import Control.Concurrent.Async (race)\n\nmain = putStrLn \"hello\" `race` putStrLn \"world\""
       Ace.onSelectionChange (const handleSelectionChange)
     case mstatus of
       Nothing -> runButton state
@@ -34,10 +38,9 @@ render ace state = div_ $ do
           mkTab state BuildTab $ text (buildStatusText status)
           mkTab state ConsoleTab "Console"
           mkTab state DocsTab "Docs"
-        case state ^. stateTab of
-          BuildTab -> buildTab status
-          ConsoleTab -> consoleTab state
-          DocsTab -> docsTab state
+        mkTabContent state BuildTab $ buildTab status
+        mkTabContent state ConsoleTab $ consoleTab termjs
+        mkTabContent state DocsTab $ docsTab state
     forM_ (state ^. stateTypes) $ \typs ->
       typePopup typs 300 100
 
@@ -74,16 +77,11 @@ infoStatusText BuildInfo {..}
     "Built"
 
 buildTab :: Status -> React ()
-buildTab status = div_ $ do
-  class_ "tab-content build-tab-content"
-  case status of
-    BuildRequested _ -> return ()
-    Building (Just progress) ->
-      forM_ (progressParsedMsg progress) text
-    Building Nothing ->
-      text "Build done.  Requesting compile info.."
-    Built info -> buildInfo info
-    QueryRequested info _ -> buildInfo info
+buildTab (BuildRequested _) = return ()
+buildTab (Building (Just progress)) = forM_ (progressParsedMsg progress) text
+buildTab (Building Nothing) = text "Build done.  Requesting compile info.."
+buildTab (Built info) = buildInfo info
+buildTab (QueryRequested info _) = buildInfo info
 
 buildInfo :: BuildInfo -> React ()
 buildInfo info =
@@ -107,16 +105,20 @@ sourceErrors info =
   buildErrors info ++
   buildWarnings info
 
-consoleTab :: State -> React ()
-consoleTab state = div_ $ do
-  class_ "tab-content console-tab-content"
-  mapM_ (span_ . text) (state ^. stateConsole)
+consoleTab :: Component TermJs.TermJs -> React ()
+consoleTab termJs =
+  buildComponent termJs stateConsole $ do
+    --TODO: weird that the code for handling stdin is in View and the
+    --code for stdout is in Model...
+    TermJs.onData $ \ev state -> do
+      mbackend <- viewTVarIO state stateBackend
+      forM_ mbackend $ \backend ->
+        sendProcessInput backend (encodeUtf8 (TermJs.dataEventText ev))
 
 docsTab :: State -> React ()
-docsTab state = div_ $ do
-  class_ "tab-content docs-tab-content"
+docsTab state =
   case state ^. stateDocs of
-    Nothing -> span_ (text "FIXME: explanatory content")
+    Nothing -> span_ "FIXME: explanatory content"
     Just (ResponseSpanInfo info _) ->
        build "iframe" $ src_ (hackageLink (getIdInfo info))
       where
@@ -154,6 +156,13 @@ mkTab state tab f = div_ $ do
     addWhen (state ^. stateTab == tab) "tab-focused"
     ("tab " <> tabClass tab)
   onClick (\_ -> flip switchTab tab)
+  f
+
+mkTabContent :: State -> Tab -> React () -> React ()
+mkTabContent state tab f = div_ $ do
+  class_ $
+    addWhen (state ^. stateTab == tab) "tab-content-focused"
+    ("tab-content " <> tabClass tab <> "-content")
   f
 
 tabClass :: Tab -> Text

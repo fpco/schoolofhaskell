@@ -7,16 +7,18 @@ import qualified Data.ByteString.Lazy as BL
 import           Data.Function (on)
 import           Data.List (partition)
 import qualified Data.List as L
-import qualified Data.Text as T
 import           Data.Text.Encoding (encodeUtf8, decodeUtf8)
+import           GHCJS.Types (JSString)
 import           GHCJS.Foreign (toJSString)
 import           Import
 import qualified React.Ace as Ace
 import           React.Internal (appState)
+import qualified React.TermJs as TermJs
 
 getApp :: IO App
 getApp = do
   ace <- Ace.getDef
+  termjs <- TermJs.getDef
   let state = State
         { _stateAce = ace
         , _stateStatus = Nothing
@@ -24,12 +26,14 @@ getApp = do
         , _stateTab = BuildTab
         , _stateDocs = Nothing
         , _stateTypes = Nothing
-        , _stateConsole = []
+        , _stateConsole = termjs
+        , _stateBackend = Nothing
         }
   makeApp state id
 
 runApp :: App -> IO void
 runApp app = withUrl "ws://localhost:3000/editor" $ \backend -> do
+  setTVarIO (appState app) stateBackend (Just backend)
   version <- expectWelcome backend
   putStrLn $ "Backendection established with ide-backend " ++ show version
   let state = appState app
@@ -70,12 +74,16 @@ compileCode backend state files = do
 runConsole :: Backend -> TVar State -> IO ()
 runConsole backend state = do
   switchToConsoleFirstTime <- once $ setTVarIO state stateTab ConsoleTab
-  let appendConsole xs = modifyTVarIO state stateConsole (++ xs)
+  let appendConsole x = do
+        TermJs.TermJs terminal <- viewTVarIO state stateConsole
+        TermJs.writeTerminal terminal x
   setProcessHandler backend $ \case
     Right output -> do
       switchToConsoleFirstTime
-      appendConsole [decodeUtf8 output]
-    Left result -> appendConsole ["\nProcess done: ", T.pack (show result)]
+      appendConsole (toJSString (decodeUtf8 output))
+    Left result -> do
+      appendConsole ("\nProcess done: " :: JSString)
+      appendConsole (toJSString (show result))
   requestRun backend "Main" "main"
 
 runQueries :: Backend -> TVar State -> IO Files
