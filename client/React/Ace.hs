@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 -- | React binding to Ace.
 module React.Ace
@@ -39,11 +40,13 @@ import Control.Monad.Trans.Maybe (MaybeT(..))
 import Data.Foldable (forM_)
 import Data.Text (Text)
 import GHCJS.Foreign
+import GHCJS.Marshal
 import GHCJS.Types
 import Import.Util (prop, mtprop, expectProp, setPropShow)
 import JavaScript.JQuery (JQuery)
 import React hiding (onClick)
 import React.Internal
+import GHC.Generics (Generic)
 
 --------------------------------------------------------------------------------
 -- Types
@@ -145,19 +148,19 @@ data Pos = Pos
     { row :: Int
     , column :: Int
     }
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Ord, Generic)
 
 data Range = Range
     { start :: Pos
     , end :: Pos
     }
-    deriving (Show, Eq)
+    deriving (Show, Eq, Generic)
 
 data Selection = Selection
     { anchor :: Pos
     , lead :: Pos
     }
-    deriving (Show, Eq)
+    deriving (Show, Eq, Generic)
 
 --------------------------------------------------------------------------------
 -- Editor state queries
@@ -175,6 +178,13 @@ getSelectionFromObject obj = runMaybeT $ Selection
            <*> mtprop obj "anchor-column")
   <*> (Pos <$> mtprop obj "lead-row"
            <*> mtprop obj "lead-column")
+
+instance ToJSRef   Pos       where toJSRef   = toJSRef_generic   id
+instance FromJSRef Pos       where fromJSRef = fromJSRef_generic id
+instance ToJSRef   Range     where toJSRef   = toJSRef_generic   id
+instance FromJSRef Range     where fromJSRef = fromJSRef_generic id
+instance ToJSRef   Selection where toJSRef   = toJSRef_generic   id
+instance FromJSRef Selection where fromJSRef = fromJSRef_generic id
 
 selectionToRange :: Selection -> Range
 selectionToRange sel =
