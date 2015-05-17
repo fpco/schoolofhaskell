@@ -1,4 +1,3 @@
 <script src="//cdn.rawgit.com/ajaxorg/ace-builds/v1.1.9/src-noconflict/ace.js"></script>
-<script src="//cdn.rawgit.com/ajaxorg/ace-builds/v1.1.9/src-noconflict/ext-static_highlight.js"></script>
 <script src="//cdn.rawgit.com/chjj/term.js/v0.0.4/src/term.js"></script>
 <div #react-container>

@@ -4,6 +4,8 @@ import           Control.Concurrent.STM
 import           Control.Exception (SomeException, catch, throwIO)
 import           Control.Lens
 import           Control.Monad (unless)
+import           Control.Monad.Trans.Maybe (MaybeT(..))
+import           Data.Char (isHexDigit)
 import           Data.IORef
 import           Data.Monoid
 import           Data.Text (Text, pack)
@@ -11,8 +13,8 @@ import qualified Data.Text as T
 import           GHCJS.Foreign
 import           GHCJS.Marshal
 import           GHCJS.Types
-import           IdeSession.Client.JsonAPI (Response)
-import           Control.Monad.Trans.Maybe (MaybeT(..))
+import           IdeSession.Client.JsonAPI
+import           IdeSession.Types.Public
 import           React
 
 addWhen :: Bool -> Text -> Text -> Text
@@ -94,5 +96,50 @@ showExceptions msg f = f `catch` \ex -> do
 showAndIgnoreExceptions :: Text -> IO () -> IO ()
 showAndIgnoreExceptions msg f = f `catch` \ex ->
   consoleError $ toJSString ("Exception ignored in " <> msg <> ": " <> tshow (ex :: SomeException))
+
+--------------------------------------------------------------------------------
+-- JsonAPI helpers
+
+displayIdInfo :: IdInfo -> Text
+displayIdInfo (IdInfo IdProp {..} scope) =
+    "'" <> idName <> "' " <> displayNameSpace idSpace <> " " <>
+    case scope of
+      Binder -> "binding"
+      Local -> "defined locally" <>
+        case idDefSpan of
+          ProperSpan ss -> ", at " <> tshow ss
+          _ -> ""
+      Imported {..} ->
+        "imported from " <> displayModuleId idImportedFrom <>
+        (if idDefinedIn /= idImportedFrom
+          then ", and defined in " <> displayModuleId idDefinedIn
+          else "")
+      WiredIn -> "builtin defined in " <> displayModuleId idDefinedIn
+
+displayNameSpace :: IdNameSpace -> Text
+displayNameSpace VarName = "value"
+displayNameSpace DataName = "data constructor"
+displayNameSpace TvName = "type variable"
+displayNameSpace TcClsName = "type"
+
+displayModuleId :: ModuleId -> Text
+displayModuleId (ModuleId mo pkg) = mo <> " (" <> displayPackageId pkg <> ")"
+
+displayPackageId :: PackageId -> Text
+displayPackageId (PackageId name (Just version) _pkey) =
+  name <> "-" <> cleanPackageVersion version
+displayPackageId (PackageId name Nothing _pkey) =
+  name
+
+-- | In our environment, ghc-prim / base / etc has a name like this
+--
+-- ghc-prim-0.3.1.0-3f9f683cd77bf581e40e5d3162876874
+--
+-- It seems like a good hack for now to just strip the "-hash" off any
+-- such package versions.  Consider moving it to ide-backend-client?
+cleanPackageVersion :: Text -> Text
+cleanPackageVersion x@(T.stripPrefix "-" . T.takeEnd 33 -> Just hash)
+  | T.all isHexDigit hash = T.dropEnd 33 x
+cleanPackageVersion x = x
 
 $(makePrisms ''Response)

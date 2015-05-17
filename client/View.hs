@@ -4,6 +4,7 @@ import           Communication (sendProcessInput)
 import qualified Data.Text as T
 import           Data.Text.Encoding (encodeUtf8)
 import           GHCJS.Foreign
+import           GHCJS.Marshal
 import           GHCJS.Types
 import           Import
 import           Model (runCode, runQuery, switchTab)
@@ -11,11 +12,12 @@ import qualified React.Ace as Ace
 import           React.Builder (refAttr)
 import qualified React.TermJs as TermJs
 import           System.IO.Unsafe (unsafePerformIO)
+import           View.TypeInfo
 
 render :: Component Ace.Ace -> Component TermJs.TermJs -> State -> React ()
 render ace termjs state = div_ $ do
   let mstatus = state ^. stateStatus
-  h1_ (text "SoH snippet demo")
+  h1_ "SoH snippet demo"
   div_ $ do
     class_ $ case mstatus of
       Nothing -> "snippet never-built"
@@ -79,7 +81,7 @@ infoStatusText BuildInfo {..}
 buildTab :: Status -> React ()
 buildTab (BuildRequested _) = return ()
 buildTab (Building (Just progress)) = forM_ (progressParsedMsg progress) text
-buildTab (Building Nothing) = text "Build done.  Requesting compile info.."
+buildTab (Building Nothing) = "Build done.  Requesting compile info.."
 buildTab (Built info) = buildInfo info
 buildTab (QueryRequested info _) = buildInfo info
 
@@ -119,29 +121,27 @@ docsTab :: State -> React ()
 docsTab state =
   case state ^. stateDocs of
     Nothing -> span_ "FIXME: explanatory content"
-    Just (ResponseSpanInfo info _) ->
-       build "iframe" $ src_ (hackageLink (getIdInfo info))
-      where
-        getIdInfo (SpanId x) = x
-        getIdInfo (SpanQQ x) = x
+    Just info -> build "iframe" $ src_ (hackageLink info)
 
 hackageLink :: IdInfo -> Text
 hackageLink (IdInfo IdProp{..} idScope) =
-  case idScope of
-    Imported{idImportedFrom = ModuleId{..}} ->
-       "http://hackage.haskell.org/package/" <>
-       packageName <>
-       maybe "" ("-" <>) packageVersion <>
-       "/docs/" <>
-       dotToDash moduleName <>
-       ".html#" <>
-       haddockSpaceMarks idSpace <>
-       ":" <>
-       idName
-      where
-        PackageId {..} = modulePackage
-        dotToDash = T.map (\c -> if c == '.' then '-' else c)
-    _ -> "<local identifier>"
+  if idScope == Binder || idScope == Local
+    --FIXME: handle this more gracefully
+    then "<local identifier>"
+    else
+      "http://hackage.haskell.org/package/" <>
+      packageName <>
+      maybe "" ("-" <>) (fmap cleanPackageVersion packageVersion) <>
+      "/docs/" <>
+      dotToDash moduleName <>
+      ".html#" <>
+      haddockSpaceMarks idSpace <>
+      ":" <>
+      idName
+  where
+    ModuleId {..} = fromMaybe idDefinedIn idHomeModule
+    PackageId {..} = modulePackage
+    dotToDash = T.map (\c -> if c == '.' then '-' else c)
 
 -- | Show approximately what Haddock adds to documentation URLs.
 haddockSpaceMarks :: IdNameSpace -> Text
@@ -183,26 +183,9 @@ aceSelectionToSourceSpan fp = aceRangeToSourceSpan fp . Ace.selectionToRange
 
 aceRangeToSourceSpan :: FilePath -> Ace.Range -> SourceSpan
 aceRangeToSourceSpan fp range = SourceSpan
-  { spanFilePath = fp
-  , spanFromLine = Ace.row (Ace.start range) + 1
+  { spanFilePath   = fp
+  , spanFromLine   = Ace.row    (Ace.start range) + 1
   , spanFromColumn = Ace.column (Ace.start range) + 1
-  , spanToLine = Ace.row (Ace.end range) + 1
-  , spanToColumn = Ace.column (Ace.end range) + 1
+  , spanToLine     = Ace.row    (Ace.end range)   + 1
+  , spanToColumn   = Ace.column (Ace.end range)   + 1
   }
-
--- | Show the type popup.
-typePopup :: Monad m => [ResponseExpType] -> Int -> Int -> ReactT State m ()
-typePopup typs x y = div_ $ do
-  class_ "type-popup"
-  style "top" $ T.pack (show (y + 14)) <> "px"
-  style "left" $ T.pack (show x) <> "px"
-  div_ $ do
-    class_ "display"
-    forM_ typs $ \(ResponseExpType t _) -> div_ $
-      refAttr "dangerouslySetInnerHTML" $ unsafePerformIO $ do
-        obj <- newObj
-        setProp ("__html" :: JSString) (highlightHaskell (toJSString t)) obj
-        return obj
-
-foreign import javascript interruptible "highlightHaskell($1, function(html) { $c(html) });"
-  highlightHaskell :: JSString -> JSString

@@ -5,6 +5,7 @@ module Import
     , module Data.Foldable
     , module Data.Maybe
     , module Data.Monoid
+    , module Data.Traversable
     , module IdeSession.Client.JsonAPI
     , module IdeSession.Types.Progress
     , module IdeSession.Types.Public
@@ -24,6 +25,7 @@ import           Control.Applicative ((<$>), (<*>))
 import           Control.Concurrent.STM
 import           Control.Lens
 import           Data.ByteString (ByteString)
+import           Data.Traversable (forM)
 import           Data.Foldable (forM_)
 import           Data.Maybe
 import           Data.Monoid

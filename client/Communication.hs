@@ -8,6 +8,7 @@ module Communication
   , getSourceErrors
   , getSpanInfo
   , getExpTypes
+  , getAnnExpTypes
   -- * Process IO
   , setProcessHandler
   , sendProcessInput
@@ -91,6 +92,13 @@ getExpTypes backend ss =
                (RequestGetExpTypes ss)
                _ResponseGetExpTypes
                "ResponseGetExpTypes"
+
+getAnnExpTypes :: Backend -> SourceSpan -> IO [ResponseAnnExpType]
+getAnnExpTypes backend ss =
+  queryBackend backend
+               (RequestGetAnnExpTypes ss)
+               _ResponseGetAnnExpTypes
+               "ResponseGetAnnExpTypes"
 
 queryBackend :: Backend -> Request -> Prism' Response a -> String -> IO a
 queryBackend backend request p expected = do

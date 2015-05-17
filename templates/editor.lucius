@@ -21,6 +21,8 @@ body {
   > .ace_editor {
     margin: 0.25em;
     height: 300px;
+  }
+  .ace_editor {
     font-size: 15px !important;
   }
   > .controls {
@@ -86,6 +88,28 @@ body {
     border: 1px solid #d1d1d1;
     border-radius: 0.4em;
     padding: 0.4em;
+    max-width: 50%;
+    .type-info {
+      padding-bottom: 0.2em;
+      border-bottom: 1px dashed #d1d1d1;
+      margin-bottom: 0.2em;
+    }
+    .type-info:last-child {
+      padding-bottom: 0;
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+  }
+  .highlighted-haskell {
+    font-size: 15px !important;
+    white-space: pre-wrap;
+  }
+  .docs-link:hover {
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  .hide-mark {
+    display: none;
   }
 }
 
@@ -179,11 +203,22 @@ body {
 }
 
 .docs-tab-content {
+  /* This is a hack to make the parent window not scroll when the iframe
+   *  anchor is updated.
+   */
+  display: block !important;
+  position: fixed;
+  visibility: hidden;
   iframe {
     border: none;
     width: 100%;
     height: 100%;
   }
+}
+
+.docs-tab-content.tab-content-focused {
+  position: initial;
+  visibility: visible;
 }
 
 .tab, .run {

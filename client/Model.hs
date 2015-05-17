@@ -93,11 +93,15 @@ runQueries backend state = do
       Left files -> return files
       Right (QueryInfo ss) -> do
         infos <- getSpanInfo backend ss
-        update $ set stateDocs (listToMaybe infos)
-        tys <- getExpTypes backend ss
+        navigateDoc state $
+          fmap (\(ResponseSpanInfo si _) -> getIdInfo si)
+               (listToMaybe infos)
+        -- FIXME: allow the client to restrict their
+        -- ide-backend-client request.
+        tys <- getAnnExpTypes backend ss
         update $ set stateTypes $
           listToMaybe $
-          L.groupBy ((==) `on` (\(ResponseExpType _ ss') -> ss')) tys
+          L.groupBy ((==) `on` (\(ResponseAnnExpType _ _ ss') -> ss')) tys
         runQueries backend state
   where
     waitForUserRequest :: IO (Either Files Query)
@@ -111,6 +115,8 @@ runQueries backend state = do
     backToIdle :: Maybe Status -> Maybe Status
     backToIdle (Just (QueryRequested info _)) = Just (Built info)
     backToIdle x = x
+    getIdInfo (SpanId x) = x
+    getIdInfo (SpanQQ x) = x
 
 --------------------------------------------------------------------------------
 -- Mutation functions invoked by View
@@ -128,6 +134,9 @@ runQuery state query =
     case oldStatus of
       Just (Built info) -> Just $ QueryRequested info query
       _ -> oldStatus
+
+navigateDoc :: TVar State -> Maybe IdInfo -> IO ()
+navigateDoc state = setTVarIO state stateDocs
 
 switchTab :: TVar State -> Tab -> IO ()
 switchTab state = setTVarIO state stateTab

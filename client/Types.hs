@@ -16,8 +16,8 @@ data State = State
   , _stateStatus :: Maybe Status
   , _stateRunning :: Running
   , _stateTab :: Tab
-  , _stateDocs :: Maybe ResponseSpanInfo
-  , _stateTypes :: Maybe [ResponseExpType]
+  , _stateDocs :: Maybe IdInfo
+  , _stateTypes :: Maybe [ResponseAnnExpType]
   , _stateConsole :: TermJs
   , _stateBackend :: Maybe Backend
   } deriving (Eq, Show)
