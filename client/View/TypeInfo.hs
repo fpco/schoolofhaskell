@@ -10,6 +10,7 @@ import           GHCJS.DOM.Element (Element, elementGetAttribute)
 import           GHCJS.Foreign
 import           GHCJS.Marshal
 import           GHCJS.Types
+import           IdeSession.Client.JsonAPI.Common (sliceSpans)
 import           Import
 import           Model (runCode, runQuery, switchTab, navigateDoc)
 import qualified React.Ace as Ace
@@ -18,88 +19,105 @@ import           React.Event
 import           React.Internal (internalLiftIOReact)
 import qualified React.TermJs as TermJs
 
+-- Feature wishlist:
+--
+-- * Explanations for builtin type syntax.  For example, explanations
+-- of forall, (=>), tuples, lists, etc.  These could also be made into
+-- links to relevant documentation, though that might bug advanced
+-- users (could make this a setting).
+--
+-- * Highlighting of AST nodes of the type on hover.  This lets the
+-- user know the structure of the type's AST, and can aid in learning
+-- Haskell syntax.  Unfortunately, this is not possible to do
+-- perfectly with our current information, because we need fixities.
+-- Even for advanced users, this will be helpful for understanding
+-- types that involve infix operators.
+--
+-- * Allow type synonyms to be replaced by definitions and vice versa.
+--
+-- I think the best implementation strategy for these wishlist items
+-- is to expose annotated ASTs from ide-backend, possibly involving
+-- modifications of GHC itself.  Until then, we'll stick to the
+-- haskell-src-exts / autocomplete map annotation of type info.
+
 -- | Show the type popup.
 typePopup :: [ResponseAnnExpType] -> Int -> Int -> React ()
 typePopup typs x y = div_ $ do
   class_ "type-popup"
   style "top" $ T.pack (show (y + 14)) <> "px"
   style "left" $ T.pack (show x) <> "px"
-  allAnns <- fmap concat $ forM (zip [0..] typs) $ \(ix, ResponseAnnExpType anns typ _) -> do
-    let namedAnns =
-          [ (T.pack ("docs-link-" ++ show ix ++ "-" ++ show jx), ann)
-          | jx <- [0..]
-          | ann <- anns
-          ]
-        toMark (cls, AnnSpan fr to (TypeIdInfo info)) =
-          (fr + off, to + off, "docs-link " <> cls, [("title", displayIdInfo info)])
-        initialText = "x :: "
-        off = T.length initialText
-        className = "type-info highlighted-haskell ace-tomorrow"
-    highlightHaskell (initialText <> typ) className $
-      (0, off, "hide-mark", []) :
-      map toMark namedAnns
-    return namedAnns
-  onClick $ \ev state -> do
-    t <- target ev
-    classes <- T.words <$> elementGetAttribute t ("class" :: JSString)
-    forM_ (find ("docs-link-" `T.isPrefixOf`) classes) $ \cls -> do
-      forM_ (find (\(cls', _) -> cls == cls') allAnns) $ \(_, AnnSpan _ _ (TypeIdInfo info)) -> do
-        navigateDoc state (Just info)
-        switchTab state DocsTab
+  forM_ (zip [0..] typs) $ \(ix, ResponseAnnExpType typ _) -> do
+    let txt = typeText typ
+        prefix = "x :: "
+        offset = T.length prefix
+    spans <- internalLiftIOReact $
+      getHighlightSpans "ace/mode/haskell" (prefix <> txt)
+    let spans' =
+          dropWhile (\(_, to, _) -> to <= 0) $
+          map (\(fr, to, x) -> (fr - offset, to - offset, x)) spans
+    internalLiftIOReact $ consoleLog =<< toJSRef spans'
+    div_ $ do
+      class_ "type-info highlighted-haskell ace-tomorrow"
+      div_ $ do
+        class_ "ace-line"
+        void $ renderAnn 0 spans' typ renderTypeAnn
 
-highlightHaskell :: Text -> Text -> [(Int, Int, Text, [(Text, Text)])] -> React ()
-highlightHaskell = highlightCode "ace/mode/haskell"
+renderTypeAnn :: TypeAnn -> React a -> React a
+renderTypeAnn (TypeIdInfo info) inner = span_ $ do
+  class_ "docs-link"
+  title_ (displayIdInfo info)
+  onClick $ \_ state -> do
+    navigateDoc state (Just info)
+    switchTab state DocsTab
+  inner
 
--- | Use Ace to highlight static code.  Uses the theme and mode of the
--- passed Editor.
-highlightCode :: Text -> Text -> Text -> [(Int, Int, Text, [(Text, Text)])] -> React ()
-highlightCode mode input className marks = div_ $ do
-  class_ className
-  html <- internalLiftIOReact $ do
-    highlighted <- highlightCodeInternal
-      (toJSString input)
-      (toJSString mode)
-      (toJSString className)
-    -- While it'd be more efficient to do something clever like
-    -- regexing on the html string, this is also more likely to be
-    -- vulnerable to injection vulnerabilities.  (we're already
-    -- relying on ace being free of such injection vulnerabilities..)
-    sliceInnerText marks highlighted
-  dangerouslySetInnerHTML html
+renderAnn
+  :: Int
+  -> HighlightSpans
+  -> Ann a
+  -> (forall b. a -> React b -> React b)
+  -> React (Int, HighlightSpans)
+renderAnn ix spans (Ann ann inner) f =
+  f ann $ renderAnn ix spans inner f
+renderAnn ix0 spans0 (AnnGroup xs0) f =
+    go ix0 spans0 xs0
+  where
+    go ix spans [] = return (ix, spans)
+    go ix spans (x:xs) = do
+      (ix', spans') <- renderAnn ix spans x f
+      go ix' spans' xs
+renderAnn ix spans (AnnLeaf txt) f = do
+    forM_ (sliceSpans ix txt spans) $ \(chunk, mclass) -> span_ $ do
+      forM_ mclass class_
+      text chunk
+    return (end, dropWhile (\(_, end', _) -> end' <= end) spans)
+  where
+    end = ix + T.length txt
 
--- | Annotates the inner text with classes by introducing additional
--- <span>s.
---
--- TODO: modify existing nodes when the span bounds match? (which is
--- frequently / always for this usecase)
---
--- NOTE: Class names should be unique.  Nested spans with the same
--- class name will cause an error to be thrown.
-sliceInnerText :: [(Int, Int, Text, [(Text, Text)])] -> JSString -> IO JSString
-sliceInnerText ivls input = do
-  starts <- forM ivls $ \(fr, _, cls, props) -> do
-    obj <- newObj
-    forM_ props (\(k, v) -> setProp k (toJSString v) obj)
-    return ((fr, False), obj, cls)
-  let ends = map (\(_, to, cls, _) -> ((to, True), jsNull, cls)) ivls
-      events =
-        map (\((ix, _), obj, cls) -> (ix, obj, cls)) $
-        sortBy (comparing (\(pos, _, _) -> pos)) $
-        starts ++ ends
-  container <- divFromInnerHTML input
-  void $ join $ sliceInnerText'
-    <$> toJSRef events
-    <*> return container
-  getInnerHTML container
+typeText :: Ann TypeAnn -> Text
+typeText (Ann _ x) = typeText x
+typeText (AnnGroup xs) = T.concat (map typeText xs)
+typeText (AnnLeaf x) = x
 
-foreign import javascript "highlightCode($1, $2, $3)"
-  highlightCodeInternal :: JSString -> JSString -> JSString -> IO JSString
+--NOTE: assumes one line of input.
+getHighlightSpans :: Text -> Text -> IO HighlightSpans
+getHighlightSpans mode codeLine =
+  highlightCodeHTML (toJSString mode) (toJSString codeLine) >>=
+  indexArray 0 >>=
+  fromJSRef >>=
+  maybe (fail "Failed to access highlighted line html") return >>=
+  divFromInnerHTML >>=
+  spanContainerToSpans >>=
+  fromJSRef >>=
+  maybe (fail "Failed to marshal highlight spans") return
+
+type HighlightSpans = [(Int, Int, Text)]
 
 foreign import javascript "function() { var node = document.createElement('div'); node.innerHTML = $1; return node; }()"
   divFromInnerHTML :: JSString -> IO (JSRef Element)
 
-foreign import javascript "$1.innerHTML"
-  getInnerHTML :: JSRef Element -> IO JSString
+foreign import javascript "highlightCodeHTML"
+  highlightCodeHTML :: JSString -> JSString -> IO (JSArray JSString)
 
-foreign import javascript "sliceInnerText($1, $2)"
-  sliceInnerText' :: JSRef [(Int, JSObject obj, Text)] -> JSRef Element -> IO ()
+foreign import javascript "spanContainerToSpans"
+  spanContainerToSpans :: JSRef Element -> IO (JSRef HighlightSpans)

@@ -39,7 +39,7 @@ function getSelection(editor){
 var EditSession = ace.require("ace/edit_session").EditSession;
 var TextLayer = ace.require("ace/layer/text").Text;
 
-function highlightCode(input, mode, theme, className) {
+function highlightCodeHTML(mode, input) {
   var session = new EditSession("");
   session.setUseWorker(false);
   session.setMode(mode);
@@ -53,104 +53,38 @@ function highlightCode(input, mode, theme, className) {
 
   session.setValue(input);
 
-  var stringBuilder = [];
-  var length =  session.getLength();
+  var results = [];
+  var length = session.getLength();
   for(var ix = 0; ix < length; ix++) {
-      stringBuilder.push("<div class='ace_line'>");
-      textLayer.$renderLine(stringBuilder, ix, true, false);
-      stringBuilder.push("\n</div>");
+      var lineBuilder = [];
+      textLayer.$renderLine(lineBuilder, ix, true, false);
+      results.push(lineBuilder.join(""));
   }
 
   textLayer.destroy();
 
-  return stringBuilder.join("");
+  return results;
 }
 
-
-// FIXME: Now that I can see the results of this splitting, this code
-// should likely changed.
-//
-// Why? Currently the structure of the DOM is being imposed by the
-// highlighting results.  This makes things like links behave
-// strangely when they get split across multiple highlight spans, such
-// as in qualified names.
-
-
-// Slices the text nodes up by inserting spans.  The input is a list
-// of slicing events like (Int, JSObject, Text).  (10, non-null,
-// "className") indicates that after position 10, the text should be
-// in a span with that class name, until (_, null, "className") is
-// encountered.
-//
-// Precondition: event is sorted and each element is (Int, JSRef obj,
-// Text) encoded as an array of length 3.  The same class name
-// shouldn't be used in nested spans.
-function sliceInnerText(events, topEl) {
-  var i = 0; // Character index
-  var j = 0; // Event index
-  var classes = {}; // Active classes (stored in property names)
-  var eventsCount = events.length;
-  function go(el) {
-    for(var k = 0; k < el.childNodes.length; k++) {
-      var child = el.childNodes[k];
-      switch (child.nodeType) {
-        case 1: // Recurse into element children
-          go(child);
-          break;
-        case 3: // Slice up text children
-          var val = child.nodeValue;
-          while (val.length > 0) {
-            // Handle events that start at the current char.
-            while (j < eventsCount && events[j][0] == i) {
-              var eventValue = events[j][1];
-              var eventName = events[j][2];
-              if (eventValue) {
-                if (classes[eventName]) {
-                  throw "sliceInnerText precondition violated: same class name in nested spans";
-                }
-                classes[eventName] = eventValue;
-              } else {
-                delete classes[eventName];
-              }
-              j++;
-            }
-            // Slice value upto next event.
-            var next = j < eventsCount ? events[j][0] : i + val.length;
-            var amount = next - i;
-            if (amount < 0) {
-              throw "sliceInnerText precondition violated: out of order events";
-            }
-            var chunk = val.slice(0, amount);
-            val = val.slice(amount);
-            // Increment char position
-            i += chunk.length;
-            // Output the chunk.  If there's no class value to output,
-            // just add a normal text node.
-            var classVal = Object.getOwnPropertyNames(classes).join(" ");
-            var outputNode;
-            if (classVal.length == 0) {
-              outputNode = document.createTextNode(chunk);
-            } else {
-              outputNode = document.createElement("span");
-              outputNode.setAttribute("class", classVal);
-              outputNode.innerText = chunk;
-              // Add specified attributes.
-              for(var className in classes) {
-                for(var prop in classes[className]) {
-                  outputNode.setAttribute(prop, classes[className][prop]);
-                }
-              }
-            }
-            el.insertBefore(outputNode, child);
-            // Increment child ix since we just inserted one.
-            k++;
-          }
-          // Remove the old text node.
-          child.remove();
-          k--;
-          break;
-      }
+// Given a container of spans (such as a line of code highlighted by
+// ace), yields a list of text intervals with class..
+function spanContainerToSpans(el) {
+  var results = [];
+  var j = 0;
+  for(var i = 0; i < el.childNodes.length; i++) {
+    var child = el.childNodes[i];
+    switch (child.nodeType) {
+      case 1: // element
+        var txt = child.innerText;
+        var className = child.getAttribute("class")
+        var to = j + txt.length;
+        results.push([j, to, className]);
+        j = to;
+        break;
+      case 3: // text node
+        j += child.nodeValue.length;
+        break;
     }
   }
-  go(topEl);
+  return results;
 }

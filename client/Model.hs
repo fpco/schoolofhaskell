@@ -35,7 +35,7 @@ runApp :: App -> IO void
 runApp app = withUrl "ws://localhost:3000/editor" $ \backend -> do
   setTVarIO (appState app) stateBackend (Just backend)
   version <- expectWelcome backend
-  putStrLn $ "Backendection established with ide-backend " ++ show version
+  putStrLn $ "Connection established with ide-backend " ++ show version
   let state = appState app
   files <- waitForTVarIO state (^? (stateStatus . _Just . _BuildRequested))
   mainLoop backend state files `catch` \ex -> do
@@ -101,7 +101,7 @@ runQueries backend state = do
         tys <- getAnnExpTypes backend ss
         update $ set stateTypes $
           listToMaybe $
-          L.groupBy ((==) `on` (\(ResponseAnnExpType _ _ ss') -> ss')) tys
+          L.groupBy ((==) `on` (\(ResponseAnnExpType _ ss') -> ss')) tys
         runQueries backend state
   where
     waitForUserRequest :: IO (Either Files Query)
