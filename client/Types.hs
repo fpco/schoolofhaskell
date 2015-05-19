@@ -30,9 +30,9 @@ data Status
   deriving (Eq, Show)
 
 data BuildInfo = BuildInfo
-  { buildErrors :: [SourceError]
-  , buildWarnings :: [SourceError]
-  , buildServerDieds :: [SourceError]
+  { buildErrors :: [AnnSourceError]
+  , buildWarnings :: [AnnSourceError]
+  , buildServerDieds :: [AnnSourceError]
   }
   deriving (Eq, Show)
 

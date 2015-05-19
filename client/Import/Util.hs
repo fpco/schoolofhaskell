@@ -16,6 +16,7 @@ import           GHCJS.Types
 import           IdeSession.Client.JsonAPI
 import           IdeSession.Types.Public
 import           React
+import           React.Lucid
 
 addWhen :: Bool -> Text -> Text -> Text
 addWhen True x y = y <> " " <> x
@@ -32,7 +33,7 @@ once runAction = do
     unless alreadyCalled runAction
 
 --------------------------------------------------------------------------------
--- Misc React utils
+-- Misc utils
 
 prop :: FromJSRef a => JSRef obj -> JSString -> IO (Maybe a)
 prop obj n = do
@@ -53,6 +54,16 @@ expectProp obj n = do
 
 setPropShow :: (Monad m, Show a) => T.Text -> a -> ReactT state m ()
 setPropShow n = attr n . T.pack . show
+
+divClass :: Monad m => Text -> ReactT state m a -> ReactT state m a
+divClass className f = div_ $ do
+  class_ className
+  f
+
+spanClass :: Monad m => Text -> ReactT state m a -> ReactT state m a
+spanClass className f = span_ $ do
+  class_ className
+  f
 
 --------------------------------------------------------------------------------
 -- Tvar/lens helpers

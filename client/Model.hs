@@ -60,8 +60,8 @@ compileCode backend state files = do
     (map requestUpdate files)
     (setTVarIO state stateStatus . Just . Building)
   -- Retrieve the errors
-  sourceErrors <- getSourceErrors backend
-  let partitionKind k = partition ((==k) . errorKind)
+  sourceErrors <- getAnnSourceErrors backend
+  let partitionKind k = partition ((==k) . annErrorKind)
   let (errors, partitionKind KindWarning -> (warnings, serverDieds)) =
         partitionKind KindError sourceErrors
   setTVarIO state stateStatus $ Just $ Built $ BuildInfo

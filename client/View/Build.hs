@@ -8,6 +8,7 @@ module View.Build
 import           Import
 import           Model (runCode)
 import qualified React.Ace as Ace
+import           View.Annotation
 
 runButton :: State -> React ()
 runButton state = div_ $ do
@@ -59,21 +60,32 @@ buildTab (QueryRequested info _) = buildInfo info
 
 buildInfo :: BuildInfo -> React ()
 buildInfo info =
-  forM_ (sourceErrors info) $ \err -> div_ $ do
+  forM_ (sourceErrors info) $ \AnnSourceError{..} -> div_ $ do
     --FIXME: have some explanatory text or victory picture when there
     --are no errors or warnings.
-    class_ $ "message " <> case errorKind err of
+    class_ $ "message " <> case annErrorKind of
       KindError -> "kind-error"
       KindServerDied -> "kind-error"
       KindWarning -> "kind-warning"
     span_ $ do
       class_ "error-span"
-      text $ tshow (errorSpan err)
+      text $ tshow annErrorSpan
     span_ $ do
       class_ "error-msg"
-      text (errorMsg err)
+      renderAnn [] annErrorMsg renderMsgAnn
 
-sourceErrors :: BuildInfo -> [SourceError]
+renderMsgAnn :: MsgAnn -> React a -> React a
+renderMsgAnn MsgAnnModule f = spanClass "msg-ann-module" f
+renderMsgAnn MsgAnnCode f= spanClass "msg-ann-code" f
+-- FIXME: add support for this
+--   divClass "msg-ann-refactor" f
+renderMsgAnn MsgAnnRefactor{} f = f
+renderMsgAnn MsgAnnCollapse f = f
+-- FIXME: add support for this
+--   spanClass "msg-ann-collapse" $ return ()
+--   span_ f
+
+sourceErrors :: BuildInfo -> [AnnSourceError]
 sourceErrors info =
   buildServerDieds info ++
   buildErrors info ++

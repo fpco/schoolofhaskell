@@ -6,6 +6,7 @@ module Communication
   , requestRun
   -- * Queries
   , getSourceErrors
+  , getAnnSourceErrors
   , getSpanInfo
   , getExpTypes
   , getAnnExpTypes
@@ -78,6 +79,13 @@ getSourceErrors backend =
                RequestGetSourceErrors
                _ResponseGetSourceErrors
                "ResponseGetSourceErrors"
+
+getAnnSourceErrors :: Backend ->  IO [AnnSourceError]
+getAnnSourceErrors backend =
+  queryBackend backend
+               RequestGetAnnSourceErrors
+               _ResponseGetAnnSourceErrors
+               "ResponseGetAnnSourceErrors"
 
 getSpanInfo :: Backend -> SourceSpan -> IO [ResponseSpanInfo]
 getSpanInfo backend ss =

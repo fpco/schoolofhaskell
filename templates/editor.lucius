@@ -196,6 +196,20 @@ body {
     white-space: pre-wrap;
     font-family: 'Ubuntu Mono', monospace;
   }
+  .msg-ann-refactor, .msg-ann-code {
+    padding: 0.1em 0.5em;
+    border: 1px solid #ddd;
+    border-radius: 0.2em;
+  }
+  .msg-ann-collapse {
+    font-size: 200%;
+    line-height: 0;
+    position: relative;
+    top: -0.1em;
+  }
+  .msg-ann-collapse:before {
+    content: " …";
+  }
 }
 
 .console-tab-content {
