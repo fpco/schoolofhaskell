@@ -7,18 +7,17 @@ import qualified Data.ByteString.Lazy as BL
 import           Data.Function (on)
 import           Data.List (partition)
 import qualified Data.List as L
+import qualified Data.Text as T
 import           Data.Text.Encoding (encodeUtf8, decodeUtf8)
-import           GHCJS.Types (JSString)
 import           GHCJS.Foreign (toJSString)
 import           Import
-import qualified React.Ace as Ace
 import           React.Internal (appState)
-import qualified React.TermJs as TermJs
+import           TermJs (writeTerminal)
 
 getApp :: IO App
 getApp = do
-  ace <- Ace.getDef
-  termjs <- TermJs.getDef
+  ace <- getDefUnmanaged
+  termjs <- getDefUnmanaged
   let state = State
         { _stateAce = ace
         , _stateStatus = Nothing
@@ -75,15 +74,15 @@ runConsole :: Backend -> TVar State -> IO ()
 runConsole backend state = do
   switchToConsoleFirstTime <- once $ setTVarIO state stateTab ConsoleTab
   let appendConsole x = do
-        TermJs.TermJs terminal <- viewTVarIO state stateConsole
-        TermJs.writeTerminal terminal x
+        terminal' <- readUnmanagedOrFail state (^. stateConsole)
+        writeTerminal terminal' x
   setProcessHandler backend $ \case
     Right output -> do
       switchToConsoleFirstTime
-      appendConsole (toJSString (decodeUtf8 output))
+      appendConsole (decodeUtf8 output)
     Left result -> do
-      appendConsole ("\nProcess done: " :: JSString)
-      appendConsole (toJSString (show result))
+      appendConsole "\nProcess done: "
+      appendConsole (T.pack (show result))
   requestRun backend "Main" "main"
 
 runQueries :: Backend -> TVar State -> IO Files

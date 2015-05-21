@@ -46,6 +46,8 @@ getEditorScriptR = $(ghcjsFileDev
     ,"-XParallelListComp"
     ,"-XGeneralizedNewtypeDeriving"
     ,"-XScopedTypeVariables"
+    ,"-XDeriveDataTypeable"
+    ,"-XDeriveGeneric"
     ,"-Wall"
     ,"-hide-all-packages"] ++ concatMap (\pkg -> ["-package", pkg])
         ["aeson"
@@ -53,6 +55,7 @@ getEditorScriptR = $(ghcjsFileDev
         ,"JsonGrammar"
         ,"base"
         ,"bytestring"
+        ,"ghcjs-ace"
         ,"ghcjs-base"
         ,"ghcjs-dom"
         ,"ghcjs-jquery"

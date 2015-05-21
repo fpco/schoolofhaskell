@@ -1,39 +1,3 @@
-// FIXME: Replace this with pure GHCJS. It's just more laborious to do
-// so.
-function makeEditor(q,defaultValue,onChange,onSelectionChange){
-  var editor = ace.edit(q.get(0));
-  editor.setTheme("ace/theme/tomorrow");
-  editor.session.setUseWorker(false);
-  editor.session.setMode("ace/mode/haskell");
-  editor.renderer.setShowGutter(false);
-  if(defaultValue) {
-    editor.setValue(defaultValue);
-  }
-  // editor.setReadOnly(true);
-  if(onChange) {
-    editor.on("change", function() {
-      val = editor.getValue();
-      onChange(val);
-    });
-  }
-  if(onSelectionChange) {
-    editor.getSelection().on("changeSelection", function() {
-      onSelectionChange({});
-    });
-  }
-  return editor;
-}
-
-function getSelection(editor){
-  var selection = editor.getSelection();
-  var anchor = selection.getSelectionAnchor();
-  var lead = selection.getSelectionLead();
-  return {"anchor-column": anchor.column,
-          "anchor-row": anchor.row,
-          "lead-column": lead.column,
-          "lead-row": lead.row};
-}
-
 // Based on https://github.com/ajaxorg/ace/blob/master/lib/ace/ext/static_highlight.js
 
 var EditSession = ace.require("ace/edit_session").EditSession;

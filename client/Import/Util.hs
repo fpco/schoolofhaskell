@@ -2,21 +2,25 @@ module Import.Util where
 
 import           Control.Concurrent.STM
 import           Control.Exception (SomeException, catch, throwIO)
-import           Control.Lens
+import           Control.Lens hiding (coerce)
 import           Control.Monad (unless)
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 import           Data.Char (isHexDigit)
+import           Data.Coerce (coerce)
 import           Data.IORef
 import           Data.Monoid
 import           Data.Text (Text, pack)
 import qualified Data.Text as T
+import           GHCJS.DOM.HTMLElement (HTMLElement)
 import           GHCJS.Foreign
 import           GHCJS.Marshal
 import           GHCJS.Types
 import           IdeSession.Client.JsonAPI
 import           IdeSession.Types.Public
+import           JavaScript.JQuery (JQuery)
 import           React
 import           React.Lucid
+import           System.IO.Unsafe (unsafePerformIO)
 
 addWhen :: Bool -> Text -> Text -> Text
 addWhen True x y = y <> " " <> x
@@ -64,6 +68,13 @@ spanClass :: Monad m => Text -> ReactT state m a -> ReactT state m a
 spanClass className f = span_ $ do
   class_ className
   f
+
+foreign import javascript unsafe "$2.get($1)"
+  getElement :: Int -> JQuery -> IO HTMLElement
+
+-- FIXME: Find a better way to do this, or add similar utilities to ghcjs-base
+intToJSNumber :: Int -> JSNumber
+intToJSNumber n = coerce $ unsafePerformIO $ toJSRef n
 
 --------------------------------------------------------------------------------
 -- Tvar/lens helpers

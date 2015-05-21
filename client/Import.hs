@@ -12,6 +12,7 @@ module Import
     , module Import.Util
     , module React
     , module React.Lucid
+    , module React.Unmanaged
     , module Types
     , ByteString
     , Text
@@ -25,11 +26,11 @@ import           Control.Applicative ((<$>), (<*>))
 import           Control.Concurrent.STM
 import           Control.Lens
 import           Data.ByteString (ByteString)
-import           Data.Traversable (forM)
 import           Data.Foldable (forM_)
 import           Data.Maybe
 import           Data.Monoid
 import           Data.Text (Text)
+import           Data.Traversable (forM)
 import           IdeSession.Client.JsonAPI
 import           IdeSession.Types.Progress
 import           IdeSession.Types.Public
@@ -37,6 +38,7 @@ import           Import.Util
 import           React hiding (App)
 import qualified React.Internal
 import           React.Lucid
+import           React.Unmanaged
 import           Types
 
 type React a = ReactT State IO a

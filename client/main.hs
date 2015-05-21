@@ -1,20 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import           Control.Concurrent
-import           Import hiding (children)
-import           Model
-import qualified React.Ace as Ace
-import           React.Internal
-import qualified React.TermJs as TermJs
-import           View
+import Control.Concurrent
+import Import
+import Model
+import View
 
 -- | Grab the container element used for rendering into and start the
 -- rendering loop.
 main :: IO ()
 main = do
   app <- getApp
-  ace <- Ace.new app
-  termjs <- TermJs.new app
+  ace <- newUnmanaged app
+  termjs <- newUnmanaged app
   _ <- forkIO $ runApp app
   -- Just for development
   -- _ <- forkIO $ do

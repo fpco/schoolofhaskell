@@ -19,3 +19,6 @@
 [submodule "deps/ghcjs-websockets"]
 	path = deps/ghcjs-websockets
 	url = git://github.com/mstksg/ghcjs-websockets.git
+[submodule "deps/ghcjs-from-typescript"]
+	path = deps/ghcjs-from-typescript
+	url = git://github.com/fpco/ghcjs-from-typescript.git

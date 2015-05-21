@@ -26,11 +26,9 @@ import           GHCJS.Types
 import           IdeSession.Client.JsonAPI.Common (sliceSpans)
 import           Import
 import           Model (runCode, runQuery, switchTab, navigateDoc)
-import qualified React.Ace as Ace
 import           React.Builder (dangerouslySetInnerHTML)
 import           React.Event
 import           React.Internal (internalLiftIOReact)
-import qualified React.TermJs as TermJs
 
 --------------------------------------------------------------------------------
 -- Annotations

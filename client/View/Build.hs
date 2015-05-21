@@ -5,9 +5,9 @@ module View.Build
   , buildTab
   ) where
 
+import qualified Ace
 import           Import
 import           Model (runCode)
-import qualified React.Ace as Ace
 import           View.Annotation
 
 runButton :: State -> React ()
@@ -15,7 +15,7 @@ runButton state = div_ $ do
   class_ "run glyphicon"
   title_ "Compile and run code"
   onClick $ \_ stateVar -> do
-    let editor = Ace.aceEditorOrError (state ^. stateAce)
+    editor <- getUnmanagedOrFail (state ^. stateAce)
     code <- Ace.getValue editor
     runCode stateVar [("main.hs", code)]
 

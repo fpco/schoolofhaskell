@@ -8,17 +8,18 @@ import Data.Text (Text)
 import IdeSession.Client.JsonAPI
 import IdeSession.Types.Progress
 import IdeSession.Types.Public
-import React.Ace (Ace)
-import React.TermJs (TermJs)
+import TermJs (TermJs)
+import JavaScript.AceAjax.Raw.Types (Editor)
+import React.Unmanaged (Unmanaged)
 
 data State = State
-  { _stateAce :: Ace
+  { _stateAce :: Unmanaged Editor
   , _stateStatus :: Maybe Status
   , _stateRunning :: Running
   , _stateTab :: Tab
   , _stateDocs :: Maybe IdInfo
   , _stateTypes :: Maybe [ResponseAnnExpType]
-  , _stateConsole :: TermJs
+  , _stateConsole :: Unmanaged TermJs
   , _stateBackend :: Maybe Backend
   } deriving (Eq, Show)
 
