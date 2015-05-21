@@ -187,7 +187,7 @@ body {
   .kind-warning {
     background: #f1eed9;
   }
-  .error-span {
+  .error-proper-span {
     cursor: pointer;
     text-decoration: underline;
   }

@@ -68,8 +68,16 @@ buildInfo info =
       KindServerDied -> "kind-error"
       KindWarning -> "kind-warning"
     span_ $ do
-      class_ "error-span"
       text $ tshow annErrorSpan
+      case annErrorSpan of
+        TextSpan {} -> class_ "error-text-span"
+        ProperSpan ss -> do
+          class_ "error-proper-span"
+          onClick $ \_ state -> do
+            let (fp, sel) = Ace.spanToSelection ss
+            editor <- readUnmanagedOrFail state (^. stateAce)
+            Ace.setSelection editor sel
+            Ace.focus editor
     span_ $ do
       class_ "error-msg"
       renderAnn [] annErrorMsg renderMsgAnn

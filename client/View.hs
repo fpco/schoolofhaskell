@@ -64,17 +64,5 @@ tabClass DocsTab = "docs-tab"
 handleSelectionChange :: TVar State -> IO ()
 handleSelectionChange state = do
   editor <- readUnmanagedOrFail state (^. stateAce)
-  ss <- aceSelectionToSourceSpan "main.hs" <$> Ace.getSelection editor
+  ss <- Ace.spanFromSelection  "main.hs" <$> Ace.getSelection editor
   runQuery state (QueryInfo ss)
-
-aceSelectionToSourceSpan :: FilePath -> Ace.Selection -> SourceSpan
-aceSelectionToSourceSpan fp = aceRangeToSourceSpan fp . Ace.selectionToRange
-
-aceRangeToSourceSpan :: FilePath -> Ace.Range -> SourceSpan
-aceRangeToSourceSpan fp range = SourceSpan
-  { spanFilePath   = fp
-  , spanFromLine   = Ace.row    (Ace.start range) + 1
-  , spanFromColumn = Ace.column (Ace.start range) + 1
-  , spanToLine     = Ace.row    (Ace.end range)   + 1
-  , spanToColumn   = Ace.column (Ace.end range)   + 1
-  }

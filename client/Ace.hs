@@ -8,6 +8,8 @@ module Ace
     -- * Mutations
   , setValue
   , setSelection
+  , Editor.focus
+  , Editor.blur
     -- * Events
   , onChange
   , onSelectionChange
@@ -16,6 +18,12 @@ module Ace
   , Range(..)
   , Selection(..)
   , selectionToRange
+  , rangeToSelection
+    -- * Conversions to JsonAPI types
+  , spanFromSelection
+  , spanToSelection
+  , spanFromRange
+  , spanToRange
   ) where
 
 import           Control.Applicative ((<$>), (<*>))
@@ -26,6 +34,7 @@ import           GHC.Generics (Generic)
 import           GHCJS.Foreign
 import           GHCJS.Marshal
 import           GHCJS.Types
+import           IdeSession.Types.Public (SourceSpan(..))
 import           Import.Util (getElement, intToJSNumber)
 import qualified JavaScript.AceAjax.Raw.Ace as Ace
 import qualified JavaScript.AceAjax.Raw.Editor as Editor
@@ -135,6 +144,39 @@ selectionToRange sel =
   if anchor sel < lead sel
     then Range (anchor sel) (lead sel)
     else Range (lead sel) (anchor sel)
+
+rangeToSelection :: Range -> Selection
+rangeToSelection Range {..} = Selection { anchor = start, lead = end }
+
+--------------------------------------------------------------------------------
+-- Conversions to JsonAPI types
+--
+-- (Move elsewhere if / when this is released as a separate package)
+
+spanFromSelection :: FilePath -> Selection -> SourceSpan
+spanFromSelection fp = spanFromRange fp . selectionToRange
+
+spanToSelection :: SourceSpan -> (FilePath, Selection)
+spanToSelection ss = (fp, rangeToSelection r)
+  where
+    (fp, r) = spanToRange ss
+
+spanFromRange :: FilePath -> Ace.Range -> SourceSpan
+spanFromRange fp Range{..} = SourceSpan
+  { spanFilePath   = fp
+  , spanFromLine   = row    start + 1
+  , spanFromColumn = column start + 1
+  , spanToLine     = row    end   + 1
+  , spanToColumn   = column end   + 1
+  }
+
+spanToRange :: SourceSpan -> (FilePath, Ace.Range)
+spanToRange SourceSpan{..} = (spanFilePath, range)
+  where
+    range = Range
+      { start = Pos (spanFromLine - 1) (spanFromColumn - 1)
+      , end = Pos (spanToLine - 1) (spanToColumn - 1)
+      }
 
 --------------------------------------------------------------------------------
 -- FFI
