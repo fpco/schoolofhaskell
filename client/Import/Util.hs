@@ -7,10 +7,12 @@ import           Control.Monad (unless)
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 import           Data.Char (isHexDigit)
 import           Data.Coerce (coerce)
+import           Data.Foldable (forM_)
 import           Data.IORef
 import           Data.Monoid
 import           Data.Text (Text, pack)
 import qualified Data.Text as T
+import           Data.Typeable (Typeable)
 import           GHCJS.DOM.HTMLElement (HTMLElement)
 import           GHCJS.Foreign
 import           GHCJS.Marshal
@@ -35,6 +37,24 @@ once runAction = do
   return $ do
     alreadyCalled <- readIORef alreadyCalledRef
     unless alreadyCalled runAction
+
+debounce :: Int -> IO () -> IO (IO ())
+debounce ms f = do
+  f' <- asyncCallback AlwaysRetain f
+  mtimeoutRef <- newIORef Nothing
+  return $ do
+    mtimeout <- readIORef mtimeoutRef
+    forM_ mtimeout clearTimeout
+    writeIORef mtimeoutRef . Just =<< setTimeout f' ms
+
+newtype TimeoutId = TimeoutId (JSRef TimeoutId)
+  deriving (Typeable, ToJSRef, FromJSRef)
+
+foreign import javascript unsafe "setTimeout($1, $2)"
+  setTimeout :: JSFun (IO ()) -> Int -> IO TimeoutId
+
+foreign import javascript unsafe "clearTimeout($1)"
+  clearTimeout :: TimeoutId -> IO ()
 
 --------------------------------------------------------------------------------
 -- Misc utils

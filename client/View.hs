@@ -23,7 +23,7 @@ render ace termjs state = div_ $ do
     buildComponent ace stateAce $ onInitUnmanaged $ \stateVar q -> do
       editor <- Ace.makeEditor q
       Ace.setValue editor "main = (readLn :: IO Int) >>= print"
-      Ace.onSelectionChange editor (handleSelectionChange stateVar)
+      Ace.onSelectionChange editor =<< debounce 100 (handleSelectionChange stateVar)
       return editor
     case mstatus of
       Nothing -> runButton state
