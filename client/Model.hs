@@ -8,7 +8,6 @@ import           Data.List (partition)
 import qualified Data.List as L
 import qualified Data.Text as T
 import           Data.Text.Encoding (encodeUtf8, decodeUtf8)
-import           GHCJS.Foreign (toJSString)
 import           Import
 import           React.Internal (appState)
 import           TermJs (writeTerminal)

@@ -13,22 +13,12 @@ module View.Annotation
   , mayMkNoNewlines
   ) where
 
-import           Communication (sendProcessInput)
-import           Control.Monad (void, join)
-import           Data.List (sortBy, find)
-import           Data.Ord (comparing)
 import qualified Data.Text as T
-import           Data.Text.Encoding (encodeUtf8)
-import           GHCJS.DOM.Element (Element, elementGetAttribute)
 import           GHCJS.Foreign
 import           GHCJS.Marshal
 import           GHCJS.Types
 import           IdeSession.Client.JsonAPI.Common (sliceSpans)
-import           Import
-import           Model (runCode, runQuery, switchTab, navigateDoc)
-import           React.Builder (dangerouslySetInnerHTML)
-import           React.Event
-import           React.Internal (internalLiftIOReact)
+import           Import hiding (ix, to)
 
 --------------------------------------------------------------------------------
 -- Annotations

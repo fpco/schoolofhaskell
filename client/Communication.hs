@@ -26,7 +26,6 @@ import           Data.Function (fix)
 import           Data.IORef
 import           Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import           Data.Void (absurd)
-import           GHCJS.Types (JSString)
 import           Import
 import qualified JavaScript.WebSockets as WS
 import           Language.JsonGrammar (Json)
