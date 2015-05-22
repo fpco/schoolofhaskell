@@ -160,6 +160,9 @@ body {
     /* glyphicon sets to 1px, unset */
     top: 0;
   }
+  .ghci-button {
+    float: right;
+  }
   .tab {
     font-size: 120%;
     padding: 0.2em 0.7em;

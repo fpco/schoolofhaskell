@@ -71,7 +71,7 @@ foreign import javascript unsafe "window.ace_editor = $1;"
 --------------------------------------------------------------------------------
 -- Queries
 
-getValue :: FromJSString t => Editor -> IO t
+getValue :: Editor -> IO Text
 getValue = fmap fromJSString . Editor.getValue
 
 getSelection :: Editor -> IO Selection

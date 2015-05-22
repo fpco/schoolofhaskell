@@ -1,11 +1,13 @@
 module View.Build
   ( runButton
+  , ghciButton
   , setSnippetClass
   , buildStatusText
   , buildTab
   ) where
 
 import qualified Ace
+import qualified Data.Text as T
 import           Import
 import           Model (runCode)
 import           PosMap (spanToSelection)
@@ -19,6 +21,27 @@ runButton = div_ $ do
     editor <- readUnmanagedOrFail state (^. stateAce)
     code <- Ace.getValue editor
     runCode state [("main.hs", code)]
+
+ghciButton :: React ()
+ghciButton = div_ $ do
+  -- FIXME: consider UI / don't use bootstrap style
+  class_ "ghci-button btn btn-default"
+  text "GHCI"
+  onClick $ \_ state -> do
+    editor <- readUnmanagedOrFail state (^. stateAce)
+    code <- Ace.getValue editor
+    --FIXME: when using GHCI, don't display build errors / messages
+    --from it.
+    --FIXME: it'd also be good if ide-backend-client held on to the
+    --old session, so that info is still available.
+    let code' = T.unlines
+          [ "import System.Process (rawSystem)"
+          , "main = do"
+          , "  writeFile \"main.hs\" " <> tshow code
+          , "  ec <- rawSystem \"ghci\" [\"main.hs\"]"
+          , "  putStrLn $ \"GHCI exited with \" ++ show ec"
+          ]
+    runCode state [("main.hs", code')]
 
 setSnippetClass :: Maybe Status -> React ()
 setSnippetClass mstatus = class_ $ "snippet " <>

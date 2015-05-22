@@ -33,6 +33,7 @@ render ace termjs state = div_ $ do
         div_ $ do
           class_ "controls-bar"
           runButton
+          ghciButton
           mkTab state BuildTab $ text (buildStatusText status)
           mkTab state ConsoleTab "Console"
           mkTab state DocsTab "Docs"
