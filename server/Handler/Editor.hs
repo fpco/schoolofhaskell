@@ -15,7 +15,6 @@ getEditorR = webSockets $ do
             { putJson = \x -> flip runReaderT conn $ sendTextData $ encode x
             , getJson = flip runReaderT conn $ fmap decodeOrFail receiveData
             }
-    -- liftIO $  putJson clientIO (toJSON (1 :: Int))
     liftIO $ startEmptySession clientIO opts EmptyOptions
   where
     -- TODO: fail more gracefully than this, possibly by changing
