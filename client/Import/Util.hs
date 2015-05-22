@@ -107,16 +107,10 @@ fromJSRefOrFail what ref = do
 -- Tvar/lens helpers
 
 setTVarIO :: TVar s -> ASetter' s a -> a -> IO ()
-setTVarIO v l a =
-  atomically
-    (modifyTVar v
-                (set l a))
+setTVarIO v l a = atomically $ modifyTVar' v $ set l a
 
 modifyTVarIO :: TVar s -> ASetter' s a -> (a -> a) -> IO ()
-modifyTVarIO v l f =
-  atomically
-    (modifyTVar v
-                (over l f))
+modifyTVarIO v l f = atomically $ modifyTVar' v $ over l f
 
 waitForTVarIO :: TVar s -> (s -> Maybe a) -> IO a
 waitForTVarIO v f = atomically $ do
