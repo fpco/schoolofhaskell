@@ -125,7 +125,7 @@ waitForTVarIO v f = atomically $ do
     Just y -> return y
     Nothing -> retry
 
-viewTVarIO ::  TVar s -> Getting a s a -> IO a
+viewTVarIO ::  TVar s -> Getter s a -> IO a
 viewTVarIO v g =
   atomically
     (fmap (view g)
