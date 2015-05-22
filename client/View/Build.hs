@@ -8,6 +8,7 @@ module View.Build
 import qualified Ace
 import           Import
 import           Model (runCode)
+import           PosMap (spanToSelection)
 import           View.Annotation
 
 runButton :: State -> React ()
@@ -73,11 +74,23 @@ buildInfo info =
         TextSpan {} -> class_ "error-text-span"
         ProperSpan ss -> do
           class_ "error-proper-span"
-          onClick $ \_ state -> do
-            let (fp, sel) = Ace.spanToSelection ss
-            editor <- readUnmanagedOrFail state (^. stateAce)
-            Ace.setSelection editor sel
-            Ace.focus editor
+          onClick $ \_ stateVar -> do
+            state <- readTVarIO stateVar
+            editor <- getUnmanagedOrFail (state ^. stateAce)
+            -- FIXME: use a more lenient version of spanToSelection
+            -- which allows for removals within the span.  Possibly
+            -- have the implementation function always compute the
+            -- lenient version, but flag that some portion of the
+            -- range was edited.
+            --
+            -- If the above isn't done, then at least the UI
+            -- should mention why it isn't selecting anything on
+            -- click, in this case.
+            case spanToSelection state ss of
+              Nothing -> putStrLn "No span for error"
+              Just sel -> do
+                Ace.setSelection editor sel
+                Ace.focus editor
     span_ $ do
       class_ "error-msg"
       renderAnn [] annErrorMsg renderMsgAnn

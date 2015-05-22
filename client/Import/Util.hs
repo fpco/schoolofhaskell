@@ -96,6 +96,13 @@ foreign import javascript unsafe "$2.get($1)"
 intToJSNumber :: Int -> JSNumber
 intToJSNumber n = coerce $ unsafePerformIO $ toJSRef n
 
+fromJSRefOrFail :: FromJSRef a => String -> JSRef a -> IO a
+fromJSRefOrFail what ref = do
+  mx <- fromJSRef ref
+  case mx of
+    Nothing -> fail $ "Failed to marshal " ++ what
+    Just x -> return x
+
 --------------------------------------------------------------------------------
 -- Tvar/lens helpers
 

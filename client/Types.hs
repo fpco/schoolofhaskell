@@ -1,5 +1,6 @@
 module Types where
 
+import Ace (Editor, Range)
 import Control.Concurrent.STM (TChan)
 import Control.Lens (makeLenses, makePrisms)
 import Data.ByteString (ByteString)
@@ -8,12 +9,12 @@ import Data.Text (Text)
 import IdeSession.Client.JsonAPI
 import IdeSession.Types.Progress
 import IdeSession.Types.Public
-import TermJs (TermJs)
-import JavaScript.AceAjax.Raw.Types (Editor)
 import React.Unmanaged (Unmanaged)
+import TermJs (TermJs)
 
 data State = State
   { _stateAce :: Unmanaged Editor
+  , _statePosMap :: PosMap
   , _stateStatus :: Maybe Status
   , _stateRunning :: Running
   , _stateTab :: Tab
@@ -65,6 +66,15 @@ instance Eq Backend where
 
 instance Show Backend where
   showsPrec _ _ = showString "Backend conn waiter"
+
+-- Note: Newer changes are towards the front of the list.
+type PosMap = [PosChange]
+
+data PosChange = PosChange
+  { oldRange :: Range
+  , newRange :: Range
+  }
+  deriving (Show, Eq)
 
 $(makeLenses ''State)
 $(makePrisms ''Status)

@@ -12,6 +12,7 @@ module Ace
   , Editor.blur
     -- * Events
   , onChange
+  , ChangeEvent(..)
   , onSelectionChange
     -- * Auxiliary Types
   , Pos(..)
@@ -19,23 +20,25 @@ module Ace
   , Selection(..)
   , selectionToRange
   , rangeToSelection
-    -- * Conversions to JsonAPI types
-  , spanFromSelection
-  , spanToSelection
-  , spanFromRange
-  , spanToRange
+  , RangeOrdering(..)
+  , compareRange
+  , comparePosWithRange
+  , DeltaPos(..)
+  , subtractPos
+  , shiftPos
+  , shiftRange
   ) where
 
 import           Control.Applicative ((<$>), (<*>))
 import           Control.Monad (void, join, (<=<))
+import           Control.Monad.Trans.Maybe (MaybeT(..))
 import           Data.Coerce (coerce)
 import           Data.Text (Text)
 import           GHC.Generics (Generic)
 import           GHCJS.Foreign
 import           GHCJS.Marshal
 import           GHCJS.Types
-import           IdeSession.Types.Public (SourceSpan(..))
-import           Import.Util (getElement, intToJSNumber)
+import           Import.Util (getElement, intToJSNumber, mtprop, fromJSRefOrFail)
 import qualified JavaScript.AceAjax.Raw.Ace as Ace
 import qualified JavaScript.AceAjax.Raw.Editor as Editor
 import qualified JavaScript.AceAjax.Raw.IEditSession as Session
@@ -58,7 +61,12 @@ makeEditor q = do
   Renderer.setTheme r "ace/theme/tomorrow"
   Renderer.setShowGutter r (toJSBool False)
   Renderer.setShowPrintMargin r (toJSBool False)
+  setGlobalEditor e
   return e
+
+-- Purely for development purposes
+foreign import javascript unsafe "window.ace_editor = $1;"
+  setGlobalEditor :: Editor -> IO ()
 
 --------------------------------------------------------------------------------
 -- Queries
@@ -69,11 +77,10 @@ getValue = fmap fromJSString . Editor.getValue
 getSelection :: Editor -> IO Selection
 getSelection editor = do
   s <- Editor.getSelection editor
-  ma <- fromJSRef . coerce =<< Selection.getSelectionAnchor s
-  ml <- fromJSRef . coerce =<< Selection.getSelectionLead s
-  case (ma, ml) of
-    (Just a, Just l) -> return Selection { anchor = a, lead = l }
-    _ -> fail "Failed to marshal ace editor selection"
+  let fromRef = fromJSRefOrFail "ace editor selection" . coerce
+  lead <- Selection.getSelectionLead s
+  anchor <- Selection.getSelectionAnchor s
+  Selection <$> fromRef lead <*> fromRef anchor
 
 --------------------------------------------------------------------------------
 -- Mutations
@@ -96,12 +103,35 @@ setSelection editor Selection{..} = do
 --------------------------------------------------------------------------------
 -- Event Handlers
 
-onChange :: Editor -> IO () -> IO ()
+onChange :: Editor -> (ChangeEvent -> IO ()) -> IO ()
 onChange e f = do
   -- TODO: open pull request on ace typescript bindings making things subtypes of EventEmitter?
   parent <- toJSRef =<< Editor.container e
-  f' <- syncCallback (DomRetain (coerce parent)) True f
+  let fromRef = fromJSRefOrFail "change event"
+  f' <- syncCallback1 (DomRetain (coerce parent)) True (f <=< fromRef)
   editorOn e "change" f'
+
+--FIXME: would be cheaper to not marshal the lines and instead get
+--their length (at least for our purposes in this project).
+
+data ChangeEvent
+  = InsertLines Range [JSString]
+  | InsertText  Range JSString
+  | RemoveLines Range [JSString] Char
+  | RemoveText  Range JSString
+
+instance FromJSRef ChangeEvent where
+  fromJSRef obj = runMaybeT $ do
+    inner <- mtprop obj "data"
+    action <- mtprop inner "action"
+    range <- mtprop inner "range"
+    case action :: Text of
+      "insertLines" -> InsertLines range <$> mtprop inner "lines"
+      "insertText"  -> InsertText  range <$> mtprop inner "text"
+      "removeLines" -> RemoveLines range <$> mtprop inner "lines"
+                                         <*> mtprop inner "nl"
+      "removeText"  -> RemoveText  range <$> mtprop inner "text"
+      _ -> MaybeT (return Nothing)
 
 onSelectionChange :: Editor -> IO () -> IO ()
 onSelectionChange e f = do
@@ -113,24 +143,27 @@ onSelectionChange e f = do
 
 --------------------------------------------------------------------------------
 -- Positions and Ranges
+--
+-- Note: inclusion tests consider the range to be inclusive on the
+-- left (closed), and exclusive on the right (open).
 
 data Pos = Pos
-    { row :: Int
-    , column :: Int
-    }
-    deriving (Show, Eq, Ord, Generic)
+  { row :: !Int
+  , column :: !Int
+  }
+  deriving (Show, Eq, Ord, Generic)
 
 data Range = Range
-    { start :: Pos
-    , end :: Pos
-    }
-    deriving (Show, Eq, Generic)
+  { start :: !Pos
+  , end :: !Pos
+  }
+  deriving (Show, Eq, Generic)
 
 data Selection = Selection
-    { anchor :: Pos
-    , lead :: Pos
-    }
-    deriving (Show, Eq, Generic)
+  { anchor :: !Pos
+  , lead :: !Pos
+  }
+  deriving (Show, Eq, Generic)
 
 instance ToJSRef   Pos       where toJSRef   = toJSRef_generic   id
 instance FromJSRef Pos       where fromJSRef = fromJSRef_generic id
@@ -148,35 +181,47 @@ selectionToRange sel =
 rangeToSelection :: Range -> Selection
 rangeToSelection Range {..} = Selection { anchor = start, lead = end }
 
---------------------------------------------------------------------------------
--- Conversions to JsonAPI types
---
--- (Move elsewhere if / when this is released as a separate package)
+data RangeOrdering
+  = Before
+  | Intersecting
+  | After
+  deriving (Show, Eq, Ord, Generic)
 
-spanFromSelection :: FilePath -> Selection -> SourceSpan
-spanFromSelection fp = spanFromRange fp . selectionToRange
+compareRange :: Range -> Range -> RangeOrdering
+compareRange x y
+  | end x < start y = Before
+  | end y <= start x = After
+  | otherwise = Intersecting
 
-spanToSelection :: SourceSpan -> (FilePath, Selection)
-spanToSelection ss = (fp, rangeToSelection r)
-  where
-    (fp, r) = spanToRange ss
+comparePosWithRange :: Pos -> Range -> RangeOrdering
+comparePosWithRange pos range
+  | pos < start range = Before
+  | end range <= pos = Intersecting
+  | otherwise = After
 
-spanFromRange :: FilePath -> Ace.Range -> SourceSpan
-spanFromRange fp Range{..} = SourceSpan
-  { spanFilePath   = fp
-  , spanFromLine   = row    start + 1
-  , spanFromColumn = column start + 1
-  , spanToLine     = row    end   + 1
-  , spanToColumn   = column end   + 1
+data DeltaPos = DeltaPos
+  { deltaRow :: !Int
+  , deltaColumn :: !Int
+  }
+  deriving (Show, Eq, Ord, Generic)
+
+subtractPos :: Pos -> Pos -> DeltaPos
+subtractPos x y = DeltaPos
+  { deltaRow = row x - row y
+  , deltaColumn = column x - column y
   }
 
-spanToRange :: SourceSpan -> (FilePath, Ace.Range)
-spanToRange SourceSpan{..} = (spanFilePath, range)
-  where
-    range = Range
-      { start = Pos (spanFromLine - 1) (spanFromColumn - 1)
-      , end = Pos (spanToLine - 1) (spanToColumn - 1)
-      }
+shiftPos :: DeltaPos -> Pos -> Pos
+shiftPos d p = Pos
+  { row = deltaRow d + row p
+  , column = deltaColumn d + column p
+  }
+
+shiftRange :: DeltaPos -> Range -> Range
+shiftRange d r = Range
+  { start = shiftPos d (start r)
+  , end = shiftPos d (end r)
+  }
 
 --------------------------------------------------------------------------------
 -- FFI
@@ -187,4 +232,4 @@ foreign import javascript unsafe "function() { return ace; }()"
 
 -- Needed due to incompleteness of typescript ace definitions
 foreign import javascript unsafe "$1.on($2, $3)"
-  editorOn :: Editor -> JSString -> JSFun (IO ()) -> IO ()
+  editorOn :: Editor -> JSString -> JSFun (JSRef obj -> IO ()) -> IO ()

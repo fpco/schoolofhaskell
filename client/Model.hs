@@ -19,6 +19,7 @@ getApp = do
   termjs <- getDefUnmanaged
   let state = State
         { _stateAce = ace
+        , _statePosMap = []
         , _stateStatus = Nothing
         , _stateRunning = NotRunning
         , _stateTab = BuildTab
@@ -120,11 +121,11 @@ runQueries backend state = do
 -- Mutation functions invoked by View
 
 runCode :: TVar State -> [(FilePath, Text)] -> IO ()
-runCode state files =
-  modifyTVarIO state stateStatus $ \oldStatus ->
-    case oldStatus of
-      Just (Building _) -> oldStatus
-      _ -> Just $ BuildRequested files
+runCode state files = atomically $ modifyTVar state $ \s ->
+  case s ^. stateStatus of
+    Just (Building _) -> s
+    _ -> s & stateStatus .~ (Just (BuildRequested files))
+           & statePosMap .~ []
 
 runQuery :: TVar State -> Query -> IO ()
 runQuery state query =
