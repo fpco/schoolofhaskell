@@ -13,33 +13,33 @@ import React.Unmanaged (Unmanaged)
 import TermJs (TermJs)
 
 data State = State
-  { _stateAce :: Unmanaged Editor
-  , _statePosMap :: PosMap
-  , _stateStatus :: Maybe Status
-  , _stateRunning :: Running
-  , _stateTab :: Tab
-  , _stateDocs :: Maybe IdInfo
-  , _stateTypes :: Maybe [ResponseAnnExpType]
-  , _stateConsole :: Unmanaged TermJs
-  , _stateBackend :: Maybe Backend
+  { _stateAce :: !(Unmanaged Editor)
+  , _statePosMap :: !PosMap
+  , _stateStatus :: !(Maybe Status)
+  , _stateRunning :: !Running
+  , _stateTab :: !Tab
+  , _stateDocs :: !(Maybe IdInfo)
+  , _stateTypes :: !(Maybe [ResponseAnnExpType])
+  , _stateConsole :: !(Unmanaged TermJs)
+  , _stateBackend :: !(Maybe Backend)
   } deriving (Eq, Show)
 
 data Status
-  = BuildRequested Files
-  | Building (Maybe Progress)
-  | Built BuildInfo
-  | QueryRequested BuildInfo Query
+  = BuildRequested !Files
+  | Building !(Maybe Progress)
+  | Built !BuildInfo
+  | QueryRequested !BuildInfo !Query
   deriving (Eq, Show)
 
 data BuildInfo = BuildInfo
-  { buildErrors :: [AnnSourceError]
-  , buildWarnings :: [AnnSourceError]
-  , buildServerDieds :: [AnnSourceError]
+  { buildErrors :: ![AnnSourceError]
+  , buildWarnings :: ![AnnSourceError]
+  , buildServerDieds :: ![AnnSourceError]
   }
   deriving (Eq, Show)
 
 data Query
-  = QueryInfo SourceSpan
+  = QueryInfo !SourceSpan
   deriving (Eq, Show)
 
 data Running
@@ -71,8 +71,8 @@ instance Show Backend where
 type PosMap = [PosChange]
 
 data PosChange = PosChange
-  { oldRange :: Range
-  , newRange :: Range
+  { oldRange :: !Range
+  , newRange :: !Range
   }
   deriving (Show, Eq)
 
