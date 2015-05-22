@@ -45,6 +45,8 @@ withUrl url f = WS.withUrl url $ \conn -> do
             readIORef backendProcessHandler >>= ($ Right bs)
           ResponseProcessDone rr ->
             readIORef backendProcessHandler >>= ($ Left rr)
+          ResponseNoProcessError ->
+            consoleErrorText "No running process"
           _ -> atomically (writeTChan backendResponseChan response)
   result <- receiveThread `race` sendThread `race` f Backend {..}
   case result of
