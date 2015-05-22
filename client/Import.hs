@@ -2,6 +2,7 @@ module Import
     ( module Control.Applicative
     , module Control.Concurrent.STM
     , module Control.Lens
+    , module Control.Monad
     , module Data.Foldable
     , module Data.Maybe
     , module Data.Monoid
@@ -25,6 +26,7 @@ module Import
 import           Control.Applicative ((<$>), (<*>))
 import           Control.Concurrent.STM
 import           Control.Lens
+import           Control.Monad (void, join, when, unless, forever, (>=>), (<=<))
 import           Data.ByteString (ByteString)
 import           Data.Foldable (forM_)
 import           Data.Maybe

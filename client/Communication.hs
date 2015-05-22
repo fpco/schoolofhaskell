@@ -20,7 +20,6 @@ module Communication
 
 import           Control.Concurrent.Async (race)
 import           Control.Concurrent.STM
-import           Control.Monad (when, forever)
 import           Data.Aeson (eitherDecodeStrict, encode)
 import           Data.ByteString.Lazy (toStrict)
 import           Data.Function (fix)

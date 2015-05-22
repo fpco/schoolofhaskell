@@ -1,6 +1,5 @@
 module View.TypeInfo (typePopup) where
 
-import           Control.Monad (void)
 import qualified Data.Text as T
 import           Import
 import           Model (switchTab, navigateDoc)

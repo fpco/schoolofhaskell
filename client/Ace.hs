@@ -27,7 +27,7 @@ module Ace
   ) where
 
 import           Control.Applicative ((<$>), (<*>))
-import           Control.Monad (void, join)
+import           Control.Monad (void, join, (<=<))
 import           Data.Coerce (coerce)
 import           Data.Text (Text)
 import           GHC.Generics (Generic)

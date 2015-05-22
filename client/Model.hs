@@ -2,7 +2,6 @@ module Model where
 
 import           Communication
 import           Control.Exception (catch, throwIO, SomeException)
-import           Control.Monad (when)
 import qualified Data.ByteString.Lazy as BL
 import           Data.Function (on)
 import           Data.List (partition)
