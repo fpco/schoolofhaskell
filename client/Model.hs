@@ -72,17 +72,14 @@ compileCode backend state files = do
 
 runConsole :: Backend -> TVar State -> IO ()
 runConsole backend state = do
-  switchToConsoleFirstTime <- once $ setTVarIO state stateTab ConsoleTab
+  switchTab state ConsoleTab
   let appendConsole x = do
         terminal' <- readUnmanagedOrFail state (^. stateConsole)
         writeTerminal terminal' x
   setProcessHandler backend $ \case
-    Right output -> do
-      switchToConsoleFirstTime
-      appendConsole (decodeUtf8 output)
-    Left result -> do
-      appendConsole "\nProcess done: "
-      appendConsole (T.pack (show result))
+    Right output -> appendConsole (decodeUtf8 output)
+    Left result ->
+      appendConsole $ "\r\nProcess done: " <> T.pack (show result) <> "\r\n"
   requestRun backend "Main" "main"
 
 runQueries :: Backend -> TVar State -> IO Files
