@@ -131,14 +131,21 @@ foreign import javascript "console.warn($1)" consoleWarn :: JSRef a -> IO ()
 
 foreign import javascript "console.error($1)" consoleError :: JSRef a -> IO ()
 
+consoleWarnText :: Text -> IO ()
+consoleWarnText = consoleWarn . toJSString
+
+consoleErrorText :: Text -> IO ()
+consoleErrorText = consoleError . toJSString
+
 showExceptions :: Text -> IO a -> IO a
 showExceptions msg f = f `catch` \ex -> do
-  consoleError $ toJSString ("Exception in " <> msg <> ": " <> tshow (ex :: SomeException))
+  consoleErrorText $ "Exception in " <> msg <> ": " <> tshow (ex :: SomeException)
   throwIO ex
 
 showAndIgnoreExceptions :: Text -> IO () -> IO ()
 showAndIgnoreExceptions msg f = f `catch` \ex ->
-  consoleError $ toJSString ("Exception ignored in " <> msg <> ": " <> tshow (ex :: SomeException))
+  consoleErrorText $
+    "Exception ignored in " <> msg <> ": " <> tshow (ex :: SomeException)
 
 --------------------------------------------------------------------------------
 -- JsonAPI helpers

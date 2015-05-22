@@ -36,7 +36,7 @@ withUrl url f = WS.withUrl url $ \conn -> do
   backendRequestChan <- newTChanIO
   backendResponseChan <- newTChanIO
   backendProcessHandler <- newIORef $ \_ ->
-    consoleWarn ("backendProcessHandler not yet set" :: JSString)
+    consoleWarnText "backendProcessHandler not yet set"
   let sendThread = showExceptions "sendThread" $ forever $
         atomically (readTChan backendRequestChan) >>= sendJson conn
       receiveThread = showExceptions "receiveThread" $ forever $ do

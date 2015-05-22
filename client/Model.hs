@@ -38,8 +38,8 @@ runApp app = withUrl "ws://localhost:3000/editor" $ \backend -> do
   let state = appState app
   files <- waitForTVarIO state (^? (stateStatus . _Just . _BuildRequested))
   mainLoop backend state files `catch` \ex -> do
-    consoleError $ toJSString $
-      "Exited mainLoop with exception " ++ show (ex :: SomeException)
+    consoleErrorText $
+      "Exited mainLoop with exception " <> tshow (ex :: SomeException)
     throwIO ex
 
 mainLoop :: Backend -> TVar State -> Files -> IO void
