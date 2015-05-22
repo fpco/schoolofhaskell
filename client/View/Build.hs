@@ -11,14 +11,14 @@ import           Model (runCode)
 import           PosMap (spanToSelection)
 import           View.Annotation
 
-runButton :: State -> React ()
-runButton state = div_ $ do
+runButton :: React ()
+runButton = div_ $ do
   class_ "run glyphicon"
   title_ "Compile and run code"
-  onClick $ \_ stateVar -> do
-    editor <- getUnmanagedOrFail (state ^. stateAce)
+  onClick $ \_ state -> do
+    editor <- readUnmanagedOrFail state (^. stateAce)
     code <- Ace.getValue editor
-    runCode stateVar [("main.hs", code)]
+    runCode state [("main.hs", code)]
 
 setSnippetClass :: Maybe Status -> React ()
 setSnippetClass mstatus = class_ $ "snippet " <>

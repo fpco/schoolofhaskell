@@ -27,12 +27,12 @@ render ace termjs state = div_ $ do
       Ace.onChange editor (handleChange stateVar)
       return editor
     case mstatus of
-      Nothing -> runButton state
+      Nothing -> runButton
       Just status -> div_ $ do
         class_ "controls"
         div_ $ do
           class_ "controls-bar"
-          runButton state
+          runButton
           mkTab state BuildTab $ text (buildStatusText status)
           mkTab state ConsoleTab "Console"
           mkTab state DocsTab "Docs"
