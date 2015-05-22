@@ -39,12 +39,12 @@ withUrl url f = WS.withUrl url $ \conn -> do
     consoleWarnText "backendProcessHandler not yet set"
   let sendThread = showExceptions "sendThread" $ forever $
         atomically (readTChan backendRequestChan) >>= sendJson conn
-      receiveThread = showExceptions "receiveThread" $ forever $ do
+      receiveThread = forever $ do
         response <- receiveJson conn
         case response of
-          ResponseProcessOutput bs -> showAndIgnoreExceptions "processOutput" $
+          ResponseProcessOutput bs ->
             readIORef backendProcessHandler >>= ($ Right bs)
-          ResponseProcessDone rr -> showAndIgnoreExceptions "processDone" $
+          ResponseProcessDone rr ->
             readIORef backendProcessHandler >>= ($ Left rr)
           _ -> atomically (writeTChan backendResponseChan response)
   result <- receiveThread `race` sendThread `race` f Backend {..}
