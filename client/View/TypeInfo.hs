@@ -2,7 +2,6 @@ module View.TypeInfo (typePopup) where
 
 import qualified Data.Text as T
 import           Import
-import           Model (switchTab, navigateDoc)
 import           React.Internal (internalLiftIOReact)
 import           View.Annotation
 
@@ -19,13 +18,4 @@ typePopup typs x y = div_ $ do
       class_ "type-info highlighted-haskell ace-tomorrow"
       div_ $ do
         class_ "ace_line"
-        void $ renderAnn spans' typ renderTypeAnn
-
-renderTypeAnn :: TypeAnn -> React a -> React a
-renderTypeAnn (TypeIdInfo info) inner = span_ $ do
-  class_ "docs-link"
-  title_ (displayIdInfo info)
-  onClick $ \_ state -> do
-    navigateDoc state (Just info)
-    switchTab state DocsTab
-  inner
+        void $ renderAnn spans' typ renderCodeAnn

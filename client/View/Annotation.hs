@@ -2,6 +2,8 @@ module View.Annotation
   ( -- * Annotations
     renderAnn
   , annText
+    -- * Rendering IdInfo links
+  , renderCodeAnn
     -- * Highlighting Code
   , getHighlightSpans
   , getExpHighlightSpans
@@ -19,6 +21,7 @@ import           GHCJS.Marshal
 import           GHCJS.Types
 import           IdeSession.Client.JsonAPI.Common (sliceSpans)
 import           Import hiding (ix, to)
+import           Model (switchTab, navigateDoc)
 
 --------------------------------------------------------------------------------
 -- Annotations
@@ -45,10 +48,22 @@ renderAnn spans0 x0 f = void $ go 0 spans0 x0
       where
         end = ix + T.length txt
 
-annText :: Ann TypeAnn -> Text
+annText :: Ann a -> Text
 annText (Ann _ x) = annText x
 annText (AnnGroup xs) = T.concat (map annText xs)
 annText (AnnLeaf x) = x
+
+--------------------------------------------------------------------------------
+-- Rendering IdInfo links
+
+renderCodeAnn :: CodeAnn -> React a -> React a
+renderCodeAnn (CodeIdInfo info) inner = span_ $ do
+  class_ "docs-link"
+  title_ (displayIdInfo info)
+  onClick $ \_ state -> do
+    navigateDoc state (Just info)
+    switchTab state DocsTab
+  inner
 
 --------------------------------------------------------------------------------
 -- Highlighting code

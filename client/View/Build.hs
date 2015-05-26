@@ -120,7 +120,8 @@ buildInfo info =
 
 renderMsgAnn :: MsgAnn -> React a -> React a
 renderMsgAnn MsgAnnModule f = spanClass "msg-ann-module" f
-renderMsgAnn MsgAnnCode f= spanClass "msg-ann-code" f
+renderMsgAnn (MsgAnnCode _) f = spanClass "msg-ann-code" f
+renderMsgAnn (MsgAnnCodeAnn x) f = renderCodeAnn x f
 -- FIXME: add support for this
 --   divClass "msg-ann-refactor" f
 renderMsgAnn MsgAnnRefactor{} f = f
