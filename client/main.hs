@@ -12,6 +12,7 @@ main = do
   app <- getApp
   ace <- newUnmanaged app
   termjs <- newUnmanaged app
+  iframe <- newUnmanaged app
   _ <- forkIO $ runApp app
   -- Just for development
   -- _ <- forkIO $ do
@@ -20,4 +21,4 @@ main = do
   --   let editor = Ace.aceEditorOrError (state ^. stateAce)
   --   code <- Ace.getValue editor
   --   runCode (appState app) [("main.hs", code)]
-  react app (render ace termjs) =<< getElementById "react-container"
+  react app (render ace termjs iframe) =<< getElementById "react-container"

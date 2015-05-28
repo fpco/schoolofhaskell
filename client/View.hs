@@ -4,6 +4,7 @@ import qualified Ace
 import Import
 import Model (runQuery, switchTab)
 import PosMap
+import React.IFrame
 import TermJs
 import View.Build
 import View.Console
@@ -11,16 +12,17 @@ import View.Docs
 import View.TypeInfo
 
 render
-  :: Component (Unmanaged Ace.Editor)
-  -> Component (Unmanaged TermJs)
+  :: UComponent Ace.Editor
+  -> UComponent TermJs
+  -> UComponent IFrame
   -> State
   -> React ()
-render ace termjs state = div_ $ do
+render ace termjs iframe state = div_ $ do
   let mstatus = state ^. stateStatus
   h1_ "SoH snippet demo"
   div_ $ do
     setSnippetClass mstatus
-    buildComponent ace stateAce $ onInitUnmanaged $ \stateVar q -> do
+    buildUnmanaged ace stateAce $ \stateVar q -> do
       editor <- Ace.makeEditor q
       Ace.setValue editor "main = (readLn :: IO Int) >>= print"
       Ace.onSelectionChange editor =<< debounce 100 (handleSelectionChange stateVar)
@@ -37,9 +39,11 @@ render ace termjs state = div_ $ do
           mkTab state BuildTab $ text (buildStatusText status)
           mkTab state ConsoleTab "Console"
           mkTab state DocsTab "Docs"
+          mkTab state WebTab "Web"
         mkTabContent state BuildTab $ buildTab status
         mkTabContent state ConsoleTab $ consoleTab termjs
         mkTabContent state DocsTab $ docsTab state
+        -- mkTabContent state WebTab $ buildIFrame iframe stateWeb Nothing
     forM_ (state ^. stateTypes) $ \typs ->
       typePopup typs 300 100
 
@@ -62,6 +66,7 @@ tabClass :: Tab -> Text
 tabClass BuildTab = "build-tab"
 tabClass ConsoleTab = "console-tab"
 tabClass DocsTab = "docs-tab"
+tabClass WebTab = "web-tab"
 
 handleSelectionChange :: TVar State -> IO ()
 handleSelectionChange state = do

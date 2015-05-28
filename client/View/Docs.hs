@@ -3,6 +3,8 @@ module View.Docs (docsTab) where
 import qualified Data.Text as T
 import           Import
 
+-- TODO: use React.IFrame for this.
+
 docsTab :: State -> React ()
 docsTab state =
   case state ^. stateDocs of

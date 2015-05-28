@@ -16,15 +16,17 @@ getApp :: IO App
 getApp = do
   ace <- getDefUnmanaged
   termjs <- getDefUnmanaged
+  web <- getDefUnmanaged
   let state = State
         { _stateAce = ace
+        , _stateConsole = termjs
+        , _stateWeb = web
         , _statePosMap = []
         , _stateStatus = Nothing
         , _stateRunning = NotRunning
         , _stateTab = BuildTab
         , _stateDocs = Nothing
         , _stateTypes = Nothing
-        , _stateConsole = termjs
         , _stateBackend = Nothing
         }
   makeApp state id
@@ -43,12 +45,15 @@ runApp app = withUrl "ws://localhost:3000/editor" $ \backend -> do
 
 mainLoop :: Backend -> TVar State -> Files -> IO void
 mainLoop backend state files = do
-  success <- compileCode backend state files
+  success <- buildSuccess <$> compileCode backend state files
   when success $ runConsole backend state
   files' <- runQueries backend state
   mainLoop backend state files'
 
-compileCode :: Backend -> TVar State -> Files -> IO Bool
+buildSuccess :: BuildInfo -> Bool
+buildSuccess bi = null (buildErrors bi) && null (buildServerDieds bi)
+
+compileCode :: Backend -> TVar State -> Files -> IO BuildInfo
 compileCode backend state files = do
   --TODO: clear ide-backend state before the rest of the updates.
   let requestUpdate (fp, txt) = RequestUpdateSourceFile fp $
@@ -62,12 +67,13 @@ compileCode backend state files = do
   let partitionKind k = partition ((==k) . annErrorKind)
   let (errors, partitionKind KindWarning -> (warnings, serverDieds)) =
         partitionKind KindError sourceErrors
-  setTVarIO state stateStatus $ Just $ Built $ BuildInfo
-    { buildErrors = errors
-    , buildWarnings = warnings
-    , buildServerDieds = serverDieds
-    }
-  return (null errors && null serverDieds)
+      buildInfo = BuildInfo
+        { buildErrors = errors
+        , buildWarnings = warnings
+        , buildServerDieds = serverDieds
+        }
+  setTVarIO state stateStatus $ Just $ Built buildInfo
+  return buildInfo
 
 runConsole :: Backend -> TVar State -> IO ()
 runConsole backend state = do

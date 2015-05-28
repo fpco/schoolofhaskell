@@ -7,6 +7,7 @@ module React.Unmanaged
   ( Unmanaged(..)
   , getDefUnmanaged
   , newUnmanaged
+  , buildUnmanaged
   , onInitUnmanaged
   , getUnmanaged
   , getUnmanagedOrFail
@@ -40,9 +41,10 @@ instance Eq (Unmanaged a) where
 getDefUnmanaged :: IO (Unmanaged a)
 getDefUnmanaged = return (Unmanaged jsNull)
 
-newUnmanaged :: Monad m
-    => App state m                          -- ^ The app.
-    -> IO (Component state (Unmanaged a) m) -- ^ Component.
+newUnmanaged
+  :: Monad m
+  => App state m                          -- ^ The app.
+  -> IO (Component state (Unmanaged a) m) -- ^ Component.
 newUnmanaged app =
   createComponent
     (newClass app
@@ -64,6 +66,14 @@ didMount app r el this = do
   x <- invokeCallback f el
   release f
   atomically $ modifyTVar (appState app) $ set r (Unmanaged x)
+
+buildUnmanaged
+  :: (MonadIO m, ToJSRef a)
+  => Component state (Unmanaged a) m
+  -> Traversal' state (Unmanaged a)
+  -> (TVar state -> JQuery -> IO a)
+  -> ReactT state m ()
+buildUnmanaged c l f = buildComponent c l $ onInitUnmanaged f
 
 onInitUnmanaged :: (MonadIO m, ToJSRef a) => (TVar state -> JQuery -> IO a) -> ReactT state m ()
 onInitUnmanaged f = do

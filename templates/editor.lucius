@@ -237,16 +237,19 @@ body {
   display: block !important;
   position: fixed;
   visibility: hidden;
-  iframe {
-    border: none;
-    width: 100%;
-    height: 100%;
-  }
 }
 
 .docs-tab-content.tab-content-focused {
   position: initial;
   visibility: visible;
+}
+
+.docs-tab-content, .web-tab-content {
+  iframe {
+    border: none;
+    width: 100%;
+    height: 100%;
+  }
 }
 
 .tab, .run {

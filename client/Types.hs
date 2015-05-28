@@ -11,16 +11,18 @@ import IdeSession.Types.Progress
 import IdeSession.Types.Public
 import React.Unmanaged (Unmanaged)
 import TermJs (TermJs)
+import React.IFrame
 
 data State = State
   { _stateAce :: !(Unmanaged Editor)
+  , _stateConsole :: !(Unmanaged TermJs)
+  , _stateWeb :: !(Unmanaged IFrame)
   , _statePosMap :: !PosMap
   , _stateStatus :: !(Maybe Status)
   , _stateRunning :: !Running
   , _stateTab :: !Tab
   , _stateDocs :: !(Maybe IdInfo)
   , _stateTypes :: !(Maybe [ResponseAnnExpType])
-  , _stateConsole :: !(Unmanaged TermJs)
   , _stateBackend :: !(Maybe Backend)
   } deriving (Eq, Show)
 
@@ -51,6 +53,7 @@ data Tab
   = BuildTab
   | ConsoleTab
   | DocsTab
+  | WebTab
   deriving (Eq, Show)
 
 type Files = [(FilePath, Text)]

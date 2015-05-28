@@ -21,6 +21,7 @@ module Import
     , React
     , App
     , Component
+    , UComponent
     ) where
 
 import           Control.Applicative ((<$>), (<*>))
@@ -48,3 +49,5 @@ type React a = ReactT State IO a
 type App = React.Internal.App State IO
 
 type Component a = React.Internal.Component State a IO
+
+type UComponent a = React.Internal.Component State (Unmanaged a) IO
