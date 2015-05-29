@@ -8,7 +8,6 @@ module SchoolOfHaskell.Scheduler.Types where
 
 import BasePrelude hiding (getEnv, (&))
 import Control.Lens
-import Control.Monad.Trans.AWS
 import qualified Control.Monad.Trans.AWS as AWS
 import Data.Aeson
 import Data.Aeson.TH
@@ -18,18 +17,22 @@ import Data.UUID (UUID)
 import qualified Data.UUID as UUID
 import Network.AWS.ECS
 
-newtype SchedulerEnv =
-  SchedulerEnv {_env :: Env}
-$(makeLenses ''SchedulerEnv)
+newtype Env =
+  Env {_env :: AWS.Env}
 
-data SchedulerSettings =
-  SchedulerSettings {_ssCluster :: Text
-                    ,_ssEnv :: SchedulerEnv}
-$(makeLenses ''SchedulerSettings)
+$(makeLenses ''Env)
+
+data Settings =
+  Settings {_ssCluster :: Text
+           ,_ssEnv :: Env}
+
+$(makeLenses ''Settings)
 
 newtype ContainerSpec =
   ContainerSpec {_csImageName :: Text}
+
 $(makeLenses ''ContainerSpec)
+
 $(deriveFromJSON
     defaultOptions {fieldLabelModifier = drop 3}
     ''ContainerSpec)
@@ -39,14 +42,21 @@ instance ToJSON UUID where
 
 newtype ContainerReceipt =
   ContainerReceipt {_crID :: UUID}
+
 $(makeLenses ''ContainerReceipt)
+
 $(deriveToJSON
     defaultOptions {fieldLabelModifier = drop 3}
     ''ContainerReceipt)
 
+instance Show ContainerReceipt where
+  show = show . _crID
+
 newtype ContainerId =
   ContainerId {_ciID :: Text}
+
 $(makeLenses ''ContainerId)
+
 $(deriveToJSON
     defaultOptions {fieldLabelModifier = drop 3}
     ''ContainerId)
@@ -55,20 +65,20 @@ data ContainerDetail =
   ContainerDetail {_cdID :: Text
                   ,_cdAddress :: Maybe (Text, Int)
                   ,_cdStatus :: Maybe Text}
+
 $(makeLenses ''ContainerDetail)
+
 $(deriveToJSON
     defaultOptions {fieldLabelModifier = drop 3}
     ''ContainerDetail)
 
-data SchedulerEx
-  = ContainerAbsentEx
-  | ContainerProviderEx AWS.Error
-  | ContainerHostMissingEx
-  | ContainerPortMissingEx
-  | ContainerFailureEx [Failure]
-  | ParseEx String
+data Err
+  = ContainerAbsentErr
+  | ContainerProviderErr AWS.Error
+  | ContainerHostMissingErr
+  | ContainerPortMissingErr
+  | ContainerFailureErr [Failure]
+  | ParseErr String
   deriving (Show,Typeable)
-instance Exception SchedulerEx
 
-instance Show ContainerReceipt where
-  show = show . _crID
+instance Exception Err

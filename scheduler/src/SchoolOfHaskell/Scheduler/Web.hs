@@ -5,7 +5,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module SchoolOfHaskell.Scheduler.Web
-       (startAndDiscoverCreds, startWithAwsSession) where
+       (startDiscoverEnv, startSessionEnv) where
 
 import Airship
 import Airship.Resource.Static (StaticOptions(..), staticResource)
@@ -29,16 +29,16 @@ import SchoolOfHaskell.Scheduler.Types
 import SchoolOfHaskell.Scheduler.AWS
 
 data State =
-  State {_sSchedulerSettings :: SchedulerSettings}
+  State {_sSettings :: Settings}
 $(makeLenses ''State)
 
-startAndDiscoverCreds :: String -> String -> IO ()
-startAndDiscoverCreds region cluster =
+startDiscoverEnv :: String -> String -> IO ()
+startDiscoverEnv region cluster =
   start (fromString cluster) =<<
   discoverEnv (fromString region)
 
-startWithAwsSession :: String -> String -> String -> String -> String -> IO ()
-startWithAwsSession access secret token region cluster =
+startSessionEnv :: String -> String -> String -> String -> String -> IO ()
+startSessionEnv access secret token region cluster =
   start (fromString cluster) =<<
   sessionEnv (fromString access)
              (fromString secret)
@@ -47,11 +47,11 @@ startWithAwsSession access secret token region cluster =
 
 ------------------------------------------------------------------------------
 
-start :: Text -> SchedulerEnv -> IO ()
+start :: Text -> Env -> IO ()
 start ecs env' =
   do static <- staticResource Cache "static"
      let state =
-           State (mkSchedulerSettings ecs env')
+           State (mkSettings ecs env')
      runSettings
        (setPort 3000 (setHost "0.0.0.0" defaultSettings))
        (resourceToWai
@@ -76,7 +76,7 @@ containerIndex =
                     do state <- getState
                        results <-
                          liftIO (runStdoutLoggingT
-                                   (listContainers (state ^. sSchedulerSettings)))
+                                   (listContainers (state ^. sSettings)))
                        case results of
                          Left e ->
                            do putResponseBody (ResponseBuilder (fromString (show e)))
@@ -97,7 +97,7 @@ containerIndex =
                      do receipt <-
                           liftIO (runStdoutLoggingT
                                     (createContainer
-                                       (state ^. sSchedulerSettings)
+                                       (state ^. sSettings)
                                        spec'))
                         case receipt of
                           Left e ->
@@ -121,12 +121,12 @@ containerDetail =
                               (\id' ->
                                  liftIO (runStdoutLoggingT
                                            (getContainerDetail
-                                              (state ^. sSchedulerSettings)
+                                              (state ^. sSettings)
                                               id')))
                               (\rcpt ->
                                  liftIO (runStdoutLoggingT
                                            (getContainerDetail
-                                              (state ^. sSchedulerSettings)
+                                              (state ^. sSettings)
                                               rcpt)))
                           case results of
                             Left e ->
@@ -141,11 +141,11 @@ containerDetail =
                       withReceiptOrId
                         (\id' ->
                            liftIO (runStdoutLoggingT
-                                     (stopContainer (state ^. sSchedulerSettings)
+                                     (stopContainer (state ^. sSettings)
                                                     id')))
                         (\rcpt ->
                            liftIO (runStdoutLoggingT
-                                     (stopContainer (state ^. sSchedulerSettings)
+                                     (stopContainer (state ^. sSettings)
                                                     rcpt)))
                     case results of
                       Left e ->

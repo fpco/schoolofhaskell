@@ -23,13 +23,13 @@ main = (void . join . execParser) optParser
         discoverCmd =
           command "discover"
                   (info (helper <*>
-                         (startAndDiscoverCreds <$> regionOpt <*> clusterOpt))
+                         (startDiscoverEnv <$> regionOpt <*> clusterOpt))
                         (fullDesc <>
                          progDesc "Discover AWS Credentials"))
         sessionCmd =
           command "session"
                   (info (helper <*>
-                         (startWithAwsSession <$> accessKeyOpt <*> secretKeyOpt <*>
+                         (startSessionEnv <$> accessKeyOpt <*> secretKeyOpt <*>
                           sessionTokenOpt <*> regionOpt <*> clusterOpt))
                         (fullDesc <>
                          progDesc "Use an Existing AWS Session"))

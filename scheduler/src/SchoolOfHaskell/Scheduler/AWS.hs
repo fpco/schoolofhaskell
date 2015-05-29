@@ -14,7 +14,7 @@ import Control.Lens
 import Control.Monad.Catch
 import Control.Monad.Error
 import Control.Monad.Logger
-import Control.Monad.Trans.AWS
+import Control.Monad.Trans.AWS hiding (Env)
 import Control.Monad.Trans.Resource
 import Data.Conduit
 import qualified Data.Conduit.List as Conduit
@@ -30,27 +30,27 @@ import SchoolOfHaskell.Scheduler.Types
 
 discoverEnv :: forall (m :: * -> *).
                (Applicative m,Functor m,MonadIO m)
-            => Text -> m SchedulerEnv
+            => Text -> m Env
 discoverEnv region' =
   do parsedRegion <- hoistFromText region'
-     SchedulerEnv <$>
+     Env <$>
        liftIO (getEnv parsedRegion Discover)
 
 sessionEnv :: forall (m :: * -> *).
               (Applicative m,Functor m,MonadIO m)
-           => Text -> Text -> Text -> Text -> m SchedulerEnv
+           => Text -> Text -> Text -> Text -> m Env
 sessionEnv access sekret token region' =
   do parsedRegion <- hoistFromText region'
-     SchedulerEnv <$>
+     Env <$>
        liftIO (getEnv parsedRegion
                       (FromSession (AccessKey (encodeUtf8 access))
                                    (SecretKey (encodeUtf8 sekret))
                                    (SecurityToken (encodeUtf8 token))))
 
-mkSchedulerSettings :: Text -> SchedulerEnv -> SchedulerSettings
-mkSchedulerSettings = SchedulerSettings
+mkSettings :: Text -> Env -> Settings
+mkSettings = Settings
 
-setCluster :: Text -> SchedulerSettings -> SchedulerSettings
+setCluster :: Text -> Settings -> Settings
 setCluster = set ssCluster
 
 mkContainerSpec :: Text -> ContainerSpec
@@ -61,9 +61,9 @@ setImageName = set csImageName
 
 createContainer :: forall (m :: * -> *).
                    (MonadBaseControl IO m,MonadCatch m,MonadIO m)
-                => SchedulerSettings
+                => Settings
                 -> ContainerSpec
-                -> m (Either SchedulerEx ContainerReceipt)
+                -> m (Either Err ContainerReceipt)
 createContainer settings spec =
   do ident <- liftIO UUID.nextRandom
      results <-
@@ -72,18 +72,18 @@ createContainer settings spec =
                       (rtStartedBy ?~
                        fromString (UUID.toString ident)) &
                       (rtCount ?~ 1)))
-     return (either (Left . ContainerProviderEx)
+     return (either (Left . ContainerProviderErr)
                     (\r ->
                        case r ^. rtrFailures of
                          fs@(_:_) ->
-                           Left (ContainerFailureEx fs)
+                           Left (ContainerFailureErr fs)
                          [] ->
                            Right (ContainerReceipt ident))
                     results)
 
 listContainers :: forall (m :: * -> *).
                   (MonadBaseControl IO m,MonadCatch m,MonadIO m)
-               => SchedulerSettings -> m (Either SchedulerEx [ContainerId])
+               => Settings -> m (Either Err [ContainerId])
 listContainers settings =
   do arnsResult <-
        runAWST (settings ^. ssEnv ^. env)
@@ -93,19 +93,19 @@ listContainers settings =
                        (settings ^. ssCluster))))
      case arnsResult of
        Left err ->
-         return (Left (ContainerProviderEx err))
+         return (Left (ContainerProviderErr err))
        Right arns ->
          return (Right (map (ContainerId) arns))
 
 class ContainerBy a where
   getContainerDetail :: forall (m :: * -> *).
                         (MonadBaseControl IO m,MonadCatch m,MonadIO m,MonadLogger m)
-                     => SchedulerSettings
+                     => Settings
                      -> a
-                     -> m (Either SchedulerEx ContainerDetail)
+                     -> m (Either Err ContainerDetail)
   stopContainer :: forall (m :: * -> *).
                    (MonadBaseControl IO m,MonadCatch m,MonadIO m,MonadLogger m)
-                => SchedulerSettings -> a -> m (Either SchedulerEx ())
+                => Settings -> a -> m (Either Err ())
 
 instance ContainerBy ContainerReceipt where
   getContainerDetail settings (ContainerReceipt ident) =
@@ -134,19 +134,19 @@ instance ContainerBy ContainerId where
                          [ident])))
        case descrResult of
          Left e ->
-           return (Left (ContainerProviderEx e))
+           return (Left (ContainerProviderErr e))
          Right tasks
            | (tasks ^. dtrTasks) ==
                [] ->
-             return (Left (ContainerAbsentEx))
+             return (Left (ContainerAbsentErr))
          Right tasks ->
            case tasks ^. dtrFailures of
              fs@(_:_) ->
-               return (Left (ContainerFailureEx fs))
+               return (Left (ContainerFailureErr fs))
              [] ->
                case tasks ^. dtrTasks of
                  [] ->
-                   return (Left (ContainerAbsentEx))
+                   return (Left (ContainerAbsentErr))
                  (t:ts) ->
                    do unless (length ts == 0)
                              ($logWarn ("More than 1 AWS ECS Task " <>
@@ -168,22 +168,22 @@ instance ContainerBy ContainerId where
                          (settings ^. ssCluster))))
        case result of
          Left e ->
-           return (Left (ContainerProviderEx e))
+           return (Left (ContainerProviderErr e))
          Right _ -> return (Right ())
 
 cleanupContainers :: forall (m :: * -> *).
                      (MonadBaseControl IO m,MonadCatch m,MonadIO m)
-                  => SchedulerSettings -> m ()
+                  => Settings -> m ()
 cleanupContainers se = error "Not Implemented!"
 
 ------------------------------------------------------------------------------
 
 addrPortForTask :: forall (m :: * -> *).
                    (MonadBaseControl IO m,MonadCatch m,MonadIO m,MonadLogger m)
-                => SchedulerSettings
+                => Settings
                 -> Task
                 -> Text
-                -> m (Either SchedulerEx (Maybe (Text,Int)))
+                -> m (Either Err (Maybe (Text,Int)))
 addrPortForTask settings task' ident =
   do results <-
        runAWST (settings ^. ssEnv ^. env)
@@ -203,7 +203,7 @@ addrPortForTask settings task' ident =
                      Conduit.consume)
      case results of
        Left e ->
-         return (Left (ContainerProviderEx e))
+         return (Left (ContainerProviderErr e))
        Right [] -> return (Right Nothing)
        Right (host:hosts) ->
          do unless (null hosts)
@@ -227,14 +227,12 @@ hoistFromText :: forall (m :: * -> *) a.
               => Text -> m a
 hoistFromText txt =
   case AWS.fromText txt of
-    Left e -> throw (ParseEx e)
+    Left e -> throw (ParseErr e)
     Right x -> pure x
 
 getContainerIdFromUUID :: forall (m :: * -> *).
                           (MonadBaseControl IO m,MonadCatch m,MonadIO m,MonadLogger m)
-                       => SchedulerSettings
-                       -> UUID
-                       -> m (Either SchedulerEx ContainerId)
+                       => Settings -> UUID -> m (Either Err ContainerId)
 getContainerIdFromUUID settings ident =
   do let txt = fromString (UUID.toString ident)
      arnsResult <-
@@ -246,9 +244,9 @@ getContainerIdFromUUID settings ident =
                       (ltStartedBy ?~ txt)))
      case arnsResult of
        Left err ->
-         return (Left (ContainerProviderEx err))
+         return (Left (ContainerProviderErr err))
        Right [] ->
-         return (Left (ContainerAbsentEx))
+         return (Left (ContainerAbsentErr))
        Right (arn:arns) ->
          do unless (null arns)
                    ($logWarn ("More than 1 AWS ECS Task " <>

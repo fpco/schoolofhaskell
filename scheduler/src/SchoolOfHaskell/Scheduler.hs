@@ -1,9 +1,9 @@
 module SchoolOfHaskell.Scheduler
        (
        -- Scheduler Types
-         SchedulerEnv
-       , SchedulerEx
-       , SchedulerSettings
+         Env
+       , Settings
+       , Err
        -- Container Types
        , ContainerDetail
        , ContainerId
@@ -13,7 +13,7 @@ module SchoolOfHaskell.Scheduler
        , discoverEnv
        , sessionEnv
        -- Scheduler Settings
-       , mkSchedulerSettings
+       , mkSettings
        , setCluster
        -- Container Spec
        , mkContainerSpec
@@ -25,8 +25,8 @@ module SchoolOfHaskell.Scheduler
        , stopContainer
        , cleanupContainers
        -- Web Interface API
-       , startWithAwsSession
-       , startAndDiscoverCreds
+       , startSessionEnv
+       , startDiscoverEnv
        ) where
 
 import SchoolOfHaskell.Scheduler.Types
