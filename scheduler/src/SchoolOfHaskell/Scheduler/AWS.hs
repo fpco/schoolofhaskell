@@ -85,17 +85,30 @@ listContainers :: forall (m :: * -> *).
                   (MonadBaseControl IO m,MonadCatch m,MonadIO m)
                => Settings -> m (Either Err [ContainerId])
 listContainers settings =
-  do arnsResult <-
-       runAWST (settings ^. ssEnv ^. env)
-               (view ltrTaskArns <$>
-                send (listTasks &
-                      (ltCluster ?~
-                       (settings ^. ssCluster))))
-     case arnsResult of
-       Left err ->
-         return (Left (ContainerProviderErr err))
-       Right arns ->
-         return (Right (map (ContainerId) arns))
+  -- ListTasks will only return max 100 hits but also doesn't
+  -- have an `instance AWSPager` so we have to do our own here.
+  -- http://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_ListTasks.html
+  let req =
+        listTasks &
+        (ltCluster ?~
+         (settings ^. ssCluster))
+  in pager req [] =<<
+     runAWST (settings ^. ssEnv ^. env)
+             (send req)
+  where pager _ _ (Left err) =
+          return (Left (ContainerProviderErr err))
+        pager req accum (Right result)
+          | isJust (result ^. ltrNextToken) =
+            pager req
+                  (accum ++
+                   map ContainerId (result ^. ltrTaskArns)) =<<
+            runAWST (settings ^. ssEnv ^. env)
+                    (send (req &
+                           (ltNextToken .~
+                            (result ^. ltrNextToken))))
+        pager _ accum (Right result) =
+          return (Right (accum ++
+                         map ContainerId (result ^. ltrTaskArns)))
 
 class ContainerBy a where
   getContainerDetail :: forall (m :: * -> *).
@@ -242,6 +255,9 @@ getContainerIdFromUUID settings ident =
                       (ltCluster ?~
                        (settings ^. ssCluster)) &
                       (ltStartedBy ?~ txt)))
+     -- NOTE: we don't care about pagination here.  We only wanted 1
+     -- Task for the UUID. "Pages" of results isn't our expectation &
+     -- we would consider any result with >1 Task suspect.
      case arnsResult of
        Left err ->
          return (Left (ContainerProviderErr err))
