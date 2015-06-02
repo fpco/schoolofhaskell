@@ -11,6 +11,7 @@ module SchoolOfHaskell.Scheduler
        , ContainerSpec
        -- Scheduler Env
        , discoverEnv
+       , profileEnv
        , sessionEnv
        -- Scheduler Settings
        , mkSettings
@@ -26,6 +27,7 @@ module SchoolOfHaskell.Scheduler
        , cleanupContainers
        -- Web Interface API
        , startSessionEnv
+       , startProfileEnv
        , startDiscoverEnv
        ) where
 

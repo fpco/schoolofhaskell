@@ -5,7 +5,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module SchoolOfHaskell.Scheduler.Web
-       (startDiscoverEnv, startSessionEnv) where
+       (startDiscoverEnv, startProfileEnv, startSessionEnv) where
 
 import Airship
 import Airship.Resource.Static (StaticOptions(..), staticResource)
@@ -36,6 +36,11 @@ startDiscoverEnv :: String -> String -> IO ()
 startDiscoverEnv region cluster =
   start (fromString cluster) =<<
   discoverEnv (fromString region)
+
+startProfileEnv :: String -> String -> String -> IO ()
+startProfileEnv profile region cluster =
+  start (fromString cluster) =<<
+  profileEnv (fromString profile) (fromString region)
 
 startSessionEnv :: String -> String -> String -> String -> String -> IO ()
 startSessionEnv access secret token region cluster =

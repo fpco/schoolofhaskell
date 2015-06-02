@@ -36,6 +36,14 @@ discoverEnv region' =
      Env <$>
        liftIO (getEnv parsedRegion Discover)
 
+profileEnv :: forall (m :: * -> *).
+              (Applicative m,Functor m,MonadIO m)
+           => Text -> Text -> m Env
+profileEnv profile region' =
+  do parsedRegion <- hoistFromText region'
+     Env <$>
+       liftIO (getEnv parsedRegion (FromProfile profile))
+
 sessionEnv :: forall (m :: * -> *).
               (Applicative m,Functor m,MonadIO m)
            => Text -> Text -> Text -> Text -> m Env

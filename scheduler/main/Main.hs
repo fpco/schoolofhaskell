@@ -16,7 +16,7 @@ main :: IO ()
 main = (void . join . execParser) optParser
   where optParser =
           info (helper <*>
-                subparser (discoverCmd <> sessionCmd))
+                subparser (discoverCmd <> profileCmd <> sessionCmd))
                (fullDesc <>
                 header ("soh-scheduler " <> packageVersion <> " " <> buildDate) <>
                 progDesc "School of Haskell Container Scheduler")
@@ -26,6 +26,12 @@ main = (void . join . execParser) optParser
                          (startDiscoverEnv <$> regionOpt <*> clusterOpt))
                         (fullDesc <>
                          progDesc "Discover AWS Credentials"))
+        profileCmd =
+          command "profile"
+                  (info (helper <*>
+                         (startProfileEnv <$> profileOpt <*> regionOpt <*> clusterOpt))
+                        (fullDesc <>
+                         progDesc "Use IAM Role Credentials"))
         sessionCmd =
           command "session"
                   (info (helper <*>
@@ -33,6 +39,11 @@ main = (void . join . execParser) optParser
                           sessionTokenOpt <*> regionOpt <*> clusterOpt))
                         (fullDesc <>
                          progDesc "Use an Existing AWS Session"))
+        profileOpt =
+          strOption (long "profile" <>
+                     short 'p' <>
+                     metavar "PROFILE" <>
+                     help "AWS IAM Profile Name")
         accessKeyOpt =
           strOption (long "access-key" <>
                      short 'a' <>
