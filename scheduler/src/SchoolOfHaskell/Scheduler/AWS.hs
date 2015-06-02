@@ -44,6 +44,16 @@ profileEnv profile region' =
      Env <$>
        liftIO (getEnv parsedRegion (FromProfile profile))
 
+keysEnv :: forall (m :: * -> *).
+           (Applicative m,Functor m,MonadIO m)
+        => Text -> Text -> Text -> m Env
+keysEnv access sekret region' =
+  do parsedRegion <- hoistFromText region'
+     Env <$>
+       liftIO (getEnv parsedRegion
+                      (FromKeys (AccessKey (encodeUtf8 access))
+                                (SecretKey (encodeUtf8 sekret))))
+
 sessionEnv :: forall (m :: * -> *).
               (Applicative m,Functor m,MonadIO m)
            => Text -> Text -> Text -> Text -> m Env

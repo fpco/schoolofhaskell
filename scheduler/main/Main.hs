@@ -16,7 +16,7 @@ main :: IO ()
 main = (void . join . execParser) optParser
   where optParser =
           info (helper <*>
-                subparser (discoverCmd <> profileCmd <> sessionCmd))
+                subparser (discoverCmd <> profileCmd <> keysCmd <> sessionCmd))
                (fullDesc <>
                 header ("soh-scheduler " <> packageVersion <> " " <> buildDate) <>
                 progDesc "School of Haskell Container Scheduler")
@@ -24,6 +24,12 @@ main = (void . join . execParser) optParser
           command "discover"
                   (info (helper <*>
                          (startDiscoverEnv <$> regionOpt <*> clusterOpt))
+                        (fullDesc <>
+                         progDesc "Discover AWS Credentials"))
+        keysCmd =
+          command "keys"
+                  (info (helper <*>
+                         (startKeysEnv <$> accessKeyOpt <*> secretKeyOpt <*> regionOpt <*> clusterOpt))
                         (fullDesc <>
                          progDesc "Discover AWS Credentials"))
         profileCmd =
