@@ -25,13 +25,13 @@ main = (void . join . execParser) optParser
                   (info (helper <*>
                          (startDiscoverEnv <$> regionOpt <*> clusterOpt))
                         (fullDesc <>
-                         progDesc "Discover AWS Credentials"))
+                         progDesc "Discover the AWS Credentials"))
         keysCmd =
           command "keys"
                   (info (helper <*>
                          (startKeysEnv <$> accessKeyOpt <*> secretKeyOpt <*> regionOpt <*> clusterOpt))
                         (fullDesc <>
-                         progDesc "Discover AWS Credentials"))
+                         progDesc "Use a Specific AWS Key/Secret"))
         profileCmd =
           command "profile"
                   (info (helper <*>
