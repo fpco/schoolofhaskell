@@ -1,0 +1,5 @@
+flags: {}
+packages:
+- '.'
+extra-deps: [ airship-0.3.0.0 ]
+resolver: lts-2.12

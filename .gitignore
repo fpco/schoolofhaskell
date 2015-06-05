@@ -19,3 +19,4 @@ session.*/
 cabal-ghcjs-config
 *.js_hi
 *.js_o
+.stack-work/
