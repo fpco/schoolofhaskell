@@ -192,4 +192,8 @@ cleanPackageVersion x@(T.stripPrefix "-" . T.takeEnd 33 -> Just hash)
   | T.all isHexDigit hash = T.dropEnd 33 x
 cleanPackageVersion x = x
 
+-- Orphans
+
+deriving instance Typeable Element
+
 $(makePrisms ''Response)

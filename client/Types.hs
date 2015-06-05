@@ -24,37 +24,37 @@ data State = State
   , _stateDocs :: !(Maybe IdInfo)
   , _stateTypes :: !(Maybe [ResponseAnnExpType])
   , _stateBackend :: !(Maybe Backend)
-  } deriving (Eq, Show)
+  } deriving (Eq, Show, Typeable)
 
 data Status
   = BuildRequested !Files
   | Building !(Maybe Progress)
   | Built !BuildInfo
   | QueryRequested !BuildInfo !Query
-  deriving (Eq, Show)
+  deriving (Eq, Show, Typeable)
 
 data BuildInfo = BuildInfo
   { buildErrors :: ![AnnSourceError]
   , buildWarnings :: ![AnnSourceError]
   , buildServerDieds :: ![AnnSourceError]
   }
-  deriving (Eq, Show)
+  deriving (Eq, Show, Typeable)
 
 data Query
   = QueryInfo !SourceSpan
-  deriving (Eq, Show)
+  deriving (Eq, Show, Typeable)
 
 data Running
   = NotRunning
   | Running
-  deriving (Eq, Show)
+  deriving (Eq, Show, Typeable)
 
 data Tab
   = BuildTab
   | ConsoleTab
   | DocsTab
   | WebTab
-  deriving (Eq, Show)
+  deriving (Eq, Show, Typeable)
 
 type Files = [(FilePath, Text)]
 
@@ -62,7 +62,7 @@ data Backend = Backend
   { backendRequestChan :: TChan Request
   , backendResponseChan :: TChan Response
   , backendProcessHandler :: IORef (Either RunResult ByteString -> IO ())
-  }
+  } deriving (Typeable)
 
 instance Eq Backend where
   _ == _ = True
@@ -77,7 +77,7 @@ data PosChange = PosChange
   { oldRange :: !Range
   , newRange :: !Range
   }
-  deriving (Show, Eq)
+  deriving (Eq, Show, Typeable)
 
 $(makeLenses ''State)
 $(makePrisms ''Status)

@@ -34,6 +34,7 @@ import           Control.Monad (void, join, (<=<))
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 import           Data.Coerce (coerce)
 import           Data.Text (Text)
+import           Data.Typeable (Typeable)
 import           GHC.Generics (Generic)
 import           GHCJS.Foreign
 import           GHCJS.Marshal
@@ -119,6 +120,7 @@ data ChangeEvent
   | InsertText  Range JSString
   | RemoveLines Range [JSString] Char
   | RemoveText  Range JSString
+  deriving (Typeable)
 
 instance FromJSRef ChangeEvent where
   fromJSRef obj = runMaybeT $ do
@@ -151,19 +153,19 @@ data Pos = Pos
   { row :: !Int
   , column :: !Int
   }
-  deriving (Show, Eq, Ord, Generic)
+  deriving (Show, Eq, Ord, Generic, Typeable)
 
 data Range = Range
   { start :: !Pos
   , end :: !Pos
   }
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Generic, Typeable)
 
 data Selection = Selection
   { anchor :: !Pos
   , lead :: !Pos
   }
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Generic, Typeable)
 
 instance ToJSRef   Pos       where toJSRef   = toJSRef_generic   id
 instance FromJSRef Pos       where fromJSRef = fromJSRef_generic id
@@ -185,7 +187,7 @@ data RangeOrdering
   = Before
   | Intersecting
   | After
-  deriving (Show, Eq, Ord, Generic)
+  deriving (Show, Eq, Ord, Generic, Typeable)
 
 compareRange :: Range -> Range -> RangeOrdering
 compareRange x y
