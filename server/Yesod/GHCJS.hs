@@ -32,7 +32,7 @@ import           Yesod.Core
 -- expression.
 ghcjsFileDev :: Bool -> [String] -> [FilePath] -> FilePath -> Q Exp
 ghcjsFileDev development args folders fp = do
-    let args' = map (\folder -> "-i" ++ folder) folders ++ args
+    let args' = ["-i"] ++ map (\folder -> "-i" ++ folder) folders ++ args
     if development
         then [| liftIO $ do
             genfp <- runGhcjs fp args'
