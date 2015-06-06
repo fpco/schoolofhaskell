@@ -4,8 +4,8 @@ version:             0.0.1
 description:         FP Complete's service for interactive Haskell tutorials and documentation
 license:             MIT
 license-file:        LICENSE
-author:              Michael Sloan
-maintainer:          sloan@fpcomplete.com
+author:              FP Complete Developers
+maintainer:          dev@fpcomplete.com
 copyright:           2015 FP Complete Corporation
 category:            Development
 homepage:            https://github.com/fpco/school-of-haskell
