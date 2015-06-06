@@ -77,5 +77,5 @@ getEditorScriptR = $(ghcjsFileDev
         ,"vector"
         ,"void"
         ])
-    ["client"]
-    "client/main.hs")
+    ["../client"]
+    "../client/main.hs")

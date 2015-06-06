@@ -11,8 +11,6 @@ category:            Development
 homepage:            https://github.com/fpco/school-of-haskell
 cabal-version:       >= 1.8
 build-type:          Simple
-extra-source-files:  README.md
-                     CHANGELOG.md
 
 Flag dev
     Description:   Turn on development settings, like auto-reload templates.
@@ -23,7 +21,6 @@ Flag library-only
     Default:       False
 
 library
-    hs-source-dirs:  server
     exposed-modules: Application
                      Foundation
                      Import
