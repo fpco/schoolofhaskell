@@ -1,8 +1,5 @@
 module View.Build
-  ( runButton
-  , ghciButton
-  , setSnippetClass
-  , buildStatusText
+  ( buildStatusText
   , buildTab
   ) where
 
@@ -13,56 +10,40 @@ import           Model (runCode)
 import           PosMap (spanToSelection)
 import           View.Annotation
 
-runButton :: React ()
-runButton = div_ $ do
-  class_ "run glyphicon"
-  title_ "Compile and run code"
-  onClick $ \_ state -> do
-    editor <- readUnmanagedOrFail state (^. stateAce)
-    code <- Ace.getValue editor
-    runCode state [("main.hs", code)]
-
-ghciButton :: React ()
-ghciButton = div_ $ do
-  -- FIXME: consider UI / don't use bootstrap style
-  class_ "ghci-button btn btn-default"
-  text "GHCI"
-  onClick $ \_ state -> do
-    editor <- readUnmanagedOrFail state (^. stateAce)
-    code <- Ace.getValue editor
-    --FIXME: when using GHCI, don't display build errors / messages
-    --from it.
-    --FIXME: it'd also be good if ide-backend-client held on to the
-    --old session, so that info is still available.
-    let code' = T.unlines
-          [ "import System.Process (rawSystem)"
-          , "main = do"
-          , "  writeFile \"main.hs\" " <> tshow code
-          , "  ec <- rawSystem \"ghci\" [\"main.hs\"]"
-          , "  putStrLn $ \"GHCI exited with \" ++ show ec"
-          ]
-    runCode state [("main.hs", code')]
-
-setSnippetClass :: Maybe Status -> React ()
-setSnippetClass mstatus = class_ $ "snippet " <>
-  case mstatus of
-    Nothing -> "never-built"
-    Just BuildRequested {} -> "building"
-    Just Building {} -> "building"
-    Just Built {} -> "built"
-    Just QueryRequested {} -> "built"
+-- FIXME: bring this back
+-- ghciButton :: React ()
+-- ghciButton = div_ $ do
+--   -- FIXME: consider UI / don't use bootstrap style
+--   class_ "ghci-button btn btn-default"
+--   text "GHCI"
+--   onClick $ \_ state -> do
+--     editor <- readUnmanagedOrFail state (^. stateAce)
+--     code <- Ace.getValue editor
+--     --FIXME: when using GHCI, don't display build errors / messages
+--     --from it.
+--     --FIXME: it'd also be good if ide-backend-client held on to the
+--     --old session, so that info is still available.
+--     let code' = T.unlines
+--           [ "import System.Process (rawSystem)"
+--           , "main = do"
+--           , "  writeFile \"main.hs\" " <> tshow code
+--           , "  ec <- rawSystem \"ghci\" [\"main.hs\"]"
+--           , "  putStrLn $ \"GHCI exited with \" ++ show ec"
+--           ]
+--     runCode state [("main.hs", code')]
 
 buildStatusText :: Status -> Text
+buildStatusText NeverBuilt = "Never built"
 buildStatusText (BuildRequested _) = "Sending"
-buildStatusText (Building (Just progress)) =
+buildStatusText (Building _ (Just progress)) =
   "Building (" <>
   tshow (progressStep progress) <>
   "/" <>
   tshow (progressNumSteps progress) <>
   ")"
-buildStatusText (Building Nothing) = "Fetching"
-buildStatusText (Built info) = infoStatusText info
-buildStatusText (QueryRequested info _) = infoStatusText info
+buildStatusText (Building _ Nothing) = "Fetching"
+buildStatusText (Built _ info) = infoStatusText info
+buildStatusText (QueryRequested _ info _) = infoStatusText info
 
 infoStatusText :: BuildInfo -> Text
 infoStatusText BuildInfo {..}
@@ -76,14 +57,15 @@ infoStatusText BuildInfo {..}
     "Built"
 
 buildTab :: Status -> React ()
+buildTab NeverBuilt = return ()
 buildTab (BuildRequested _) = return ()
-buildTab (Building (Just progress)) = forM_ (progressParsedMsg progress) text
-buildTab (Building Nothing) = "Build done.  Requesting compile info.."
-buildTab (Built info) = buildInfo info
-buildTab (QueryRequested info _) = buildInfo info
+buildTab (Building _ (Just progress)) = forM_ (progressParsedMsg progress) text
+buildTab (Building _ Nothing) = "Build done.  Requesting compile info.."
+buildTab (Built sid info) = buildInfo sid info
+buildTab (QueryRequested sid info _) = buildInfo sid info
 
-buildInfo :: BuildInfo -> React ()
-buildInfo info =
+buildInfo :: SnippetId -> BuildInfo -> React ()
+buildInfo sid info =
   forM_ (sourceErrors info) $ \AnnSourceError{..} -> div_ $ do
     --FIXME: have some explanatory text or victory picture when there
     --are no errors or warnings.
@@ -98,8 +80,6 @@ buildInfo info =
         ProperSpan ss -> do
           class_ "error-proper-span"
           onClick $ \_ stateVar -> do
-            state <- readTVarIO stateVar
-            editor <- getUnmanagedOrFail (state ^. stateAce)
             -- FIXME: use a more lenient version of spanToSelection
             -- which allows for removals within the span.  Possibly
             -- have the implementation function always compute the
@@ -109,7 +89,9 @@ buildInfo info =
             -- If the above isn't done, then at least the UI
             -- should mention why it isn't selecting anything on
             -- click, in this case.
-            case spanToSelection state ss of
+            state <- readTVarIO stateVar
+            editor <- getEditor state sid
+            case spanToSelection state sid ss of
               Nothing -> putStrLn "No span for error"
               Just sel -> do
                 Ace.setSelection editor sel

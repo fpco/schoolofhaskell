@@ -52,3 +52,26 @@ function spanContainerToSpans(el) {
   }
   return results;
 }
+
+function positionControlsOnResize(sohControls, sohColumn) {
+  $(sohControls).css('position', 'fixed');
+  $(sohControls).css('bottom', '0');
+  var positionControls = debounce(100, function () {
+    $(sohControls).css('left', $(sohColumn).offset().left - $(window).scrollLeft());
+    $(sohControls).css('width', $(sohColumn).width());
+  });
+  positionControls();
+  $(window).resize(positionControls);
+  $(window).scroll(positionControls);
+}
+
+// Debounce the given function
+function debounce(ms, f){
+  var t;
+  return function(x){
+    clearTimeout(t);
+    t = setTimeout(function(){
+      f(x);
+    },ms);
+  };
+}

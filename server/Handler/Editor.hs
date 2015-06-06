@@ -47,6 +47,10 @@ getEditorScriptR = $(ghcjsFileDev
     ,"-XScopedTypeVariables"
     ,"-XDeriveDataTypeable"
     ,"-XDeriveGeneric"
+    ,"-XStandaloneDeriving"
+    ,"-XTypeFamilies"
+    ,"-XFlexibleInstances"
+    ,"-XMultiParamTypeClasses"
     ,"-Wall"
     ,"-hide-all-packages"] ++ concatMap (\pkg -> ["-package", pkg])
         ["aeson"
@@ -70,6 +74,7 @@ getEditorScriptR = $(ghcjsFileDev
         ,"stm"
         ,"text"
         ,"transformers"
+        ,"vector"
         ,"void"
         ])
     ["client"]

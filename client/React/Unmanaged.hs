@@ -88,19 +88,23 @@ onInitUnmanaged f = do
 getUnmanaged :: (Typeable a, FromJSRef a) => Unmanaged a -> IO (Maybe a)
 getUnmanaged (Unmanaged ref) = fromJSRef ref
 
-getUnmanagedOrFail :: forall a. (Typeable a, FromJSRef a) => Unmanaged a -> IO a
-getUnmanagedOrFail unmanaged = do
-  mx <- getUnmanaged unmanaged
-  case mx of
-    Nothing -> fail $ "Failed to view (Unmanaged (" ++ show (typeRep (Proxy :: Proxy a)) ++ "))"
-    Just x -> return x
+getUnmanagedOrFail :: forall a. (Typeable a, FromJSRef a) => Maybe (Unmanaged a) -> IO a
+getUnmanagedOrFail munmanaged = do
+  let shownType = "(Unmanaged (" ++ show (typeRep (Proxy :: Proxy a)) ++ "))"
+  case munmanaged of
+    Nothing -> fail $ "getUnmanagedOrFail received 'Nothing' for " ++ shownType
+    Just unmanaged -> do
+      mx <- getUnmanaged unmanaged
+      case mx of
+        Nothing -> fail $ "Failed to view " ++ shownType
+        Just x -> return x
 
 readUnmanaged
   :: (Typeable a, FromJSRef a) => TVar state -> (state -> Unmanaged a) -> IO (Maybe a)
 readUnmanaged stateVar f = getUnmanaged . f =<< readTVarIO stateVar
 
 readUnmanagedOrFail
-  :: (Typeable a, FromJSRef a) => TVar state -> (state -> Unmanaged a) -> IO a
+  :: (Typeable a, FromJSRef a) => TVar state -> (state -> Maybe (Unmanaged a)) -> IO a
 readUnmanagedOrFail stateVar f = getUnmanagedOrFail . f =<< readTVarIO stateVar
 
 -- Better way to do this??

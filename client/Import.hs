@@ -15,6 +15,9 @@ module Import
     , module React.Lucid
     , module React.Unmanaged
     , module Types
+    , module GHCJS.Foreign
+    , module GHCJS.Marshal
+    , module GHCJS.Types
     , ByteString
     , Text
     -- * Simplified types
@@ -22,8 +25,14 @@ module Import
     , App
     , Component
     , UComponent
+    -- * Misc utils
+    , ixSnippet
+    , getEditor
+    , readEditor
+    , currentSnippet
     ) where
 
+import           Ace (Editor)
 import           Control.Applicative ((<$>), (<*>))
 import           Control.Concurrent.STM
 import           Control.Lens
@@ -34,6 +43,9 @@ import           Data.Maybe
 import           Data.Monoid
 import           Data.Text (Text)
 import           Data.Traversable (forM)
+import           GHCJS.Foreign
+import           GHCJS.Marshal
+import           GHCJS.Types
 import           IdeSession.Client.JsonAPI
 import           IdeSession.Types.Progress
 import           IdeSession.Types.Public
@@ -51,3 +63,25 @@ type App = React.Internal.App State IO
 type Component a = React.Internal.Component State a IO
 
 type UComponent a = React.Internal.Component State (Unmanaged a) IO
+
+-- TODO: move these to a utilities module?
+
+ixSnippet :: SnippetId -> Traversal' State Snippet
+ixSnippet (SnippetId sid) = stateSnippets . ix sid
+
+getEditor :: State -> SnippetId -> IO Editor
+getEditor state sid =
+  getUnmanagedOrFail (state ^? ixSnippet sid . snippetEditor)
+
+readEditor :: TVar State -> SnippetId -> IO Editor
+readEditor stateVar sid =
+  readUnmanagedOrFail stateVar (^? ixSnippet sid . snippetEditor)
+
+currentSnippet :: State -> Maybe SnippetId
+currentSnippet state =
+  case state ^. stateStatus of
+    NeverBuilt -> Nothing
+    BuildRequested (BuildRequest sid _) -> Just sid
+    Building sid _ -> Just sid
+    Built sid _ -> Just sid
+    QueryRequested sid _ _ -> Just sid

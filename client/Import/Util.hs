@@ -12,7 +12,8 @@ import           Data.IORef
 import           Data.Monoid
 import           Data.Text (Text, pack)
 import qualified Data.Text as T
-import           Data.Typeable (Typeable)
+import           Data.Typeable (Typeable, typeRep)
+import           GHCJS.DOM.Element (Element)
 import           GHCJS.DOM.HTMLElement (HTMLElement)
 import           GHCJS.Foreign
 import           GHCJS.Marshal
@@ -96,8 +97,11 @@ foreign import javascript unsafe "$2.get($1)"
 intToJSNumber :: Int -> JSNumber
 intToJSNumber n = coerce $ unsafePerformIO $ toJSRef n
 
-fromJSRefOrFail :: FromJSRef a => String -> JSRef a -> IO a
-fromJSRefOrFail what ref = do
+fromJSRefOrFail :: (FromJSRef a, Typeable a) => JSRef a -> IO a
+fromJSRefOrFail ref = fromJSRefOrFail' (show (typeRep ref)) ref
+
+fromJSRefOrFail' :: FromJSRef a => String -> JSRef a -> IO a
+fromJSRefOrFail' what ref = do
   mx <- fromJSRef ref
   case mx of
     Nothing -> fail $ "Failed to marshal " ++ what

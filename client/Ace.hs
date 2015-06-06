@@ -10,6 +10,7 @@ module Ace
   , setSelection
   , Editor.focus
   , Editor.blur
+  , setMaxLinesInfty
     -- * Events
   , onChange
   , ChangeEvent(..)
@@ -39,7 +40,7 @@ import           GHC.Generics (Generic)
 import           GHCJS.Foreign
 import           GHCJS.Marshal
 import           GHCJS.Types
-import           Import.Util (getElement, intToJSNumber, mtprop, fromJSRefOrFail)
+import           Import.Util (getElement, intToJSNumber, mtprop, fromJSRefOrFail, fromJSRefOrFail')
 import qualified JavaScript.AceAjax.Raw.Ace as Ace
 import qualified JavaScript.AceAjax.Raw.Editor as Editor
 import qualified JavaScript.AceAjax.Raw.IEditSession as Session
@@ -78,7 +79,7 @@ getValue = fmap fromJSString . Editor.getValue
 getSelection :: Editor -> IO Selection
 getSelection editor = do
   s <- Editor.getSelection editor
-  let fromRef = fromJSRefOrFail "ace editor selection" . coerce
+  let fromRef = fromJSRefOrFail' "ace editor selection" . coerce
   lead <- Selection.getSelectionLead s
   anchor <- Selection.getSelectionAnchor s
   Selection <$> fromRef lead <*> fromRef anchor
@@ -88,8 +89,8 @@ getSelection editor = do
 
 -- Note: -1 specifies that the cursor should be moved to the end
 --
-setValue :: Editor -> Text -> IO ()
-setValue e val = void $ Editor.setValue e (toJSString val) (intToJSNumber (-1))
+setValue :: Editor -> JSString -> IO ()
+setValue e val = void $ Editor.setValue e val (intToJSNumber (-1))
 
 setSelection :: Editor -> Selection -> IO ()
 setSelection editor Selection{..} = do
@@ -108,8 +109,7 @@ onChange :: Editor -> (ChangeEvent -> IO ()) -> IO ()
 onChange e f = do
   -- TODO: open pull request on ace typescript bindings making things subtypes of EventEmitter?
   parent <- toJSRef =<< Editor.container e
-  let fromRef = fromJSRefOrFail "change event"
-  f' <- syncCallback1 (DomRetain (coerce parent)) True (f <=< fromRef)
+  f' <- syncCallback1 (DomRetain (coerce parent)) True (f <=< fromJSRefOrFail)
   editorOn e "change" f'
 
 --FIXME: would be cheaper to not marshal the lines and instead get
@@ -205,7 +205,7 @@ data DeltaPos = DeltaPos
   { deltaRow :: !Int
   , deltaColumn :: !Int
   }
-  deriving (Show, Eq, Ord, Generic)
+  deriving (Show, Eq, Ord, Generic, Typeable)
 
 subtractPos :: Pos -> Pos -> DeltaPos
 subtractPos x y = DeltaPos
@@ -233,5 +233,9 @@ foreign import javascript unsafe "function() { return ace; }()"
   ace :: IO Ace
 
 -- Needed due to incompleteness of typescript ace definitions
+
 foreign import javascript unsafe "$1.on($2, $3)"
   editorOn :: Editor -> JSString -> JSFun (JSRef obj -> IO ()) -> IO ()
+
+foreign import javascript unsafe "$1.setOption('maxLines', Infinity)"
+  setMaxLinesInfty :: Editor -> IO ()

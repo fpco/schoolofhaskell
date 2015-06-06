@@ -19,6 +19,7 @@ module PosMap
   , rangeToSpan
   , spanToRange
   -- * Implementation
+  , emptyPosMap
   , rangeMapForward
   , rangeMapBackward
   , posMapForward
@@ -33,25 +34,29 @@ import Import
 --------------------------------------------------------------------------------
 -- School-of-haskell specific utilities
 
-handleChange :: TVar State -> Ace.ChangeEvent -> IO ()
-handleChange state ev =
-  modifyTVarIO state statePosMap $ (changeEventToPosChange ev :)
+handleChange :: TVar State -> SnippetId -> Ace.ChangeEvent -> IO ()
+handleChange state sid ev =
+  modifyTVarIO state
+               (ixSnippet sid . snippetPosMap . _Wrapped)
+               (changeEventToPosChange ev :)
 
-selectionToSpan :: State -> Selection -> Maybe SourceSpan
-selectionToSpan state =
-  rangeToSpan state . selectionToRange
+selectionToSpan :: State -> SnippetId -> Selection -> Maybe SourceSpan
+selectionToSpan state sid =
+  rangeToSpan state sid . selectionToRange
 
-spanToSelection :: State -> SourceSpan -> Maybe Selection
-spanToSelection state =
-  fmap rangeToSelection . spanToRange state
+spanToSelection :: State -> SnippetId -> SourceSpan -> Maybe Selection
+spanToSelection state sid =
+  fmap rangeToSelection . spanToRange state sid
 
-rangeToSpan :: State -> Range -> Maybe SourceSpan
-rangeToSpan state =
-  fmap (rangeToSpan' "main.hs") . rangeMapBackward (state ^. statePosMap)
+rangeToSpan :: State -> SnippetId -> Range -> Maybe SourceSpan
+rangeToSpan state sid range = do
+  posMap <- state ^? ixSnippet sid . snippetPosMap
+  rangeToSpan' "main.hs" <$> (rangeMapBackward posMap range)
 
-spanToRange :: State -> SourceSpan -> Maybe Range
-spanToRange state ss =
-    rangeMapForward (state ^. statePosMap) r
+spanToRange :: State -> SnippetId -> SourceSpan -> Maybe Range
+spanToRange state sid ss = do
+    posMap <- state ^? ixSnippet sid . snippetPosMap
+    rangeMapForward posMap r
   where
     -- FIXME: do something with the filepath.
     (_fp, r) = spanToRange' ss
@@ -94,24 +99,31 @@ spanToRange' SourceSpan{..} = (spanFilePath, range)
 -- TODO: Probably ought to return Nothing when there's been any
 -- change in the interval, but that would require coppy
 
+emptyPosMap :: PosMap
+emptyPosMap = PosMap []
+
 rangeMapForward :: PosMap -> Range -> Maybe Range
-rangeMapForward = mapImpl oldRange newRange shiftRange compareRange . reverse
+rangeMapForward =
+  mapImpl oldRange newRange shiftRange compareRange . reverse . unPosMap
 
 rangeMapBackward :: PosMap -> Range -> Maybe Range
-rangeMapBackward = mapImpl newRange oldRange shiftRange compareRange
+rangeMapBackward =
+  mapImpl newRange oldRange shiftRange compareRange . unPosMap
 
 posMapForward :: PosMap -> Pos -> Maybe Pos
-posMapForward = mapImpl oldRange newRange shiftPos comparePosWithRange . reverse
+posMapForward =
+  mapImpl oldRange newRange shiftPos comparePosWithRange . reverse . unPosMap
 
 posMapBackward :: PosMap -> Pos -> Maybe Pos
-posMapBackward = mapImpl newRange oldRange shiftPos comparePosWithRange
+posMapBackward =
+  mapImpl newRange oldRange shiftPos comparePosWithRange . unPosMap
 
 mapImpl
   :: (PosChange -> Range)
   -> (PosChange -> Range)
   -> (DeltaPos -> a -> a)
   -> (a -> Range -> RangeOrdering)
-  -> PosMap
+  -> [PosChange]
   -> a
   -> Maybe a
 mapImpl before after shift comp changes p0 =

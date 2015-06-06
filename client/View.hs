@@ -1,4 +1,4 @@
-module View where
+module View (renderControls, renderEditor) where
 
 import qualified Ace
 import Import
@@ -8,39 +8,91 @@ import TermJs
 import View.Build
 import View.Console
 import View.Docs
-import View.Editor
 import View.TypeInfo
+import PosMap (handleChange, selectionToSpan)
+import Model (runQuery, runCode)
+import Control.Lens.Extras (is)
 
-render
-  :: UComponent Ace.Editor
-  -> UComponent TermJs
+renderControls
+  :: UComponent TermJs
   -> UComponent IFrame
   -> State
   -> React ()
-render ace termjs iframe state = div_ $ do
-  let mstatus = state ^. stateStatus
-  h1_ "SoH snippet demo"
-  div_ $ do
-    setSnippetClass mstatus
-    buildEditor ace
-    case mstatus of
-      Nothing -> runButton
-      Just status -> div_ $ do
-        class_ "controls"
-        div_ $ do
-          class_ "controls-bar"
-          runButton
-          ghciButton
-          mkTab state BuildTab $ text (buildStatusText status)
-          mkTab state ConsoleTab "Console"
-          mkTab state DocsTab "Docs"
-          mkTab state WebTab "Web"
-        mkTabContent state BuildTab $ buildTab status
-        mkTabContent state ConsoleTab $ consoleTab termjs
-        mkTabContent state DocsTab $ docsTab state
-        -- mkTabContent state WebTab $ buildIFrame iframe stateWeb Nothing
-    forM_ (state ^. stateTypes) $ \typs ->
-      typePopup typs 300 100
+renderControls termjs iframe state = do
+  let status = state ^. stateStatus
+  case status of
+    NeverBuilt -> return ()
+    _ -> do
+      class_ "soh-visible"
+      -- Set the position of the controls.
+      div_ $ do
+        class_ "controls-bar"
+        mkTab state BuildTab $ text (buildStatusText status)
+        mkTab state ConsoleTab "Console"
+        mkTab state DocsTab "Docs"
+        -- mkTab state WebTab "Web"
+      mkTabContent state BuildTab $ buildTab status
+      mkTabContent state ConsoleTab $ consoleTab termjs
+      mkTabContent state DocsTab $ docsTab state
+      -- mkTabContent state WebTab $ buildIFrame iframe stateWeb Nothing
+
+--------------------------------------------------------------------------------
+-- Editor
+
+renderEditor
+  :: UComponent Ace.Editor
+  -> UComponent TermJs
+  -> UComponent IFrame
+  -> SnippetId
+  -> JSString
+  -> Bool
+  -> State
+  -> React ()
+renderEditor ace termjs iframe sid initialValue inlineControls state = div_ $ do
+  let isCurrent = currentSnippet state == Just sid
+  class_ $ addWhen isCurrent "soh-current"
+         $ addWhen (not inlineControls) "soh-remote-controls"
+         $ "soh-snippet"
+  buildUnmanaged ace (ixSnippet sid . snippetEditor) $ \stateVar q -> do
+    editor <- Ace.makeEditor q
+    Ace.setMaxLinesInfty editor
+    Ace.setValue editor initialValue
+    debounce 100 (handleSelectionChange stateVar sid) >>=
+      Ace.onSelectionChange editor
+    Ace.onChange editor (handleChange stateVar sid)
+    return editor
+  runButton sid isCurrent (state ^. stateStatus)
+  forM_ (join (state ^? ixSnippet sid . snippetTypeInfo)) $ \typs ->
+    typePopup typs 300 100
+  when (isCurrent && inlineControls) $ div_ $ do
+    id_ "soh-controls"
+    div_ $ renderControls termjs iframe state
+
+handleSelectionChange :: TVar State -> SnippetId -> IO ()
+handleSelectionChange stateVar sid = do
+  -- Clear the old type info.
+  setTVarIO stateVar (ixSnippet sid . snippetTypeInfo) Nothing
+  -- Compute the source span of the query at the time of compilation.
+  state <- readTVarIO stateVar
+  selection <- Ace.getSelection =<< getEditor state sid
+  case selectionToSpan state sid selection of
+    -- FIXME: UI for this.
+    Nothing -> putStrLn "No span for this query"
+    Just ss -> runQuery stateVar sid (QueryInfo ss)
+
+runButton :: SnippetId -> Bool -> Status -> React ()
+runButton sid isCurrent s = div_ $ do
+  let building = is _BuildRequested s || is _Building s
+  class_ $ addWhen (building && isCurrent) "building"
+         $ "run glyphicon"
+  title_ "Compile and run code"
+  onClick $ \_ state -> do
+    editor <- readEditor state sid
+    code <- Ace.getValue editor
+    runCode state (BuildRequest sid [("main.hs", code)])
+
+--------------------------------------------------------------------------------
+-- Tabs
 
 mkTab :: State -> Tab -> React () -> React ()
 mkTab state tab f = div_ $ do

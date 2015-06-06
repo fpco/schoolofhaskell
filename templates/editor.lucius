@@ -1,63 +1,60 @@
+/* For demo */
+
 body {
   font-family: "Lato", sans-serif;
 }
 
-#react-container > div {
+.content {
   margin-left: auto;
   margin-right: auto;
   width: 800px;
 }
 
-.snippet {
-  font-family: 'Ubuntu', sans-serif;
-  width: 800px;
-  /* same background color as the editor theme */
+.soh-code, code {
+  white-space: pre;
+}
+
+#soh-controls {
+  z-index: 1000;
+}
+
+
+/* Theme CSS */
+
+.soh-snippet, #soh-controls > div {
   background: #fff;
-  border: 1px solid #d1d1d1;
-  position: relative;
-  border-radius: 0.2em;
-  margin: 0.25em 0 0.75em 0;
-/*  min-height: 2.5em; */
-  > .ace_editor {
-    margin: 0.25em;
-    height: 300px;
-  }
-  .ace_editor {
-    font-size: 15px !important;
-  }
-  > .controls {
-    width: 100%;
-    margin-top: -0.25em;
-  }
-  .controls-bar {
-    border-top: 1px solid #d1d1d1;
-    border-bottom: 1px solid #d1d1d1;
-    overflow: hidden;
-  }
+  border-color: #d1d1d1;
+}
+
+.soh-snippet:hover {
   .run {
-    cursor: pointer;
-  }
-  /* glyphicon-play */
-  .run:before {
-    content: "\e072";
-  }
-  .run:hover {
-    background-color: #eee;
-  }
-  /*
-  .run:hover {
-    color: #a55;
-  }
-  .run:active {
+    opacity: 0.75;
     color: #c33;
-    text-shadow: 0px 0px 7px #CB413D;
   }
-  */
+}
+
+.soh-snippet {
+  .run {
+    -webkit-transition: opacity 0.2s ease-in-out, color 0.2s ease-in-out;
+    -moz-transition: opacity 0.2s ease-in-out, color 0.2s ease-in-out;
+    -o-transition: opacity 0.2s ease-in-out, color 0.2s ease-in-out;
+    transition: opacity 0.2s ease-in-out, color 0.2s ease-in-out;
+    opacity: 0.25;
+  }
+  .run:hover {
+    opacity: 1;
+    color: #d44;
+  }
+  .type-popup {
+    border-color: #d1d1d1;
+    .type-info {
+      border-color: #d1d1d1;
+    }
+  }
+}
+
+#soh-controls {
   .tab {
-    cursor: pointer;
-    display: block;
-    float: left;
-    height: 100%;
     color: #655;
   }
   .tab:hover {
@@ -75,109 +72,19 @@ body {
     border-radius: 0.5em 0.5em 0 0;
      */
   }
-  /* TODO: make it resizable */
-  .tab-content {
-    height: 29em;
-    display: none;
-  }
-  .tab-content-focused {
-    display: block;
-  }
-  .type-popup {
-    position: absolute;
-    border: 1px solid #d1d1d1;
-    border-radius: 0.4em;
-    padding: 0.4em;
-    max-width: 50%;
-    .type-info {
-      padding-bottom: 0.2em;
-      border-bottom: 1px dashed #d1d1d1;
-      margin-bottom: 0.2em;
-    }
-    .type-info:last-child {
-      padding-bottom: 0;
-      border-bottom: none;
-      margin-bottom: 0;
-    }
-  }
-  .highlighted-haskell {
-    font-size: 15px !important;
-    white-space: pre-wrap;
-  }
-  .docs-link:hover {
-    cursor: pointer;
-    text-decoration: underline;
-  }
-  .hide-mark {
-    display: none;
-  }
 }
 
-.snippet.never-built {
-  .run {
-    -webkit-transition: opacity 0.5s ease-in-out;
-    -moz-transition: opacity 0.5s ease-in-out;
-    -o-transition: opacity 0.5s ease-in-out;
-    transition: opacity 0.5s ease-in-out;
-    opacity: 0.5;
-    position: relative;
-    top: -1.6em;
-  }
+#soh-controls > div {
+  display: none;
 }
 
-.snippet.built {
-  .run {
-    padding-top: 0.2em;
-  }
-}
-
-.snippet.never-built:hover {
-  .run {
-    opacity: 1;
-  }
-}
-
-.snippet.building {
-  .run:hover, .run:active {
-    text-shadow: none;
-  }
-  /* glyphicon-cog */
-  .run:before {
-    content: "\e019";
-  }
-}
-
-/* Sizing + positioning of run button and tabs */
-.snippet {
-  .build-tab {
-    float: right;
-  }
-  .run {
-    float: right;
-    height: 100%;
-    font-size: 150%;
-    padding: 0.3em 0.3em 0.3em 0.4em;
-    /* glyphicon sets to 1px, unset */
-    top: 0;
-  }
-  .ghci-button {
-    float: right;
-  }
-  .tab {
-    font-size: 120%;
-    padding: 0.2em 0.7em;
-  }
-  .controls-bar {
-    height:  2.3em;
-  }
+#soh-controls > div.soh-visible {
+  display: block;
 }
 
 .build-tab-content {
-  overflow: auto;
   .message {
-    padding: 0.25em 0.25em 0.25em 0.5em;
     border-bottom: 0.05em solid #ccc;
-    min-height: 1.5em;
   }
   .kind-error {
     color: #b94a48;
@@ -190,6 +97,122 @@ body {
   .kind-warning {
     background: #f1eed9;
   }
+  .msg-ann-refactor, .msg-ann-code {
+    border: 1px solid #ddd;
+    border-radius: 0.2em;
+  }
+}
+
+
+/* Main CSS */
+
+.soh-snippet, #soh-controls > div {
+  font-family: 'Ubuntu', sans-serif;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 0.2em;
+}
+
+/* Show which snippet is active when the controls aren't attached */
+.soh-snippet.soh-current.soh-remote-controls {
+  border-color: #e1c1c1;
+}
+
+.soh-snippet {
+  width: 800px;
+  /* same background color as the editor theme */
+  position: relative;
+  padding: 0.2em;
+  margin: 0.25em 0 0.75em 0;
+  .ace_editor {
+    margin: 0.25em;
+    height: 300px;
+    font-size: 15px !important;
+  }
+  .run {
+    position: absolute;
+    right: 0;
+    padding: 0.1em;
+    font-size: 150%;
+    cursor: pointer;
+  }
+  /* glyphicon-play */
+  .run:before {
+    content: "\e072";
+  }
+  /* glyphicon-cog */
+  .run.building:before {
+    content: "\e019";
+  }
+  .run.building {
+    -webkit-animation:spin 4s linear infinite;
+    -moz-animation:spin 4s linear infinite;
+    animation:spin 4s linear infinite;
+  }
+  .type-popup {
+    position: absolute;
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 0.4em;
+    padding: 0.4em;
+    max-width: 50%;
+    .type-info {
+      padding-bottom: 0.2em;
+      border-bottom: 1px dashed;
+      margin-bottom: 0.2em;
+    }
+    .type-info:last-child {
+      padding-bottom: 0;
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+  }
+}
+
+#soh-controls {
+  .controls-bar {
+    height:  2.3em;
+  }
+  .tab {
+    cursor: pointer;
+    display: block;
+    float: left;
+    height: 100%;
+    font-size: 120%;
+    padding: 0.2em 0.7em;
+  }
+  /* TODO: different colors for the build tab? */
+  .build-tab {
+    float: right;
+  }
+  /* TODO: make it resizable */
+  .tab-content {
+    height: 29em;
+    display: none;
+  }
+  .tab-content-focused {
+    display: block;
+  }
+  .docs-link:hover {
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  .hide-mark {
+    display: none;
+  }
+}
+
+.highlighted-haskell {
+  font-size: 15px !important;
+  white-space: pre-wrap;
+}
+
+.build-tab-content {
+  overflow: auto;
+  .message {
+    padding: 0.25em 0.25em 0.25em 0.5em;
+    min-height: 1.5em;
+  }
   .error-proper-span {
     cursor: pointer;
     text-decoration: underline;
@@ -201,8 +224,6 @@ body {
   }
   .msg-ann-refactor, .msg-ann-code {
     padding: 0.1em 0.5em;
-    border: 1px solid #ddd;
-    border-radius: 0.2em;
   }
   .msg-ann-collapse {
     font-size: 200%;
@@ -259,3 +280,7 @@ body {
   -o-user-select: none;
   user-select: none;
 }
+
+@-moz-keyframes spin { 100% { -moz-transform: rotate(360deg); } }
+@-webkit-keyframes spin { 100% { -webkit-transform: rotate(360deg); } }
+@keyframes spin { 100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); } }
