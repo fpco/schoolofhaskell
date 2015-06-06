@@ -6,5 +6,4 @@
 
 / HomeR GET
 
-/editor EditorR GET
 /editor/script.js EditorScriptR GET

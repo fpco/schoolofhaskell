@@ -38,7 +38,7 @@ getApp cnt = do
   makeApp state id
 
 runApp :: App -> IO void
-runApp app = withUrl "ws://localhost:3000/editor" $ \backend -> do
+runApp app = withUrl "ws://localhost:4000" $ \backend -> do
   setTVarIO (appState app) stateBackend (Just backend)
   version <- expectWelcome backend
   putStrLn $ "Connection established with ide-backend " ++ show version
