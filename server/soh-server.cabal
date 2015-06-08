@@ -100,13 +100,13 @@ library
                  , transformers
                  , yesod-websockets >= 0.2
 
-executable         schoolofhaskell
+executable soh-server
     if flag(library-only)
         Buildable: False
 
     main-is:           main.hs
     hs-source-dirs:    app
-    build-depends:     base, schoolofhaskell
+    build-depends:     base, soh-server
 
     ghc-options:       -threaded -O2 -rtsopts -with-rtsopts=-N
 
