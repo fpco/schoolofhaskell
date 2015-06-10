@@ -6,4 +6,4 @@
 
 set -x
 
-fpbuild exec -- $PWD/dev-scripts/install-ghcjs-deps-internal.sh
+stack exec -- $PWD/dev-scripts/install-ghcjs-deps-internal.sh

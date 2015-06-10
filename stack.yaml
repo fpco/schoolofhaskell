@@ -1,6 +1,11 @@
+resolver: lts-2.13
+flags:
+  ide-backend-client:
+    use-cabal: false
+extra-deps: [ airship-0.3.0.0 ]
 docker:
-  repo-suffix: "_ghc-7.8.4.20141229_stackage-lts-1.0"
-  image-tag: "20150101"
+  enable: true
+  repo: fpco/ghcjs-dev
 packages:
   - ./deps/JsonGrammar2
   - ./deps/ide-backend-client
@@ -11,5 +16,6 @@ packages:
   - ./deps/ide-backend/vendor/cabal/Cabal
   - ./deps/language-typescript
   - ./deps/stack-prism
+  - ./scheduler
   - ./server
   - ./runner
