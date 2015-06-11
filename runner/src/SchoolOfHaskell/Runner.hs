@@ -1,9 +1,12 @@
+{-# LANGUAGE OverloadedStrings #-}
 module SchoolOfHaskell.Runner (Settings(..), runner) where
 
 import           Data.Aeson (encode, eitherDecode)
 import           IdeSession (defaultSessionInitParams, defaultSessionConfig)
 import           IdeSession.Client (ClientIO(..), startEmptySession)
 import           IdeSession.Client.CmdLine
+import qualified Network.HTTP.Types as H
+import qualified Network.Wai as W
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Network.Wai.Handler.WebSockets as WaiWS
 import qualified Network.WebSockets as WS
@@ -35,8 +38,9 @@ runner settings = do
               , getJson = fmap decodeOrFail (WS.receiveData conn)
               }
         startEmptySession clientIO clientOpts EmptyOptions
-  Warp.runSettings warpSettings $ \req sendResponse ->
+  Warp.runSettings warpSettings $ \req sendResponse -> sendResponse $
     case WaiWS.websocketsApp WS.defaultConnectionOptions app req of
-      Just res -> sendResponse res
-      --TODO: better response than this?
-      Nothing -> fail "Not a websockets connection"
+      Just res -> res
+      Nothing -> W.responseLBS H.status404
+                               [ ("Content-Type", "text/plain") ]
+                               "Not Found: expected a websockets connection"

@@ -15,6 +15,7 @@ library
   exposed-modules:     SchoolOfHaskell.Runner
   build-depends:       base >=4.7 && <5
                      , aeson
+                     , http-types
                      , ide-backend
                      , ide-backend-client
                      , wai
