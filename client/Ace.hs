@@ -1,3 +1,4 @@
+-- | Bindings to the Ace editor.
 module Ace
   ( Editor
     -- * Construction

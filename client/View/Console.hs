@@ -1,3 +1,4 @@
+-- | This module defines how the console tab is rendered.
 module View.Console (consoleTab) where
 
 import Communication (sendProcessInput)

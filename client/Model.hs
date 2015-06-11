@@ -1,3 +1,5 @@
+-- | This module defines the School of Haskell client's behavior.  It
+-- handles updating the state based on responses from the backend, and
 module Model where
 
 import           Communication
@@ -14,6 +16,9 @@ import           PosMap (emptyPosMap)
 import           React.Internal (appState)
 import           TermJs (writeTerminal)
 
+-- | Given the number of snippets on the page, this creates the
+-- initial state and App.  It needs to know the number of snippets in
+-- order to initialize the Ace components.
 getApp :: Int -> IO App
 getApp cnt = do
   snippets <- V.replicateM cnt $ do
@@ -29,7 +34,7 @@ getApp cnt = do
         { _stateSnippets = snippets
         , _stateConsole = termjs
         , _stateWeb = web
-        , _stateStatus = NeverBuilt
+        , _stateStatus = InitialStatus
         , _stateRunning = NotRunning
         , _stateTab = BuildTab
         , _stateDocs = Nothing
@@ -37,6 +42,7 @@ getApp cnt = do
         }
   makeApp state id
 
+-- | Runs the SoH client application.
 runApp :: App -> IO void
 runApp app = withUrl "ws://localhost:4000" $ \backend -> do
   setTVarIO (appState app) stateBackend (Just backend)
@@ -49,6 +55,11 @@ runApp app = withUrl "ws://localhost:4000" $ \backend -> do
       "Exited mainLoop with exception " <> tshow (ex :: SomeException)
     throwIO ex
 
+-- | This is the main loop.  It takes the current 'BuildRequest',
+-- compiles the code, runs it, and then waits for queries or further
+-- build requests.  These build requests re-enter this 'mainLoop'
+-- function.  As is implied by its @IO void@ return type, it never
+-- returns.
 mainLoop :: Backend -> TVar State -> BuildRequest -> IO void
 mainLoop backend state br = do
   success <- buildSuccess <$> compileCode backend state br
@@ -57,9 +68,12 @@ mainLoop backend state br = do
   br' <- runQueries backend state
   mainLoop backend state br'
 
+-- | Whether there are no errors in a 'BuildInfo'.
 buildSuccess :: BuildInfo -> Bool
 buildSuccess bi = null (buildErrors bi) && null (buildServerDieds bi)
 
+-- | Compiles a set of files and retrieves the resulting error
+-- / warning messages.
 compileCode :: Backend -> TVar State -> BuildRequest -> IO BuildInfo
 compileCode backend state (BuildRequest sid files) = do
   --TODO: clear ide-backend state before the rest of the updates.
@@ -82,6 +96,7 @@ compileCode backend state (BuildRequest sid files) = do
   setTVarIO state stateStatus $ Built sid buildInfo
   return buildInfo
 
+-- | Runs the user's program and directs stdout to the console.
 runConsole :: Backend -> TVar State -> IO ()
 runConsole backend state = do
   switchTab state ConsoleTab
@@ -94,6 +109,8 @@ runConsole backend state = do
       appendConsole $ "\r\nProcess done: " <> T.pack (show result) <> "\r\n"
   requestRun backend "Main" "main"
 
+-- | Waits for queries and performs them.  Once a build is requested
+-- this stops waiting for queries and yields the 'BuildRequest'.
 runQueries :: Backend -> TVar State -> IO BuildRequest
 runQueries backend state = do
     req <- waitForUserRequest
@@ -127,8 +144,9 @@ runQueries backend state = do
     getIdInfo (SpanQQ x) = x
 
 --------------------------------------------------------------------------------
--- Mutation functions invoked by View
+-- Mutation functions invoked by View (a.k.a. "the controller")
 
+-- | Runs the user's code.
 runCode :: TVar State -> BuildRequest -> IO ()
 runCode state br@(BuildRequest sid _) = atomically $ modifyTVar state $ \s ->
   case s ^. stateStatus of
@@ -136,6 +154,7 @@ runCode state br@(BuildRequest sid _) = atomically $ modifyTVar state $ \s ->
     _ -> s & stateStatus .~ BuildRequested br
            & (ixSnippet sid . snippetPosMap) .~ emptyPosMap
 
+-- | Runs a query.
 runQuery :: TVar State -> SnippetId -> Query -> IO ()
 runQuery state sid query =
   modifyTVarIO state stateStatus $ \oldStatus ->
@@ -146,8 +165,10 @@ runQuery state sid query =
       Built sid' info | sid' == sid -> QueryRequested sid info query
       _ -> oldStatus
 
+-- | Sets the id-info which the haddock iframe should use for its url.
 navigateDoc :: TVar State -> Maybe IdInfo -> IO ()
 navigateDoc state = setTVarIO state stateDocs
 
+-- | Switches which tab is currently focused.
 switchTab :: TVar State -> Tab -> IO ()
 switchTab state = setTVarIO state stateTab

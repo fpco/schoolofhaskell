@@ -1,3 +1,19 @@
+-- | This module provides an API for interacting with
+-- ide-backend-client over the websocket interface provided by
+-- soh-runner.
+--
+-- This API wraps up the different patterns of sending requests and
+-- expecting responses, such that the code which uses it mostly does
+-- not need to worry about violating any protocol invariants.
+--
+-- The only current invariant that needs to be preserved is that all
+-- the functions which expect a response can't be executed
+-- concurrently.    In particular, this applies to all of the queries,
+-- 'updateSession', and 'expectWelcome'.  Process starting, stdin,
+-- stdout, and killing can all be done concurrently.
+--
+-- In the future, a runtime check for this might be added.  However,
+-- for now this is enforced by the single-threaded nature of "Model".
 module Communication
   ( Backend
   , withUrl
@@ -30,6 +46,8 @@ import           Import
 import qualified JavaScript.WebSockets as WS
 import           Language.JsonGrammar (Json)
 
+-- | Given the URL of the SoH container, this creates a websockets
+-- connection to it.
 withUrl :: Text -> (Backend -> IO a) -> IO a
 withUrl url f = WS.withUrl url $ \conn -> do
   backendRequestChan <- newTChanIO
@@ -57,6 +75,11 @@ withUrl url f = WS.withUrl url $ \conn -> do
 --------------------------------------------------------------------------------
 -- Commands
 
+-- | Sends updates to the backend.  The backend will send back
+-- progress updates until it finishes compilation.  These progress
+-- updates are provided to the callback function.  Once compilation is
+-- finished, 'Nothing' is sent to the callback and this function
+-- returns.
 updateSession :: Backend -> [RequestSessionUpdate] -> (Maybe Progress -> IO ()) -> IO ()
 updateSession backend updates f = do
   sendRequest backend (RequestUpdateSession updates)
@@ -67,12 +90,15 @@ updateSession backend updates f = do
     f mx
     when (isJust mx) loop
 
+-- | Requests that the backend run the user's code.  The module nad
+-- identifier to run are taken as parameters.
 requestRun :: Backend -> ModuleName -> Identifier -> IO ()
 requestRun backend mn ident = sendRequest backend $ RequestRun True mn ident
 
 --------------------------------------------------------------------------------
 -- Queries
 
+-- | Gets the source errors of the last compilation.
 getSourceErrors :: Backend -> IO [SourceError]
 getSourceErrors backend =
   queryBackend backend
@@ -80,6 +106,9 @@ getSourceErrors backend =
                _ResponseGetSourceErrors
                "ResponseGetSourceErrors"
 
+-- | Gets the annotated source errors of the last compilation.  These
+-- annotations add more structure and info to the error messages, so
+-- they can be presented in nicer, more informative ways.
 getAnnSourceErrors :: Backend ->  IO [AnnSourceError]
 getAnnSourceErrors backend =
   queryBackend backend
@@ -87,6 +116,8 @@ getAnnSourceErrors backend =
                _ResponseGetAnnSourceErrors
                "ResponseGetAnnSourceErrors"
 
+-- | Gets the span info of the last __error-free__ compile.  Span info
+-- tells you where an identifier came from.
 getSpanInfo :: Backend -> SourceSpan -> IO [ResponseSpanInfo]
 getSpanInfo backend ss =
   queryBackend backend
@@ -94,6 +125,8 @@ getSpanInfo backend ss =
                _ResponseGetSpanInfo
                "ResponseGetSpanInfo"
 
+-- | Gets the type info of the last __error-free__ compile.  This
+-- tells you the type info
 getExpTypes :: Backend -> SourceSpan -> IO [ResponseExpType]
 getExpTypes backend ss =
   queryBackend backend
@@ -101,6 +134,9 @@ getExpTypes backend ss =
                _ResponseGetExpTypes
                "ResponseGetExpTypes"
 
+-- | Gets the annotated type info of the last __error-free__ compile. These
+-- annotations add identifier info to the type info, so that doc links
+-- can be provided in the type info.
 getAnnExpTypes :: Backend -> SourceSpan -> IO [ResponseAnnExpType]
 getAnnExpTypes backend ss =
   queryBackend backend
@@ -108,6 +144,8 @@ getAnnExpTypes backend ss =
                _ResponseGetAnnExpTypes
                "ResponseGetAnnExpTypes"
 
+-- Pattern of sending a request and expecting a response, common to
+-- the queries above.
 queryBackend :: Backend -> Request -> Prism' Response a -> String -> IO a
 queryBackend backend request p expected = do
   sendRequest backend request
@@ -116,18 +154,25 @@ queryBackend backend request p expected = do
 --------------------------------------------------------------------------------
 -- Process IO
 
-setProcessHandler :: Backend -> ((Either RunResult ByteString) -> IO ()) -> IO ()
+-- | Sets the callback which is used to handle process output.  Stdout
+-- is provided as 'Right' values, and the 'Left' values let you know
+-- that the process exited.
+setProcessHandler :: Backend -> (Either RunResult ByteString -> IO ()) -> IO ()
 setProcessHandler = atomicWriteIORef . backendProcessHandler
 
+-- | Sends stdin to the process.
 sendProcessInput :: Backend -> ByteString -> IO ()
 sendProcessInput backend = sendRequest backend . RequestProcessInput
 
+-- | Sends a SIGINT signal to the process, equivalent of using Ctrl-C.
 sendProcessKill :: Backend -> IO ()
 sendProcessKill backend = sendRequest backend RequestProcessKill
 
 --------------------------------------------------------------------------------
 -- Misc
 
+-- | Expects the welcome message which is sent by ide-backend-client
+-- once the connection is established.
 expectWelcome :: Backend -> IO VersionInfo
 expectWelcome backend =
   expectResponse backend (^? _ResponseWelcome) "ResponseWelcome"

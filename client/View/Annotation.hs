@@ -1,3 +1,16 @@
+-- | This module provides utilities for rendering the 'Ann' type of the
+-- ide-backend-client API.  'Ann' gives extra structure to textual
+-- information provided by the backend, by adding nested annotations
+-- atop the text.
+--
+-- In the current School of Haskell code, 'Ann' is used for source
+-- errors and type info.  This allows things like links to docs for
+-- identifiers, and better styling for source errors.
+--
+-- This module also provides utilities for getting highlight spans
+-- from code, via Ace.  This allows the display of annotated info to
+-- highlight the involved expressions / types, and pass these
+-- 'ClassSpans' into 'renderAnn'.
 module View.Annotation
   ( -- * Annotations
     renderAnn
@@ -26,6 +39,18 @@ import           Model (switchTab, navigateDoc)
 --------------------------------------------------------------------------------
 -- Annotations
 
+-- | This renders an 'Ann' type, given a function for rendering the
+-- annotations.
+--
+-- This rendering function takes the annotation, and is given the
+-- 'React' rendering of the nested content.  This allows it to add
+-- parent DOM nodes / attributes, in order to apply the effect of the
+-- annotation.
+--
+-- It also takes a 'ClassSpans' value, which is used at the leaf
+-- level, to slice up the spans of text, adding additional class
+-- annotations.  This is used to add the results of code highlighting
+-- to annotated info.
 renderAnn
   :: forall a.
      ClassSpans
@@ -56,6 +81,9 @@ annText (AnnLeaf x) = x
 --------------------------------------------------------------------------------
 -- Rendering IdInfo links
 
+-- | Renders a 'CodeAnn'.  This function is intended to be passed in
+-- to 'renderAnn', or used to implement a function which is passed
+-- into it.
 renderCodeAnn :: CodeAnn -> React a -> React a
 renderCodeAnn (CodeIdInfo info) inner = span_ $ do
   class_ "docs-link"
@@ -72,9 +100,12 @@ type ClassSpans = [(Int, Int, Text)]
 
 -- NOTE: prefixing for expressions doesn't seem to make a difference
 -- for the current highlighter, but it might in the future.
+
+-- | Get the highlight spans of an expression.
 getExpHighlightSpans :: NoNewlines -> IO ClassSpans
 getExpHighlightSpans = getHighlightSpansWithPrefix $ mkNoNewlines "x = "
 
+-- | Get the highlight spans of a type.
 getTypeHighlightSpans :: NoNewlines -> IO ClassSpans
 getTypeHighlightSpans = getHighlightSpansWithPrefix $ mkNoNewlines "x :: "
 
@@ -111,6 +142,9 @@ foreign import javascript "spanContainerToSpans"
 
 -- FIXME: should probably use source spans / allow new lines instead
 -- of having this newtype...
+
+-- | This newtype enforces the invariant that the stored 'Text' doesn't
+-- have the character \"\\n\".
 newtype NoNewlines = NoNewlines Text
   deriving (Eq, Show, Monoid)
 

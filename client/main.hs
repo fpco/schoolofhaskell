@@ -7,8 +7,7 @@ import View (renderControls, renderEditor)
 import GHCJS.DOM.HTMLElement (htmlElementGetInnerText, castToHTMLElement)
 import qualified Ace
 
--- | Grab the container element used for rendering into and start the
--- rendering loop.
+-- | Main function of the School of Haskell client.
 main :: IO ()
 main = do
   -- Get the code elements.

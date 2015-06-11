@@ -80,7 +80,7 @@ readEditor stateVar sid =
 currentSnippet :: State -> Maybe SnippetId
 currentSnippet state =
   case state ^. stateStatus of
-    NeverBuilt -> Nothing
+    InitialStatus -> Nothing
     BuildRequested (BuildRequest sid _) -> Just sid
     Building sid _ -> Just sid
     Built sid _ -> Just sid

@@ -1,3 +1,4 @@
+-- | This module defines how the Docs tab is rendered.
 module View.Docs (docsTab) where
 
 import qualified Data.Text as T

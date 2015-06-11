@@ -1,3 +1,4 @@
+-- | This module defines how the build tab is rendered.
 module View.Build
   ( buildStatusText
   , buildTab
@@ -33,7 +34,7 @@ import           View.Annotation
 --     runCode state [("main.hs", code')]
 
 buildStatusText :: Status -> Text
-buildStatusText NeverBuilt = "Never built"
+buildStatusText InitialStatus = "Unbuilt"
 buildStatusText (BuildRequested _) = "Sending"
 buildStatusText (Building _ (Just progress)) =
   "Building (" <>
@@ -57,7 +58,7 @@ infoStatusText BuildInfo {..}
     "Built"
 
 buildTab :: Status -> React ()
-buildTab NeverBuilt = return ()
+buildTab InitialStatus = return ()
 buildTab (BuildRequested _) = return ()
 buildTab (Building _ (Just progress)) = forM_ (progressParsedMsg progress) text
 buildTab (Building _ Nothing) = "Build done.  Requesting compile info.."

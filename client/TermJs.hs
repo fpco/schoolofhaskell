@@ -1,3 +1,4 @@
+-- | Bindings to the TermJs terminal emulator.
 module TermJs
   ( TermJs(..)
   , initTerminal
