@@ -26,6 +26,7 @@ import qualified Data.UUID.V4 as UUID
 import qualified Network.AWS.Data as AWS
 import Network.AWS.EC2
 import Network.AWS.ECS
+import SchoolOfHaskell.Scheduler.API
 import SchoolOfHaskell.Scheduler.Types
 
 discoverEnv :: forall (m :: * -> *).

@@ -24,6 +24,7 @@ import Network.HTTP.Media (MediaType)
 import qualified Network.HTTP.Types as HTTP
 import Network.Wai.Handler.Warp
        (runSettings, defaultSettings, setPort, setHost)
+import SchoolOfHaskell.Scheduler.API
 import SchoolOfHaskell.Scheduler.Types
 import SchoolOfHaskell.Scheduler.AWS
 

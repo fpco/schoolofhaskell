@@ -19,3 +19,4 @@ packages:
   - ./scheduler
   - ./server
   - ./runner
+  - ./soh-scheduler-api

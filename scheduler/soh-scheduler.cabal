@@ -35,6 +35,7 @@ library
                      , monad-logger
                      , mtl
                      , resourcet
+                     , soh-scheduler-api
                      , text
                      , time
                      , transformers

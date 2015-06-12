@@ -33,6 +33,7 @@ module SchoolOfHaskell.Scheduler
        , startSessionEnv
        ) where
 
+import SchoolOfHaskell.Scheduler.API
 import SchoolOfHaskell.Scheduler.Types
 import SchoolOfHaskell.Scheduler.AWS
 import SchoolOfHaskell.Scheduler.Web
