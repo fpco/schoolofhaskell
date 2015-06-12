@@ -47,12 +47,14 @@ getEditorScriptR = $(ghcjsFileDev
         ,"language-typescript"
         ,"lens"
         ,"mtl"
+        ,"soh-scheduler-api"
         ,"stack-prism"
         ,"stm"
         ,"text"
         ,"transformers"
+        ,"uuid-types"
         ,"vector"
         ,"void"
         ])
     ["../soh-client"]
-    "../soh-client/main.hs")
+    "../soh-client/main.hs" )
