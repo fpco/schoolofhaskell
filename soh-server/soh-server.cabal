@@ -1,7 +1,7 @@
 name:                soh-server
 synopsis:            Interactive haskell as a service
 version:             0.0.1
-description:         FP Complete's service for interactive Haskell tutorials and documentation
+description:         Service for interactive Haskell tutorials and documentation
 license:             MIT
 license-file:        LICENSE
 author:              FP Complete Developers
