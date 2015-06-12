@@ -142,8 +142,8 @@ containerDetail =
                             Left e ->
                               do putResponseBody (ResponseBuilder (fromString (show e)))
                                  halt HTTP.status502
-                            Right ids ->
-                              return (ResponseBuilder (lazyByteString (encode ids)))
+                            Right detail ->
+                              return (ResponseBuilder (lazyByteString (encode detail)))
                  return [(jsonMIME,cIndex)]
            ,deleteResource =
               do do state <- getState
