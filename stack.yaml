@@ -16,7 +16,7 @@ packages:
   - ./deps/ide-backend/vendor/cabal/Cabal
   - ./deps/language-typescript
   - ./deps/stack-prism
-  - ./scheduler
-  - ./server
-  - ./runner
+  - ./soh-runner
+  - ./soh-scheduler
   - ./soh-scheduler-api
+  - ./soh-server
