@@ -1,7 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 module SchoolOfHaskell.Runner (Settings(..), runner) where
 
 import           Data.Aeson (encode, eitherDecode)
+import           Data.Text (Text)
 import           IdeSession (defaultSessionInitParams, defaultSessionConfig)
 import           IdeSession.Client (ClientIO(..), startEmptySession)
 import           IdeSession.Client.CmdLine
@@ -13,12 +15,13 @@ import qualified Network.WebSockets as WS
 
 data Settings = Settings
   { settingsPort :: Int
+  , settingsReceipt :: Text
   }
 
 runner :: Settings -> IO ()
-runner settings = do
+runner Settings {..} = do
   let warpSettings = Warp.defaultSettings
-        { Warp.settingsPort = settingsPort settings
+        { Warp.settingsPort = settingsPort
         }
       clientOpts = Options
         { optInitParams = defaultSessionInitParams
@@ -32,12 +35,16 @@ runner settings = do
         conn <- WS.acceptRequest pending
         WS.forkPingThread conn 30
         -- TODO: authenticate the container receipt
-        -- msg <- WS.receiveData conn
-        let clientIO = ClientIO
-              { putJson = \x -> WS.sendTextData conn $ encode x
-              , getJson = fmap decodeOrFail (WS.receiveData conn)
-              }
-        startEmptySession clientIO clientOpts EmptyOptions
+        clientReceipt <- WS.receiveData conn
+        if clientReceipt /= settingsReceipt
+          then WS.sendTextData conn ("Error: Incorrect container receipt" :: Text)
+          else do
+            WS.sendTextData conn ("Success: Correct container receipt" :: Text)
+            let clientIO = ClientIO
+                  { putJson = \x -> WS.sendTextData conn $ encode x
+                  , getJson = fmap decodeOrFail (WS.receiveData conn)
+                  }
+            startEmptySession clientIO clientOpts EmptyOptions
   Warp.runSettings warpSettings $ \req sendResponse -> sendResponse $
     case WaiWS.websocketsApp WS.defaultConnectionOptions app req of
       Just res -> res

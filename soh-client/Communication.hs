@@ -40,16 +40,26 @@ import           Data.Aeson (eitherDecodeStrict, encode)
 import           Data.ByteString.Lazy (toStrict)
 import           Data.Function (fix)
 import           Data.IORef
-import           Data.Text.Encoding (encodeUtf8, decodeUtf8)
+import qualified Data.Text as T
+import           Data.Text.Encoding (encodeUtf8, decodeUtf8, decodeASCII)
+import qualified Data.UUID.Types as UUID
 import           Data.Void (absurd)
 import           Import
 import qualified JavaScript.WebSockets as WS
 import           Language.JsonGrammar (Json)
+import           SchoolOfHaskell.Scheduler.API (ContainerReceipt(..))
 
 -- | Given the URL of the SoH container, this creates a websockets
 -- connection to it.
-withUrl :: Text -> (Backend -> IO a) -> IO a
-withUrl url f = WS.withUrl url $ \conn -> do
+withUrl :: Text -> ContainerReceipt -> (Backend -> IO a) -> IO a
+withUrl url (ContainerReceipt uuid) f = WS.withUrl url $ \conn -> do
+  -- Send the receipt to the backend.  If it's rejected, then this
+  -- throws an exception.
+  sendText conn (decodeASCII (UUID.toASCIIBytes uuid))
+  response <- WS.receiveText conn
+  when (not ("Success" `T.isPrefixOf` response)) $ fail (T.unpack response)
+  -- Initialize state of the 'Backend' type, and fork off threads for
+  -- handling communication with the backend.
   backendRequestChan <- newTChanIO
   backendResponseChan <- newTChanIO
   backendProcessHandler <- newIORef $ \_ ->
@@ -198,10 +208,13 @@ expectResponse backend f expected = do
 --------------------------------------------------------------------------------
 -- Sending and receiving JSON
 
+--FIXME: fewer conversions...
 sendJson :: Json a => WS.Connection -> a -> IO ()
-sendJson conn req = do
-  --FIXME: fewer conversions...
-  connected <- WS.sendText conn (decodeUtf8 (toStrict (encode (toJSON req))))
+sendJson conn = sendText conn . decodeUtf8 . toStrict . encode . toJSON
+
+sendText :: WS.Connection -> Text -> IO ()
+sendText conn req = do
+  connected <- WS.sendText conn req
   when (not connected) $ fail "Websocket disconnected"
 
 receiveJson :: Json a => WS.Connection -> IO a

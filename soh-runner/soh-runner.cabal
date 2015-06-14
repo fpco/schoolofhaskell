@@ -13,11 +13,13 @@ library
   default-language:    Haskell2010
   hs-source-dirs:      src
   exposed-modules:     SchoolOfHaskell.Runner
+  other-modules:       Paths_soh_runner
   build-depends:       base >=4.7 && <5
                      , aeson
                      , http-types
                      , ide-backend
                      , ide-backend-client
+                     , text
                      , wai
                      , wai-websockets
                      , warp
@@ -29,4 +31,6 @@ executable soh-runner
   hs-source-dirs:      main
   main-is:             Main.hs
   build-depends:       base >=4.7 && <5
+                     , optparse-simple
                      , soh-runner
+                     , text

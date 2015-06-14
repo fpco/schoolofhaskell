@@ -21,6 +21,10 @@ newtype ContainerReceipt =
   ContainerReceipt {_crID :: UUID}
   deriving (Eq, Data, Typeable)
 
+-- | Receipt used for local development.
+devReceipt :: ContainerReceipt
+devReceipt = ContainerReceipt (UUID.fromWords 0 0 0 0)
+
 instance Show ContainerReceipt where
   show = show . _crID
 

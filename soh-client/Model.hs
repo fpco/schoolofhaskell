@@ -15,6 +15,7 @@ import qualified Data.Vector as V
 import           Import
 import           PosMap (emptyPosMap)
 import           React.Internal (appState)
+import           SchoolOfHaskell.Scheduler.API (ContainerReceipt)
 import           TermJs (writeTerminal)
 
 -- | Given the number of snippets on the page, this creates the
@@ -44,8 +45,8 @@ getApp cnt = do
   makeApp state id
 
 -- | Runs the SoH client application.
-runApp :: App -> IO void
-runApp app = withUrl "ws://localhost:4000" $ \backend -> do
+runApp :: Text -> ContainerReceipt -> App -> IO void
+runApp url receipt app = withUrl url receipt $ \backend -> do
   setTVarIO (appState app) stateBackend (Just backend)
   version <- expectWelcome backend
   putStrLn $ "Connection established with ide-backend " ++ show version
