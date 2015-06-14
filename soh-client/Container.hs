@@ -36,11 +36,11 @@ createContainer bu spec =
 
 getContainerDetail :: BaseUrl -> Text -> IO ContainerDetail
 getContainerDetail bu k =
-  sendRequestJsonResponse bu ("containers/" <> k) "" JQ.GET
+  sendRequestJsonResponse bu ("containers/" <> encodeURIComponent k) "" JQ.GET
 
 stopContainer :: BaseUrl -> Text -> IO ()
 stopContainer bu k =
-  sendRequestJsonResponse bu ("containers/" <> k) "" JQ.DELETE
+  sendRequestJsonResponse bu ("containers/" <> encodeURIComponent k) "" JQ.DELETE
 
 getContainerDetailById :: BaseUrl -> ContainerId -> IO ContainerDetail
 getContainerDetailById bu cid =
@@ -67,7 +67,7 @@ sendRequest (BaseUrl bu) route body method =
     ajax (bu <> "/" <> route) body settings
   where
     settings =  JQ.AjaxSettings
-      { JQ.asContentType = "application/json; charset:UTF-8"
+      { JQ.asContentType = "application/json"
       , JQ.asCache = False
       , JQ.asIfModified = False
       , JQ.asMethod = method
@@ -89,11 +89,17 @@ decode s =
 -- * Uses JSStrings instead of converting to and from Text.
 --
 -- * Sends a raw body rather than parameters.
+--
+-- * 'Accept' : 'application/json'
+--
 ajax :: Text -> JSString -> JQ.AjaxSettings -> IO JSString
 ajax url d s = do
   os <- toJSRef s
   setProp ("data"::JSString) d os
   setProp ("processData"::JSString) (toJSBool False) os
+  headers <- newObj
+  setProp ("headers"::JSString) headers os
+  setProp ("Accept"::JSString) ("application/json"::JSString) headers
   arr <- JQ.jq_ajax (toJSString url) os
   status <- fromMaybe 0 <$> (fromJSRef =<< getProp ("status"::JSString) arr)
   if status >= 300
@@ -108,3 +114,9 @@ data AjaxException = AjaxException
   } deriving (Show, Typeable)
 
 instance Exception AjaxException
+
+encodeURIComponent :: Text -> Text
+encodeURIComponent = fromJSString . encodeURIComponent' . toJSString
+
+foreign import javascript unsafe "encodeURIComponent"
+  encodeURIComponent' :: JSString -> JSString
