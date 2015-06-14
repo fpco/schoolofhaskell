@@ -1,6 +1,6 @@
 -- | Handles communicating with the server, to initialize the SoH
 -- container.
-module Container
+module ContainerClient
   ( BaseUrl(..)
   , listContainers
   , createContainer

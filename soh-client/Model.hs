@@ -3,7 +3,7 @@
 module Model where
 
 import           Communication
-import           Container
+import           ContainerClient
 import           Control.Exception (catch, throwIO, SomeException)
 import qualified Data.ByteString.Lazy as BL
 import           Data.Function (on)
