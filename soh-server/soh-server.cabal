@@ -107,7 +107,7 @@ executable soh-server
     hs-source-dirs:    app
     build-depends:     base, soh-server
 
-    ghc-options:       -threaded -O2 -rtsopts -with-rtsopts=-N
+    ghc-options:       -Wall -threaded -O2 -rtsopts -with-rtsopts=-N
 
 test-suite test
     type:              exitcode-stdio-1.0

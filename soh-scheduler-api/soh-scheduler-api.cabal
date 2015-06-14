@@ -12,8 +12,8 @@ cabal-version:       >=1.10
 library
   default-language:    Haskell2010
   hs-source-dirs:      src
-  ghc-options:         -Wall
   exposed-modules:     SchoolOfHaskell.Scheduler.API
+  ghc-options:         -Wall
   build-depends:       aeson
                      , base >=4.7 && <5
                      , lens

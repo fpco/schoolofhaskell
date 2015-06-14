@@ -1,7 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Main (main) where
 
-import Control.Monad (void)
 import SchoolOfHaskell.Runner (runner, Settings(Settings))
 import Options.Applicative.Simple
 import Paths_soh_runner (version)

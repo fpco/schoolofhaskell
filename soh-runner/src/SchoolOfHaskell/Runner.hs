@@ -20,9 +20,7 @@ data Settings = Settings
 
 runner :: Settings -> IO ()
 runner Settings {..} = do
-  let warpSettings = Warp.defaultSettings
-        { Warp.settingsPort = settingsPort
-        }
+  let warpSettings = Warp.setPort settingsPort Warp.defaultSettings
       clientOpts = Options
         { optInitParams = defaultSessionInitParams
         , optConfig = defaultSessionConfig
