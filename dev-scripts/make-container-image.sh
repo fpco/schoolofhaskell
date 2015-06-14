@@ -14,4 +14,4 @@ docker build -t mgsloan/soh-ghcjs-dev:lts-2.13 .
 
 # After this, we can run it via:
 #
-# docker run -p 127.0.0.1:4000:4000 -t -i mgsloan/soh-ghcjs-dev:lts-2.13 /bin/bash -c 'PATH=/home/:$PATH /home/soh-runner'
+# docker run -p 127.0.0.1:4000:4000 -t -i mgsloan/soh-ghcjs-dev:lts-2.13 /bin/bash -c 'PATH=/opt/soh/:$PATH /opt/soh/soh-runner'
