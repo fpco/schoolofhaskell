@@ -60,3 +60,10 @@ foreign import javascript unsafe "document.getElementById($1)"
 foreign import javascript unsafe
   "positionControlsOnResize"
   positionControlsOnResize :: Element -> Element -> IO ()
+-- about `-fdev`.
+devMode :: Bool
+devMode = fromJSBool devMode'
+
+foreign import javascript unsafe
+  "window['devMode']"
+  devMode' :: JSBool
