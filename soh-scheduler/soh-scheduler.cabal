@@ -43,6 +43,7 @@ library
                      , unordered-containers
                      , uuid
                      , wai
+                     , wai-cors
                      , warp
 
 executable sohs

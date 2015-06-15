@@ -27,6 +27,8 @@ import Network.Wai.Handler.Warp
 import SchoolOfHaskell.Scheduler.API
 import SchoolOfHaskell.Scheduler.Types
 import SchoolOfHaskell.Scheduler.AWS
+import Network.Wai.Middleware.Cors (CorsResourcePolicy(..), cors, simpleCorsResourcePolicy)
+import qualified Network.Wai as Wai
 
 data State =
   State {_sSettings :: Settings}
@@ -64,14 +66,24 @@ start ecs env' =
            State (mkSettings ecs env')
      runSettings
        (setPort 3000 (setHost "0.0.0.0" defaultSettings))
-       (resourceToWai
-          (do "static" </> star #> static
-              "containers" #> containerIndex
-              "containers" </>
-                var "id" #>
-                containerDetail)
-          resource404
-          state)
+       (cors corsPolicy
+             (resourceToWai
+                (do "static" </> star #> static
+                    "containers" #> containerIndex
+                    "containers" </>
+                      var "id" #>
+                      containerDetail)
+                resource404
+                state))
+
+-- This allows pages served by other domains to access this API.
+--
+-- Note: It doesn't seem to be necessary, but ideally this would do
+-- per-route computation of fields like 'corsMethods'
+corsPolicy :: Wai.Request -> Maybe CorsResourcePolicy
+corsPolicy _ = Just $ simpleCorsResourcePolicy
+  { corsMethods = HTTP.methodDelete : corsMethods simpleCorsResourcePolicy
+  }
 
 containerIndex :: forall m.
                   MonadIO m

@@ -2,7 +2,11 @@ resolver: lts-2.13
 flags:
   ide-backend-client:
     use-cabal: false
-extra-deps: [ airship-0.3.0.0 ]
+  wai-cors:
+    transformers-3: true
+extra-deps: [ airship-0.3.0.0
+            , wai-cors-0.2.3
+            ]
 docker:
   enable: true
   repo: fpco/ghcjs-dev
