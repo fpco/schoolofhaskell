@@ -3,34 +3,85 @@ $newline text
 <script src="//cdn.rawgit.com/chjj/term.js/v0.0.4/src/term.js"></script>
 
 <div .content #soh-column>
-  <h1>Haskell Fast & Hard (Part 1)
-  <h2>Don't be afraid
-  <p>Many book/articles about Haskell start by introducing some esoteric formula (quick sort, Fibonacci, etc...). I will do the exact opposite. At first I won't show you any Haskell super power. I will start with similarities between Haskell and other programming languages. Let's jump to the mandatory "Hello World".
-  <div .soh-code>main = putStrLn "Hello World!"
-  <p>Now, a program asking your name and replying "Hello" using the name you entered:
+  <h1>2: Algebraic Data Types
+  <p>By Brent Yorgey
+  <p>(from <a href=https://www.fpcomplete.com/school/starting-with-haskell/introduction-to-haskell/2-algebraic-data-types>here</a>)
+  <h2>Enumeration Types
+  <p>Like many programming languages, Haskell allows programmers to create their own enumeration types. Here’s a simple example:
   <div .soh-code>
-    main = do
-    \  print "What is your name?"
-    \  name <- getLine
-    \  print ("Hello " ++ name ++ "!")
+    data Thing = Shoe
+    \       | Ship
+    \       | SealingWax
+    \       | Cabbage
+    \       | King
+    \deriving Show
+  <p>This declares a new type called Thing with five data constructors Shoe, Ship, etc which are the (only) values of type Thing. [The deriving Show is a magical incantation which tells GHC to automatically generate default code for converting Things to Strings. This is what GHCi uses when printing the value of an expression of type Thing.]
+  <div .soh-code>
+    shoe :: Thing
+    shoe = Shoe
 
-  First, let us compare with a similar program in some imperative languages:
+    listO'Things :: [Thing]
+    listO'Things = [Shoe, SealingWax, King, Cabbage, King]
+  <p>We can write functions on Things by pattern matching:
+  <div .soh-code>
+    isSmall :: Thing -> Bool
+    isSmall Shoe       = True
+    isSmall Ship       = False
+    isSmall SealingWax = True
+    isSmall Cabbage    = True
+    isSmall King       = False
 
-  <code>
-    # Python
-    print "What is your name?"
-    name = raw_input()
-    print "Hello %s!" % name
-  <code>
-    // In C
-    #include <stdio.h>
-    int main (int argc, char **argv) {
-    \    char name[666]; // <- An Evil Number!
-    \    // What if my name is more than 665 character long?
-    \    printf("What is your name?\n");
-    \    scanf("%s", name);
-    \    printf("Hello %s!\n", name);
-    \    return 0;
-    }
+    main = print (isSmall Cabbage)
+  <p>Recalling how function clauses are tried in order from top to bottom, we could also make the definition of isSmall a bit shorter like so:
+  <div .soh-code>
+    isSmall2 :: Thing -> Bool
+    isSmall2 Ship       = False
+    isSmall2 King       = False
+    isSmall2 _          = True
+
+    main = print (isSmall2 Cabbage)
+  <h2>Beyond Enumerations
+  <p>Thing is an enumeration type, similar to those provided by other languages such as Java or C++. However, enumerations are actually only a special case of Haskell’s more general algebraic data types. As a first example of a data type which is not just an enumeration, consider the definition of FailableDouble:
+  <div .soh-code>
+    data FailableDouble = Failure
+    \                    | OK Double
+    \  deriving Show
+  <p>This says that the FailableDouble type has two data constructors. The first one, OK, takes an argument of type Double. So OK by itself is not a value of type FailableDouble; we need to give it a Double. For example, OK 3.4 is a value of type FailableDouble.
+  <div .soh-code>
+    a = Failure
+    b = OK 3.4
+
+    main = print (a,b)
+  <p>Here's one way we might use our new FailableDouble type:
+  <div .soh-code>
+    safeDiv :: Double -> Double -> FailableDouble
+    safeDiv _ 0 = Failure
+    safeDiv x y = OK (x / y)
+
+    main = print (safeDiv 2 0, safeDiv 3 4)
+  <p>More pattern matching! Notice how in the OK case we can give a name to the Double that comes along with it. For some applications, we might consider mapping a failed computation to a value of zero:
+  <div .soh-code>
+    failureToZero :: FailableDouble -> Double
+    failureToZero Failure = 0
+    failureToZero (OK d) = d
+
+    main = print (failureToZero Failure, failureToZero (OK 3.4))
+  <p>Data constructors can have more than one argument:
+  <div .soh-code>
+    -- Store a person's name, age, and favorite Thing
+    data Person = Person String Int Thing
+    \  deriving Show
+
+    brent :: Person
+    brent = Person "Brent" 30 SealingWax
+
+    stan :: Person
+    stan = Person "Stan" 94 Cabbage
+
+    getAge :: Person -> Int
+    getAge (Person _ a _) = a
+
+    main = print (getAge brent)
+  <p>Notice how the type constructor and data constructor are both named Person, but they inhabit different namespaces and are different things. This idiom (giving the type and data constructor of a one-constructor type the same name) is common, but can be confusing until you get used to it.
 
 <div #soh-controls>
