@@ -7,10 +7,10 @@ cd dev-scripts/container-docker
 rm soh-runner
 rm ide-backend-server
 
-ln -P ../../.stack-work/install/x86_64-linux/lts-2.13/7.8.4/bin/soh-runner soh-runner
-ln -P ../../.stack-work/install/x86_64-linux/lts-2.13/7.8.4/bin/ide-backend-server ide-backend-server
+ln -P ../../.stack-work/install/x86_64-linux/lts-2.14/7.8.4/bin/soh-runner soh-runner
+ln -P ../../.stack-work/install/x86_64-linux/lts-2.14/7.8.4/bin/ide-backend-server ide-backend-server
 
-docker build -t mgsloan/soh-ghcjs-dev:local .
+docker build -t mgsloan/soh-runner:local .
 
 # After this, we can run it via:
 #

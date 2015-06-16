@@ -22,3 +22,6 @@
 [submodule "deps/ghcjs-from-typescript"]
 	path = deps/ghcjs-from-typescript
 	url = git://github.com/fpco/ghcjs-from-typescript.git
+[submodule "deps/ghcjs-jquery"]
+	path = deps/ghcjs-jquery
+	url = git@github.com:ghcjs/ghcjs-jquery.git

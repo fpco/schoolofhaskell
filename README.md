@@ -68,4 +68,4 @@ following scripts in separate terminals:
 ./dev-scripts/soh-runner.sh
 ```
 
-Then, point your browser at `localhost:3000`.
+Then, point your browser at `localhost:5000`.

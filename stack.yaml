@@ -1,4 +1,4 @@
-resolver: lts-2.13
+resolver: lts-2.14
 flags:
   ide-backend-client:
     use-cabal: false
@@ -9,7 +9,7 @@ extra-deps: [ airship-0.3.0.0
             ]
 docker:
   enable: true
-  repo: fpco/ghcjs-dev
+  repo: fpco/stack-ghcjs-build
 packages:
   - ./deps/JsonGrammar2
   - ./deps/ide-backend-client
