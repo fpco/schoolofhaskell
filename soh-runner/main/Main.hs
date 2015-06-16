@@ -23,4 +23,5 @@ settingsParser :: Parser Settings
 settingsParser =
   Settings
     <$> option auto (long "port" <> short 'p' <> metavar "PORT" <> value 4000)
-    <*> (pack <$> option str (long "receipt" <> short 'r' <> metavar "RECEIPT"))
+    <*> option (fmap pack str) (long "receipt" <> short 'r' <> metavar "RECEIPT")
+    <*> optional (option auto (long "lifetime-seconds" <> metavar "SECONDS"))

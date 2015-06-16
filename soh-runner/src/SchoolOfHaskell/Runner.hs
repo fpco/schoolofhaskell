@@ -2,6 +2,7 @@
 {-# LANGUAGE RecordWildCards #-}
 module SchoolOfHaskell.Runner (Settings(..), runner) where
 
+import           Control.Monad (void)
 import           Data.Aeson (encode, eitherDecode)
 import           Data.Text (Text)
 import           IdeSession (defaultSessionInitParams, defaultSessionConfig)
@@ -12,10 +13,12 @@ import qualified Network.Wai as W
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Network.Wai.Handler.WebSockets as WaiWS
 import qualified Network.WebSockets as WS
+import           System.Timeout (timeout)
 
 data Settings = Settings
   { settingsPort :: Int
   , settingsReceipt :: Text
+  , settingsLifetime :: Maybe Int
   }
 
 runner :: Settings -> IO ()
@@ -26,6 +29,13 @@ runner Settings {..} = do
         , optConfig = defaultSessionConfig
         , optCommand = StartEmptySession EmptyOptions
         }
+      -- Times out the server if we have a lifetime limit.  This is a
+      -- temporary solution to the problem of garbage collecting
+      -- containers.
+      lifetime
+        | Just secs <- settingsLifetime =
+          void . timeout (secs * 1000 * 1000)
+        | otherwise = id
       -- TODO: fail more gracefully than this, possibly by changing
       -- ide-backend-client to have getJson :: IO (Maybe Value).
       decodeOrFail = either error id . eitherDecode
@@ -43,7 +53,7 @@ runner Settings {..} = do
                   , getJson = fmap decodeOrFail (WS.receiveData conn)
                   }
             startEmptySession clientIO clientOpts EmptyOptions
-  Warp.runSettings warpSettings $ \req sendResponse -> sendResponse $
+  lifetime $ Warp.runSettings warpSettings $ \req sendResponse -> sendResponse $
     case WaiWS.websocketsApp WS.defaultConnectionOptions app req of
       Just res -> res
       Nothing -> W.responseLBS H.status404
