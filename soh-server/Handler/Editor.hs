@@ -47,6 +47,7 @@ getEditorScriptR = $(ghcjsFileDev
         ,"language-typescript"
         ,"lens"
         ,"mtl"
+        ,"soh-runner-api"
         ,"soh-scheduler-api"
         ,"stack-prism"
         ,"stm"

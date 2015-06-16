@@ -21,6 +21,7 @@ packages:
   - ./deps/language-typescript
   - ./deps/stack-prism
   - ./soh-runner
+  - ./soh-runner-api
   - ./soh-scheduler
   - ./soh-scheduler-api
   - ./soh-server

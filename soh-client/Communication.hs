@@ -47,17 +47,21 @@ import           Data.Void (absurd)
 import           Import
 import qualified JavaScript.WebSockets as WS
 import           Language.JsonGrammar (Json)
+import           SchoolOfHaskell.RunnerAPI
 import           SchoolOfHaskell.Scheduler.API (ContainerReceipt(..))
 
 -- | Given the URL of the SoH container, this creates a websockets
 -- connection to it.
 withUrl :: Text -> ContainerReceipt -> (Backend -> IO a) -> IO a
 withUrl url (ContainerReceipt uuid) f = WS.withUrl url $ \conn -> do
-  -- Send the receipt to the backend.  If it's rejected, then this
-  -- throws an exception.
-  sendText conn (decodeASCII (UUID.toASCIIBytes uuid))
-  response <- WS.receiveText conn
-  when (not ("Success" `T.isPrefixOf` response)) $ fail (T.unpack response)
+  -- Send the receipt to the backend.  If it's rejected, then an
+  -- exception is thrown.
+  let receiptText = decodeASCII (UUID.toASCIIBytes uuid)
+  sendJson conn (RunnerRequestAuth receiptText)
+  authResponse <- receiveJson conn
+  case authResponse of
+    RunnerResponseAuthSuccess -> return ()
+    _ -> fail "Didn't receive expected authentication success from runner."
   -- Initialize state of the 'Backend' type, and fork off threads for
   -- handling communication with the backend.
   backendRequestChan <- newTChanIO
@@ -69,13 +73,21 @@ withUrl url (ContainerReceipt uuid) f = WS.withUrl url $ \conn -> do
       receiveThread = showExceptions "receiveThread" $ forever $ do
         response <- receiveJson conn
         case response of
-          ResponseProcessOutput bs ->
-            readIORef backendProcessHandler >>= ($ Right bs)
-          ResponseProcessDone rr ->
-            readIORef backendProcessHandler >>= ($ Left rr)
-          ResponseNoProcessError ->
-            consoleErrorText "No running process"
-          _ -> atomically (writeTChan backendResponseChan response)
+          RunnerResponseAuthSuccess ->
+            fail "Didn't expect to receive auth response while running"
+          RunnerResponseAuthFailure ->
+            fail "Didn't expect to receive auth response while running"
+          RunnerResponsePortIsListening ->
+            fail "FIXME"
+          RunnerResponseClient response' ->
+            case response' of
+              ResponseProcessOutput bs ->
+                readIORef backendProcessHandler >>= ($ Right bs)
+              ResponseProcessDone rr ->
+                readIORef backendProcessHandler >>= ($ Left rr)
+              ResponseNoProcessError ->
+                consoleErrorText "No running process"
+              _ -> atomically (writeTChan backendResponseChan response')
   result <- receiveThread `race` sendThread `race` f Backend {..}
   case result of
     Left (Left x) -> absurd x
@@ -191,7 +203,10 @@ expectWelcome backend =
 -- Backend IO
 
 sendRequest :: Backend -> Request -> IO ()
-sendRequest backend = atomically . writeTChan (backendRequestChan backend)
+sendRequest backend = sendRequest' backend . RunnerRequestClient
+
+sendRequest' :: Backend -> RunnerRequest -> IO ()
+sendRequest' backend = atomically . writeTChan (backendRequestChan backend)
 
 receiveResponse :: Backend -> IO Response
 receiveResponse = atomically . readTChan . backendResponseChan

@@ -17,9 +17,12 @@ library
   ghc-options:         -Wall
   build-depends:       base >=4.7 && <5
                      , aeson
+                     , bytestring
                      , http-types
                      , ide-backend
                      , ide-backend-client
+                     , ide-backend-json
+                     , soh-runner-api
                      , text
                      , wai
                      , wai-websockets

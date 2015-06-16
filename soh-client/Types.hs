@@ -6,14 +6,15 @@ import Control.Lens (makeLenses, makePrisms, makeWrapped)
 import Data.ByteString (ByteString)
 import Data.IORef (IORef)
 import Data.Text (Text)
+import Data.Typeable (Typeable)
+import Data.Vector (Vector)
 import IdeSession.Client.JsonAPI
 import IdeSession.Types.Progress
 import IdeSession.Types.Public
-import React.Unmanaged (Unmanaged)
-import TermJs (TermJs)
 import React.IFrame
-import Data.Vector (Vector)
-import Data.Typeable (Typeable)
+import React.Unmanaged (Unmanaged)
+import SchoolOfHaskell.RunnerAPI (RunnerRequest)
+import TermJs (TermJs)
 
 -- | The application state.  Ideally, this would entirely consist of
 -- pure data.
@@ -108,7 +109,7 @@ data BuildRequest = BuildRequest !SnippetId [(FilePath, Text)]
 
 -- | State of the connection with the backend.  See "Communication".
 data Backend = Backend
-  { backendRequestChan :: TChan Request
+  { backendRequestChan :: TChan RunnerRequest
   , backendResponseChan :: TChan Response
   , backendProcessHandler :: IORef (Either RunResult ByteString -> IO ())
   } deriving (Typeable)
