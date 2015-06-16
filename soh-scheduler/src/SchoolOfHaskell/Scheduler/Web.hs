@@ -83,6 +83,7 @@ start ecs env' =
 corsPolicy :: Wai.Request -> Maybe CorsResourcePolicy
 corsPolicy _ = Just $ simpleCorsResourcePolicy
   { corsMethods = HTTP.methodDelete : corsMethods simpleCorsResourcePolicy
+  , corsRequestHeaders = "Content-Type" : corsRequestHeaders simpleCorsResourcePolicy
   }
 
 containerIndex :: forall m.
