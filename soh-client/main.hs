@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import qualified Ace
-import           ContainerClient (BaseUrl(..), createContainer, getContainerDetailByReceipt)
+import           ContainerClient
 import           Control.Concurrent
 import           GHCJS.DOM.HTMLElement (htmlElementGetInnerText, castToHTMLElement)
 import           Import hiding (getElementById)
@@ -94,3 +94,17 @@ devMode = fromJSBool devMode'
 foreign import javascript unsafe
   "window['devMode']"
   devMode' :: JSBool
+
+-- Purely for testing purposes
+testContainerApi :: IO ()
+testContainerApi = do
+  let bu = BaseUrl "http://localhost:3000"
+  containers <- listContainers bu
+  print ("containers = ", containers)
+  forM_ containers $ \cid -> do
+    cd <- getContainerDetailById bu cid
+    print ("container detail for " ++ show cid, cd)
+  -- print ("deleting", head containers)
+  -- stopContainerById bu (head containers)
+  -- containers <- listContainers bu
+  -- print ("containers = ", containers)
