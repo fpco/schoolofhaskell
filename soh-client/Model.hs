@@ -50,8 +50,11 @@ runApp url receipt app = withUrl url receipt $ \backend -> do
   version <- expectWelcome backend
   putStrLn $ "Connection established with ide-backend " ++ show version
   let state = appState app
+      -- TODO: Other env variables from old SoH?  APPROOT,
+      -- FP_ENVIRONMENT_NAME, FP_ENVIRONMENT_TYPE, IMAGE_DIR, and etc
+      initialUpdates = [RequestUpdateEnv [("PORT", Just "3000")]]
   br <- waitForTVarIO state (^? (stateStatus . _BuildRequested))
-  mainLoop backend state br `catch` \ex -> do
+  mainLoop backend state br initialUpdates `catch` \ex -> do
     consoleErrorText $
       "Exited mainLoop with exception " <> tshow (ex :: SomeException)
     throwIO ex
@@ -61,13 +64,18 @@ runApp url receipt app = withUrl url receipt $ \backend -> do
 -- build requests.  These build requests re-enter this 'mainLoop'
 -- function.  As is implied by its @IO void@ return type, it never
 -- returns.
-mainLoop :: Backend -> TVar State -> BuildRequest -> IO void
-mainLoop backend state br = do
-  success <- buildSuccess <$> compileCode backend state br
+mainLoop
+  :: Backend
+  -> TVar State
+  -> BuildRequest
+  -> [RequestSessionUpdate]
+  -> IO void
+mainLoop backend state br extraUpdates = do
+  success <- buildSuccess <$> compileCode backend state br extraUpdates
   when success $ runConsole backend state
   --FIXME: Kill the running process
   br' <- runQueries backend state
-  mainLoop backend state br'
+  mainLoop backend state br' []
 
 -- | Whether there are no errors in a 'BuildInfo'.
 buildSuccess :: BuildInfo -> Bool
@@ -75,14 +83,19 @@ buildSuccess bi = null (buildErrors bi) && null (buildServerDieds bi)
 
 -- | Compiles a set of files and retrieves the resulting error
 -- / warning messages.
-compileCode :: Backend -> TVar State -> BuildRequest -> IO BuildInfo
-compileCode backend state (BuildRequest sid files) = do
+compileCode
+  :: Backend
+  -> TVar State
+  -> BuildRequest
+  -> [RequestSessionUpdate]
+  -> IO BuildInfo
+compileCode backend state (BuildRequest sid files) extraUpdates = do
   --TODO: clear ide-backend state before the rest of the updates.
   let requestUpdate (fp, txt) = RequestUpdateSourceFile fp $
         BL.fromStrict (encodeUtf8 txt)
   -- Show the build's progress and wait for it to finish.
   updateSession backend
-    (map requestUpdate files)
+    (extraUpdates ++ map requestUpdate files)
     (setTVarIO state stateStatus . Building sid)
   -- Retrieve the errors
   sourceErrors <- getAnnSourceErrors backend
