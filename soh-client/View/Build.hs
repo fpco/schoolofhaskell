@@ -1,6 +1,7 @@
 -- | This module defines how the build tab is rendered.
 module View.Build
   ( buildStatusText
+  , buildStatusClass
   , buildTab
   ) where
 
@@ -45,6 +46,15 @@ buildStatusText (Building _ Nothing) = "Fetching"
 buildStatusText (Built _ info) = infoStatusText info
 buildStatusText (QueryRequested _ info _) = infoStatusText info
 buildStatusText (KillRequested _ _) = "Killing"
+
+-- TODO: use these classes to add style to the build tab.
+buildStatusClass :: Status -> Text
+buildStatusClass InitialStatus {} = ""
+buildStatusClass BuildRequested {} = "soh-build-requested"
+buildStatusClass Building {} = "soh-building"
+buildStatusClass Built {} = "soh-built"
+buildStatusClass QueryRequested {} = "soh-query-requested"
+buildStatusClass KillRequested {} = "soh-kill-requested"
 
 infoStatusText :: BuildInfo -> Text
 infoStatusText BuildInfo {..}

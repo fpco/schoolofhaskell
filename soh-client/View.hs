@@ -27,10 +27,11 @@ renderControls termjs iframe state = do
       -- Set the position of the controls.
       div_ $ do
         class_ "controls-bar"
-        renderTab state ConsoleTab "Console"
-        renderTab state WebTab "Web"
-        renderTab state DocsTab "Docs"
-        renderTab state BuildTab $ text (buildStatusText status)
+        renderTab state ConsoleTab "" "Console"
+        renderTab state WebTab "" "Web"
+        renderTab state DocsTab "" "Docs"
+        renderTab state BuildTab (buildStatusClass status) $ do
+          text (buildStatusText status)
         renderCloseButton
       renderTabContent state ConsoleTab $ consoleTab termjs
       renderTabContent state DocsTab $ docsTab state
@@ -98,11 +99,11 @@ renderRunButton sid isCurrent s = div_ $ do
 --------------------------------------------------------------------------------
 -- Tabs
 
-renderTab :: State -> Tab -> React () -> React ()
-renderTab state tab f = div_ $ do
+renderTab :: State -> Tab -> Text -> React () -> React ()
+renderTab state tab extraClasses f = div_ $ do
   class_ $
     addWhen (state ^. stateTab == tab) "tab-focused"
-    ("tab " <> tabClass tab)
+    ("tab " <> tabClass tab <> " " <> extraClasses)
   onClick (\_ -> flip switchTab tab)
   f
 
