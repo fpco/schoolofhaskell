@@ -67,7 +67,11 @@ buildTab (QueryRequested sid info _) = buildInfo sid info
 buildTab (KillRequested sid info) = buildInfo sid info
 
 buildInfo :: SnippetId -> BuildInfo -> React ()
-buildInfo sid info =
+buildInfo sid info
+  -- TODO: victory picture instead of text?
+  | null (sourceErrors info) =
+  text "Successful build - no errors or warnings!"
+  | otherwise =
   forM_ (sourceErrors info) $ \AnnSourceError{..} -> div_ $ do
     -- FIXME: have some explanatory text or victory picture when there
     -- are no errors or warnings.

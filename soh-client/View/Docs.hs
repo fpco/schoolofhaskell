@@ -9,7 +9,9 @@ import           Import
 docsTab :: State -> React ()
 docsTab state =
   case state ^. stateDocs of
-    Nothing -> span_ "FIXME: explanatory content"
+    Nothing -> div_ $ do
+      class_ "soh-no-docs-available"
+      text "No docs available for selection"
     Just info -> build "iframe" $ src_ (hackageLink info)
 
 hackageLink :: IdInfo -> Text
