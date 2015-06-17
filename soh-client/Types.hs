@@ -109,9 +109,10 @@ data BuildRequest = BuildRequest !SnippetId [(FilePath, Text)]
 
 -- | State of the connection with the backend.  See "Communication".
 data Backend = Backend
-  { backendRequestChan :: TChan RunnerRequest
+  { backendHost :: Text
+  , backendRequestChan :: TChan RunnerRequest
   , backendResponseChan :: TChan Response
-  , backendProcessHandler :: IORef (Either RunResult ByteString -> IO ())
+  , backendProcessHandler :: IORef (ProcessOutput -> IO ())
   } deriving (Typeable)
 
 instance Eq Backend where
@@ -119,6 +120,11 @@ instance Eq Backend where
 
 instance Show Backend where
   showsPrec _ _ = showString "Backend conn waiter"
+
+data ProcessOutput
+  = ProcessOutput ByteString
+  | ProcessDone RunResult
+  | ProcessListening
 
 -- | Stores a list of source code location changes.  See "PosMap".
 --

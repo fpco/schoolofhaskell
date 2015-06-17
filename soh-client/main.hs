@@ -36,8 +36,8 @@ main = do
   -- Just for development purposes
   -- void $ forkIO $ initialRun (appState app)
   -- Run the application
-  (url, receipt) <- case mschedulerUrl of
-    Nothing -> return ("ws://localhost:4000", devReceipt)
+  case mschedulerUrl of
+    Nothing -> runApp "localhost" 4000 devReceipt app
     Just schedulerUrl -> do
       let spec = ContainerSpec "mgsloan/soh-ghcjs-dev:lts-2.13"
           bu = BaseUrl schedulerUrl
@@ -46,8 +46,7 @@ main = do
       case detail ^. cdAddress of
         --FIXME: under which conditions does this happen?
         Nothing -> fail "No address in container detail"
-        Just (host, port) -> return (host <> ":" <> tshow port, receipt)
-  runApp url receipt app
+        Just (host, port) -> runApp host port receipt app
 
 initialRun :: TVar State -> IO ()
 initialRun stateVar = do

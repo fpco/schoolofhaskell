@@ -17,7 +17,9 @@ library
   ghc-options:         -Wall
   build-depends:       base >=4.7 && <5
                      , aeson
+                     , async
                      , bytestring
+                     , conduit-combinators
                      , http-types
                      , ide-backend
                      , ide-backend-client

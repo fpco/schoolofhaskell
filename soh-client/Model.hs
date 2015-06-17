@@ -13,6 +13,7 @@ import           Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import qualified Data.Vector as V
 import           Import
 import           PosMap (emptyPosMap)
+import           React.IFrame (setIFrameUrl)
 import           React.Internal (appState)
 import           SchoolOfHaskell.Scheduler.API (ContainerReceipt)
 import           TermJs (writeTerminal)
@@ -44,15 +45,15 @@ getApp cnt = do
   makeApp state id
 
 -- | Runs the SoH client application.
-runApp :: Text -> ContainerReceipt -> App -> IO void
-runApp url receipt app = withUrl url receipt $ \backend -> do
+runApp :: Text -> Int -> ContainerReceipt -> App -> IO void
+runApp host port receipt app = withUrl host port receipt $ \backend -> do
   setTVarIO (appState app) stateBackend (Just backend)
   version <- expectWelcome backend
   putStrLn $ "Connection established with ide-backend " ++ show version
   let state = appState app
       -- TODO: Other env variables from old SoH?  APPROOT,
       -- FP_ENVIRONMENT_NAME, FP_ENVIRONMENT_TYPE, IMAGE_DIR, and etc
-      initialUpdates = [RequestUpdateEnv [("PORT", Just "3000")]]
+      initialUpdates = [RequestUpdateEnv [("PORT", Just (show webPort))]]
   br <- waitForTVarIO state (^? (stateStatus . _BuildRequested))
   mainLoop backend state br initialUpdates `catch` \ex -> do
     consoleErrorText $
@@ -118,10 +119,20 @@ runConsole backend state = do
         terminal' <- readUnmanagedOrFail state (^? stateConsole)
         writeTerminal terminal' x
   setProcessHandler backend $ \case
-    Right output -> appendConsole (decodeUtf8 output)
-    Left result ->
+    ProcessOutput output -> appendConsole (decodeUtf8 output)
+    ProcessDone result ->
       appendConsole $ "\r\nProcess done: " <> T.pack (show result) <> "\r\n"
+    ProcessListening -> do
+      webFrame <- readUnmanagedOrFail state (^? stateWeb)
+      let url = "http://" <> backendHost backend <> ":" <> tshow webPort
+      setIFrameUrl webFrame url
+      switchTab state WebTab
   requestRun backend "Main" "main"
+  requestPortListening backend webPort
+
+-- | Which port is used to serve websites from snippets.
+webPort :: Int
+webPort = 3000
 
 -- | Waits for queries and performs them.  Once a build is requested
 -- this stops waiting for queries and yields the 'BuildRequest'.

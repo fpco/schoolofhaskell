@@ -19,7 +19,7 @@ import IdeSession.Client.JsonAPI (Request, Response)
 
 data RunnerRequest =
     RunnerRequestAuth Text
-  | RunnerRequestListen Int
+  | RunnerRequestPortListening Int
   | RunnerRequestClient Request
   deriving (Show)
 
@@ -42,8 +42,8 @@ instance Json RunnerRequest where
       . fromPrism _RunnerRequestAuth
       . prop "receipt"
     , object $
-        property "runnerRequest" "listen"
-      . fromPrism _RunnerRequestListen
+        property "runnerRequest" "portListening"
+      . fromPrism _RunnerRequestPortListening
       . prop "port"
     -- Fallback on handling ide-backend-client requests.  This way we
     -- don't change the format of those messages.

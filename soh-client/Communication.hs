@@ -32,6 +32,8 @@ module Communication
   , sendProcessKill
   -- * Misc
   , expectWelcome
+  -- * Runner commands
+  , requestPortListening
   ) where
 
 import           Control.Concurrent.Async (race)
@@ -52,47 +54,49 @@ import           SchoolOfHaskell.Scheduler.API (ContainerReceipt(..))
 
 -- | Given the URL of the SoH container, this creates a websockets
 -- connection to it.
-withUrl :: Text -> ContainerReceipt -> (Backend -> IO a) -> IO a
-withUrl url (ContainerReceipt uuid) f = WS.withUrl url $ \conn -> do
-  -- Send the receipt to the backend.  If it's rejected, then an
-  -- exception is thrown.
-  let receiptText = decodeASCII (UUID.toASCIIBytes uuid)
-  sendJson conn (RunnerRequestAuth receiptText)
-  authResponse <- receiveJson conn
-  case authResponse of
-    RunnerResponseAuthSuccess -> return ()
-    _ -> fail "Didn't receive expected authentication success from runner."
-  -- Initialize state of the 'Backend' type, and fork off threads for
-  -- handling communication with the backend.
-  backendRequestChan <- newTChanIO
-  backendResponseChan <- newTChanIO
-  backendProcessHandler <- newIORef $ \_ ->
-    consoleWarnText "backendProcessHandler not yet set"
-  let sendThread = showExceptions "sendThread" $ forever $
-        atomically (readTChan backendRequestChan) >>= sendJson conn
-      receiveThread = showExceptions "receiveThread" $ forever $ do
-        response <- receiveJson conn
-        case response of
-          RunnerResponseAuthSuccess ->
-            fail "Didn't expect to receive auth response while running"
-          RunnerResponseAuthFailure ->
-            fail "Didn't expect to receive auth response while running"
-          RunnerResponsePortIsListening ->
-            fail "FIXME"
-          RunnerResponseClient response' ->
-            case response' of
-              ResponseProcessOutput bs ->
-                readIORef backendProcessHandler >>= ($ Right bs)
-              ResponseProcessDone rr ->
-                readIORef backendProcessHandler >>= ($ Left rr)
-              ResponseNoProcessError ->
-                consoleErrorText "No running process"
-              _ -> atomically (writeTChan backendResponseChan response')
-  result <- receiveThread `race` sendThread `race` f Backend {..}
-  case result of
-    Left (Left x) -> absurd x
-    Left (Right x) -> absurd x
-    Right x -> return x
+withUrl :: Text -> Int -> ContainerReceipt -> (Backend -> IO a) -> IO a
+withUrl backendHost port (ContainerReceipt uuid) f =
+  let url = "ws://" <> backendHost <> ":" <> tshow port in
+  WS.withUrl url $ \conn -> do
+    -- Send the receipt to the backend.  If it's rejected, then an
+    -- exception is thrown.
+    let receiptText = decodeASCII (UUID.toASCIIBytes uuid)
+    sendJson conn (RunnerRequestAuth receiptText)
+    authResponse <- receiveJson conn
+    case authResponse of
+      RunnerResponseAuthSuccess -> return ()
+      _ -> fail "Didn't receive expected authentication success from runner."
+    -- Initialize state of the 'Backend' type, and fork off threads for
+    -- handling communication with the backend.
+    backendRequestChan <- newTChanIO
+    backendResponseChan <- newTChanIO
+    backendProcessHandler <- newIORef $ \_ ->
+      consoleWarnText "backendProcessHandler not yet set"
+    let sendThread = showExceptions "sendThread" $ forever $
+          atomically (readTChan backendRequestChan) >>= sendJson conn
+        receiveThread = showExceptions "receiveThread" $ forever $ do
+          response <- receiveJson conn
+          case response of
+            RunnerResponseAuthSuccess ->
+              fail "Didn't expect to receive auth response while running"
+            RunnerResponseAuthFailure ->
+              fail "Didn't expect to receive auth response while running"
+            RunnerResponsePortIsListening ->
+              readIORef backendProcessHandler >>= ($ ProcessListening)
+            RunnerResponseClient response' ->
+              case response' of
+                ResponseProcessOutput bs ->
+                  readIORef backendProcessHandler >>= ($ ProcessOutput bs)
+                ResponseProcessDone rr ->
+                  readIORef backendProcessHandler >>= ($ ProcessDone rr)
+                ResponseNoProcessError ->
+                  consoleErrorText "No running process"
+                _ -> atomically (writeTChan backendResponseChan response')
+    result <- receiveThread `race` sendThread `race` f Backend {..}
+    case result of
+      Left (Left x) -> absurd x
+      Left (Right x) -> absurd x
+      Right x -> return x
 
 --------------------------------------------------------------------------------
 -- Commands
@@ -179,7 +183,7 @@ queryBackend backend request p expected = do
 -- | Sets the callback which is used to handle process output.  Stdout
 -- is provided as 'Right' values, and the 'Left' values let you know
 -- that the process exited.
-setProcessHandler :: Backend -> (Either RunResult ByteString -> IO ()) -> IO ()
+setProcessHandler :: Backend -> (ProcessOutput -> IO ()) -> IO ()
 setProcessHandler = atomicWriteIORef . backendProcessHandler
 
 -- | Sends stdin to the process.
@@ -198,6 +202,12 @@ sendProcessKill backend = sendRequest backend RequestProcessKill
 expectWelcome :: Backend -> IO VersionInfo
 expectWelcome backend =
   expectResponse backend (^? _ResponseWelcome) "ResponseWelcome"
+
+--------------------------------------------------------------------------------
+-- SoH Runner Commands
+
+requestPortListening :: Backend -> Int -> IO ()
+requestPortListening backend = sendRequest' backend . RunnerRequestPortListening
 
 --------------------------------------------------------------------------------
 -- Backend IO

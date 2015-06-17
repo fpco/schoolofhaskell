@@ -1,13 +1,23 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE TupleSections #-}
 module SchoolOfHaskell.Runner (Settings(..), runner) where
 
+import           Conduit (foldC, sourceHandle, ($$))
+import           Control.Applicative ((<$>))
+import           Control.Concurrent (threadDelay)
+import           Control.Concurrent.Async (async, cancel)
+import           Control.Exception (SomeException, catch, finally)
 import           Control.Monad (void)
 import           Data.Aeson (encode, eitherDecode)
 import qualified Data.ByteString.Lazy as LBS
+import           Data.IORef
+import           Data.Maybe (fromMaybe)
 import           Data.Monoid ((<>))
 import           Data.Text (Text)
 import qualified Data.Text as T
+import           Data.Text.Encoding (decodeUtf8)
 import           IdeSession (defaultSessionInitParams, defaultSessionConfig)
 import           IdeSession.Client (ClientIO(..), startEmptySession)
 import           IdeSession.Client.CmdLine
@@ -17,8 +27,11 @@ import qualified Network.Wai as W
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Network.Wai.Handler.WebSockets as WaiWS
 import qualified Network.WebSockets as WS
+import           Numeric (showHex)
 import           SchoolOfHaskell.RunnerAPI
+import qualified System.IO as IO
 import           System.Timeout (timeout)
+import Data.Foldable (forM_)
 
 data Settings = Settings
   { settingsPort :: Int
@@ -59,17 +72,65 @@ runnerApp receipt pending = do
         send RunnerResponseAuthFailure
       | otherwise -> do
         send RunnerResponseAuthSuccess
+        listenThreadRef <- newIORef Nothing
         let sendResponse = send . RunnerResponseClient
             receiveRequest = do
               ereq <- receive
-              return $ case ereq of
-                Left err -> Left err
-                Right (RunnerRequestClient x) -> Right x
-                _ -> Left "Didn't expect runner request"
+              case ereq of
+                Left err -> return $ Left err
+                Right (RunnerRequestClient x) -> return $ Right x
+                Right (RunnerRequestPortListening port) -> do
+                  thread <- async $ do
+                    waitForProcessListening port
+                    send RunnerResponsePortIsListening
+                  mold <- atomicModifyIORef listenThreadRef (Just thread, )
+                  forM_ mold cancel
+                  receiveRequest
+                Right req -> return $ Left $
+                  "Didn't expect runner request: " ++ show req
         startEmptySession ClientIO {..} clientOpts EmptyOptions
+          `finally` do
+            mthread <- readIORef listenThreadRef
+            forM_ mthread cancel
   where
     clientOpts = Options
       { optInitParams = defaultSessionInitParams
       , optConfig = defaultSessionConfig
       , optCommand = StartEmptySession EmptyOptions
       }
+
+-- | Returns when some process is listening to the port.
+waitForProcessListening :: Int -> IO ()
+waitForProcessListening port = loop 120
+  where
+    loop :: Int -> IO ()
+    loop gen = do
+      isListening <- processListening port `catch` \e -> do
+        --FIXME: some better error logging than this.
+        putStrLn $ "Exception while listening for port: " ++
+          show (e :: SomeException)
+        return False
+      if isListening
+        then return ()
+        else do
+          threadDelay $ if gen <= 0 then 5000000 else 250000
+          loop (max 0 (gen - 1))
+
+processListening :: Int -> IO Bool
+processListening port =
+    any findPort . T.lines . decodeUtf8 <$>
+    localReadFile "/proc/net/tcp"
+  where
+    -- Fun fact: files in the /proc filesystem will often report their
+    -- size as 0. Because of this, the standard Data.ByteString.readFile
+    -- will read in an empty ByteString. Instead, we use conduit here.
+    localReadFile fp =
+      IO.withBinaryFile fp IO.ReadMode $ \h ->
+      sourceHandle h $$ foldC
+    goalPortHex =
+      T.toUpper $ T.takeEnd 4 $ T.pack ("0000" ++ showHex port "")
+    findPort line =
+      case T.words line of
+        (_sl:(T.stripPrefix ":" . T.dropWhile (/= ':') -> Just portHex):_) ->
+          portHex == goalPortHex
+        _ -> False

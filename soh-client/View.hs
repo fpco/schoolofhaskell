@@ -31,11 +31,11 @@ renderControls termjs iframe state = do
         renderTab state BuildTab $ text (buildStatusText status)
         renderTab state ConsoleTab "Console"
         renderTab state DocsTab "Docs"
-        -- renderTab state WebTab "Web"
+        renderTab state WebTab "Web"
       renderTabContent state BuildTab $ buildTab status
       renderTabContent state ConsoleTab $ consoleTab termjs
       renderTabContent state DocsTab $ docsTab state
-      -- renderTabContent state WebTab $ buildIFrame iframe stateWeb Nothing
+      renderTabContent state WebTab $ buildIFrame iframe stateWeb Nothing
 
 --------------------------------------------------------------------------------
 -- Editor
