@@ -42,9 +42,6 @@ About `-fdev` mode
 
 `--flag soh-server:dev` enables the following:
 
-* Client JS is recompiled for every request.  This allows the
-  `soh-client/` code to be edited without doing rebuilding the server.
-
 * Sets default Yesod dev settings (see Settings.hs).
 
 * Enables dev mode for the client code, which has the following
@@ -53,6 +50,10 @@ About `-fdev` mode
   - Instead of connecting to soh-scheduler to request a container, it
     expects that a container is already running on `localhost:4000`,
     with a predetermined container receipt.
+
+A different flag, `--flag soh-server:runtime-ghcjs` enables
+recompiling the Client JS for every request.  This allows the
+`soh-client/` code to be edited without doing rebuilding the server.
 
 How to run locally
 ------------------

@@ -5,7 +5,7 @@ import Yesod.GHCJS
 
 getEditorScriptR :: Handler TypedContent
 getEditorScriptR = $(ghcjsFileDev
-#if DEVELOPMENT
+#if RUNTIME_GHCJS
     True
 #else
     False

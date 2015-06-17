@@ -16,6 +16,10 @@ Flag dev
     Description:   Turn on development settings, like auto-reload templates.
     Default:       False
 
+Flag runtime-ghcjs
+    Description:   Compile clientside code at runtime.
+    Default:       False
+
 Flag library-only
     Description:   Build for use with "yesod devel"
     Default:       False
@@ -38,6 +42,8 @@ library
         ghc-options:   -Wall -fwarn-tabs -O0
     else
         ghc-options:   -Wall -fwarn-tabs -O2
+    if flag(runtime-ghcjs)
+        cpp-options:   -DRUNTIME_GHCJS
 
     extensions: TemplateHaskell
                 QuasiQuotes
