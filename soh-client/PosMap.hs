@@ -64,7 +64,7 @@ spanToRange state sid ss = do
     posMap <- state ^? ixSnippet sid . snippetPosMap
     rangeMapForward posMap r
   where
-    -- FIXME: do something with the filepath.
+    -- TODO: do something with the filepath.
     (_fp, r) = spanToRange' ss
 
 rangeToSpan' :: FilePath -> Ace.Range -> SourceSpan
@@ -87,7 +87,7 @@ spanToRange' SourceSpan{..} = (spanFilePath, range)
 --------------------------------------------------------------------------------
 -- Implementation
 
--- FIXME: this is rather inefficient.  Adjustments will get slower and
+-- TODO: this is rather inefficient.  Adjustments will get slower and
 -- slower as more edits are added since the last compile.  I think a
 -- more efficient implementation of this would use something like
 -- "Data.FingerTree".  A rough sketch I haven't thought that much
@@ -101,9 +101,6 @@ spanToRange' SourceSpan{..} = (spanFilePath, range)
                        -- search for a particular position in the old state.
 --   , posInNew :: Pos -- ^ Similarly to the above, but for the new state.
 --   }
-
--- TODO: Probably ought to return Nothing when there's been any
--- change in the interval, but that would require coppy
 
 emptyPosMap :: PosMap
 emptyPosMap = PosMap []

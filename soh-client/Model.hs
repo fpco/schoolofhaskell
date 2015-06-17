@@ -92,7 +92,7 @@ compileCode
   -> [RequestSessionUpdate]
   -> IO (SnippetId, BuildInfo)
 compileCode backend state (BuildRequest sid files) extraUpdates = do
-  --TODO: clear ide-backend state before the rest of the updates.
+  -- TODO: clear ide-backend state before the rest of the updates?
   let requestUpdate (fp, txt) = RequestUpdateSourceFile fp $
         BL.fromStrict (encodeUtf8 txt)
   -- Show the build's progress and wait for it to finish.
@@ -147,8 +147,8 @@ runQueries backend state = do
         navigateDoc state $
           fmap (\(ResponseSpanInfo si _) -> getIdInfo si)
                (listToMaybe infos)
-        -- FIXME: allow the client to restrict their
-        -- ide-backend-client request.
+        -- TODO: allow the client to restrict their ide-backend-client
+        -- request to just the innermost type info.
         tys <- getAnnExpTypes backend ss
         update $ set (ixSnippet sid . snippetTypeInfo) $
           listToMaybe $
@@ -197,9 +197,9 @@ runQuery :: TVar State -> SnippetId -> Query -> IO ()
 runQuery state sid query =
   modifyTVarIO state stateStatus $ \oldStatus ->
     case oldStatus of
-      --TODO: Consider whether we want some other behavior when a
-      --query is requested for a non-current snippet.  Seems like we
-      --should let the user know why the query isn't being performed.
+      -- TODO: Consider whether we want some other behavior when a
+      -- query is requested for a non-current snippet.  Seems like we
+      -- should let the user know why the query isn't being performed.
       Built sid' info | sid' == sid -> QueryRequested sid info query
       _ -> oldStatus
 

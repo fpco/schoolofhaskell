@@ -140,7 +140,7 @@ foreign import javascript "spanContainerToSpans"
 --------------------------------------------------------------------------------
 -- NoNewlines: utility for code highlighting
 
--- FIXME: should probably use source spans / allow new lines instead
+-- TODO: should probably use source spans / allow new lines instead
 -- of having this newtype...
 
 -- | This newtype enforces the invariant that the stored 'Text' doesn't

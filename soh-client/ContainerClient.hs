@@ -9,6 +9,7 @@ module ContainerClient
   , stopContainerById
   , stopContainerByReceipt
   , pollForContainerAddress
+  , mschedulerUrl
   , AjaxException(..)
   ) where
 
@@ -71,6 +72,17 @@ pollForContainerAddress n getContainer
           threadDelay (1000 * 1000)
           pollForContainerAddress (n - 1) getContainer
         Just address -> return address
+
+mschedulerUrl :: Maybe Text
+mschedulerUrl = Nothing
+  -- | devMode = Nothing
+  -- | isNull schedulerUrl' || isUndefined schedulerUrl' =
+    -- Just "http://localhost:3001"
+  -- | otherwise = Just (fromJSString schedulerUrl')
+
+foreign import javascript unsafe
+  "window['schedulerUrl']"
+  schedulerUrl' :: JSString
 
 sendRequestJsonResponse :: Aeson.FromJSON a => BaseUrl -> Text -> JSString -> JQ.Method -> IO a
 sendRequestJsonResponse bu route body method =

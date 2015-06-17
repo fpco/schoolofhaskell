@@ -113,7 +113,7 @@ onChange e f = do
   f' <- syncCallback1 (DomRetain (coerce parent)) True (f <=< fromJSRefOrFail)
   editorOn e "change" f'
 
---FIXME: would be cheaper to not marshal the lines and instead get
+--TODO: would be cheaper to not marshal the lines and instead get
 --their length (at least for our purposes in this project).
 
 data ChangeEvent

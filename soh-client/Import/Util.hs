@@ -93,7 +93,7 @@ spanClass className f = span_ $ do
 foreign import javascript unsafe "$2.get($1)"
   getElement :: Int -> JQuery -> IO HTMLElement
 
--- FIXME: Find a better way to do this, or add similar utilities to ghcjs-base
+-- TODO: Find a better way to do this, or add similar utilities to ghcjs-base
 intToJSNumber :: Int -> JSNumber
 intToJSNumber n = coerce $ unsafePerformIO $ toJSRef n
 
@@ -106,6 +106,20 @@ fromJSRefOrFail' what ref = do
   case mx of
     Nothing -> fail $ "Failed to marshal " ++ what
     Just x -> return x
+
+getElementsByClassName :: JSString -> IO [Element]
+getElementsByClassName name =
+  mapM fromJSRefOrFail =<< fromArray =<< getElementsByClassName' name
+
+getElementById :: JSString -> IO (Maybe Element)
+getElementById name =
+  fromJSRef =<< getElementById' name
+
+foreign import javascript unsafe "document.getElementsByClassName($1)"
+  getElementsByClassName' :: JSString -> IO (JSArray Element)
+
+foreign import javascript unsafe "document.getElementById($1)"
+  getElementById' :: JSString -> IO (JSRef Element)
 
 --------------------------------------------------------------------------------
 -- Tvar/lens helpers

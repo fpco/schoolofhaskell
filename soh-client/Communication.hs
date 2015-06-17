@@ -235,7 +235,7 @@ expectResponse backend f expected = do
 --------------------------------------------------------------------------------
 -- Sending and receiving JSON
 
---FIXME: fewer conversions...
+-- TODO: fewer conversions...
 sendJson :: Json a => WS.Connection -> a -> IO ()
 sendJson conn = sendText conn . decodeUtf8 . toStrict . encode . toJSON
 

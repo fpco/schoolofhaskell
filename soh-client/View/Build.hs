@@ -11,10 +11,9 @@ import           Model (runCode)
 import           PosMap (spanToSelection)
 import           View.Annotation
 
--- FIXME: bring this back
+-- TODO: bring this back
 -- ghciButton :: React ()
 -- ghciButton = div_ $ do
---   -- FIXME: consider UI / don't use bootstrap style
 --   class_ "ghci-button btn btn-default"
 --   text "GHCI"
 --   onClick $ \_ state -> do
@@ -70,8 +69,8 @@ buildTab (KillRequested sid info) = buildInfo sid info
 buildInfo :: SnippetId -> BuildInfo -> React ()
 buildInfo sid info =
   forM_ (sourceErrors info) $ \AnnSourceError{..} -> div_ $ do
-    --FIXME: have some explanatory text or victory picture when there
-    --are no errors or warnings.
+    -- FIXME: have some explanatory text or victory picture when there
+    -- are no errors or warnings.
     class_ $ "message " <> case annErrorKind of
       KindError -> "kind-error"
       KindServerDied -> "kind-error"
@@ -107,11 +106,11 @@ renderMsgAnn :: MsgAnn -> React a -> React a
 renderMsgAnn MsgAnnModule f = spanClass "msg-ann-module" f
 renderMsgAnn (MsgAnnCode _) f = spanClass "msg-ann-code" f
 renderMsgAnn (MsgAnnCodeAnn x) f = renderCodeAnn x f
--- FIXME: add support for this
+-- TODO: add support for this
 --   divClass "msg-ann-refactor" f
 renderMsgAnn MsgAnnRefactor{} f = f
 renderMsgAnn MsgAnnCollapse f = f
--- FIXME: add support for this
+-- TODO: add support for this
 --   spanClass "msg-ann-collapse" $ return ()
 --   span_ f
 

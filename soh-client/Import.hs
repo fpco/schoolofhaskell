@@ -30,6 +30,8 @@ module Import
     , getEditor
     , readEditor
     , currentSnippet
+    , devMode
+    , positionControlsOnResize
     ) where
 
 import           Ace (Editor)
@@ -50,7 +52,7 @@ import           IdeSession.Client.JsonAPI
 import           IdeSession.Types.Progress
 import           IdeSession.Types.Public
 import           Import.Util
-import           React hiding (App)
+import           React hiding (App, getElementById)
 import qualified React.Internal
 import           React.Lucid
 import           React.Unmanaged
@@ -63,8 +65,6 @@ type App = React.Internal.App State IO
 type Component a = React.Internal.Component State a IO
 
 type UComponent a = React.Internal.Component State (Unmanaged a) IO
-
--- TODO: move these to a utilities module?
 
 ixSnippet :: SnippetId -> Traversal' State Snippet
 ixSnippet (SnippetId sid) = stateSnippets . ix sid
@@ -86,3 +86,16 @@ currentSnippet state =
     Built sid _ -> Just sid
     QueryRequested sid _ _ -> Just sid
     KillRequested sid _ -> Just sid
+
+-- NOTE: when adding additional usages of this, also add to README.md
+-- about `-fdev`.
+devMode :: Bool
+devMode = fromJSBool devMode'
+
+foreign import javascript unsafe
+  "window['devMode']"
+  devMode' :: JSBool
+
+foreign import javascript unsafe
+  "positionControlsOnResize"
+  positionControlsOnResize :: Element -> Element -> IO ()
