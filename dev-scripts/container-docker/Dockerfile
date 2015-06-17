@@ -4,4 +4,6 @@ MAINTAINER Michael Sloan
 RUN cabal update; cabal install ide-backend-rts
 ADD soh-runner ide-backend-server /opt/soh/
 
+VOLUME /logs
+
 EXPOSE 3000 4000

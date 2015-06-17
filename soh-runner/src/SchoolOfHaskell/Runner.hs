@@ -12,6 +12,7 @@ import           Control.Exception (SomeException, catch, finally)
 import           Control.Monad (void)
 import           Data.Aeson (encode, eitherDecode)
 import qualified Data.ByteString.Lazy as LBS
+import           Data.Foldable (forM_)
 import           Data.IORef
 import           Data.Maybe (fromMaybe)
 import           Data.Monoid ((<>))
@@ -29,9 +30,10 @@ import qualified Network.Wai.Handler.WebSockets as WaiWS
 import qualified Network.WebSockets as WS
 import           Numeric (showHex)
 import           SchoolOfHaskell.RunnerAPI
+import           System.Directory (createDirectoryIfMissing)
 import qualified System.IO as IO
 import           System.Timeout (timeout)
-import Data.Foldable (forM_)
+import qualified GHC.IO.Handle as IO
 
 data Settings = Settings
   { settingsPort :: Int
@@ -41,6 +43,7 @@ data Settings = Settings
 
 runner :: Settings -> IO ()
 runner Settings {..} = do
+  logStdio settingsReceipt
   let -- Halts the server after a duration of time, if we have a
       -- lifetime limit.  This is a temporary solution to the problem
       -- of garbage collecting containers.
@@ -59,8 +62,11 @@ runner Settings {..} = do
 
 runnerApp :: Text -> WS.PendingConnection -> IO ()
 runnerApp receipt pending = do
+  putStrLn $ "Accepting connection from client: " ++
+    show (WS.pendingRequest pending)
   conn <- WS.acceptRequest pending
   WS.forkPingThread conn 30
+  putStrLn "Accepted connection and forked ping thread"
   let send = WS.sendTextData conn . encode . toJSON
       receive = do
         input <- WS.receiveData conn
@@ -68,9 +74,11 @@ runnerApp receipt pending = do
   initial <- receive
   case initial of
     Right (RunnerRequestAuth receipt')
-      | receipt' /= receipt ->
+      | receipt' /= receipt -> do
+        putStrLn "Authentication failed"
         send RunnerResponseAuthFailure
       | otherwise -> do
+        putStrLn "Authentication succeeded"
         send RunnerResponseAuthSuccess
         listenThreadRef <- newIORef Nothing
         let sendResponse = send . RunnerResponseClient
@@ -134,3 +142,16 @@ processListening port =
         (_sl:(T.stripPrefix ":" . T.dropWhile (/= ':') -> Just portHex):_) ->
           portHex == goalPortHex
         _ -> False
+
+logStdio :: Text -> IO ()
+logStdio receipt = do
+  createDirectoryIfMissing False "logs"
+  let fp = "logs/" ++ T.unpack receipt
+  stdoutFile <- IO.openFile (fp ++ ".stdout") IO.WriteMode
+  stderrFile <- IO.openFile (fp ++ ".stderr") IO.WriteMode
+  IO.hDuplicateTo stdoutFile IO.stdout
+  IO.hDuplicateTo stderrFile IO.stderr
+  IO.hClose stdoutFile
+  IO.hClose stderrFile
+  IO.hSetBuffering IO.stdout IO.NoBuffering
+  IO.hSetBuffering IO.stderr IO.NoBuffering

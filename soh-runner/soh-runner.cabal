@@ -20,6 +20,7 @@ library
                      , async
                      , bytestring
                      , conduit-combinators
+                     , directory
                      , http-types
                      , ide-backend
                      , ide-backend-client
