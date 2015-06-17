@@ -23,6 +23,9 @@ body {
 
 .soh-snippet, #soh-controls > div {
   background: #fff;
+}
+
+.soh-snippet, #soh-controls > div, .controls-bar {
   border-color: #d1d1d1;
 }
 
@@ -46,6 +49,8 @@ body {
     color: #d44;
   }
   .type-popup {
+    background-color: white;
+    z-index: 1;
     border-color: #d1d1d1;
     .type-info {
       border-color: #d1d1d1;
@@ -80,6 +85,10 @@ body {
 
 #soh-controls > div.soh-visible {
   display: block;
+}
+
+.soh-inline-controls {
+  margin-top: 1em;
 }
 
 .build-tab-content {
@@ -172,6 +181,8 @@ body {
 #soh-controls {
   .controls-bar {
     height:  2.3em;
+    border-bottom-width: 1px;
+    border-bottom-style: solid
   }
   .tab {
     cursor: pointer;
@@ -181,13 +192,19 @@ body {
     font-size: 120%;
     padding: 0.2em 0.7em;
   }
-  /* TODO: different colors for the build tab? */
-  .build-tab {
+  .soh-close-btn {
+    cursor: pointer;
+    display: inline-block;
     float: right;
+    font-size: 150%;
+    margin-right: 0.25em;
+  }
+  .soh-close-btn:before {
+    content: "X"
   }
   /* TODO: make it resizable */
   .tab-content {
-    height: 29em;
+    height: 30em;
     display: none;
   }
   .tab-content-focused {
@@ -209,8 +226,9 @@ body {
 
 .build-tab-content {
   overflow: auto;
+  padding: 0.25em;
   .message {
-    padding: 0.25em 0.25em 0.25em 0.5em;
+    padding: 0.25em;
     min-height: 1.5em;
   }
   .error-proper-span {
@@ -258,6 +276,9 @@ body {
   display: block !important;
   position: fixed;
   visibility: hidden;
+  .soh-no-docs-available {
+    padding: 0.25em;
+  }
 }
 
 .docs-tab-content.tab-content-focused {

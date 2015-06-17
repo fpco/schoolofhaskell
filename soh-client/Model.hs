@@ -210,3 +210,7 @@ navigateDoc state = setTVarIO state stateDocs
 -- | Switches which tab is currently focused.
 switchTab :: TVar State -> Tab -> IO ()
 switchTab state = setTVarIO state stateTab
+
+-- | Reset the UI's status as if compilation hadn't yet happened.
+closeControls :: TVar State -> IO ()
+closeControls stateVar = setTVarIO stateVar stateStatus InitialStatus

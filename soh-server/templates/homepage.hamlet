@@ -2,7 +2,7 @@ $newline text
 <script src="//cdn.rawgit.com/ajaxorg/ace-builds/v1.1.9/src-noconflict/ace.js"></script>
 <script src="//cdn.rawgit.com/chjj/term.js/v0.0.4/src/term.js"></script>
 
-<div .content #soh-column>
+<div .content>
   <h1>2: Algebraic Data Types
   <p>By Brent Yorgey
   <p>(from <a href=https://www.fpcomplete.com/school/starting-with-haskell/introduction-to-haskell/2-algebraic-data-types>here</a>)
@@ -83,5 +83,3 @@ $newline text
 
     main = print (getAge brent)
   <p>Notice how the type constructor and data constructor are both named Person, but they inhabit different namespaces and are different things. This idiom (giving the type and data constructor of a one-constructor type the same name) is common, but can be confusing until you get used to it.
-
-<div #soh-controls>

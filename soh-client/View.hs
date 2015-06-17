@@ -3,7 +3,6 @@ module View (renderControls, renderEditor) where
 
 import qualified Ace
 import Import
-import Model (switchTab)
 import React.IFrame
 import TermJs
 import View.Build
@@ -11,7 +10,7 @@ import View.Console
 import View.Docs
 import View.TypeInfo
 import PosMap (handleChange, selectionToSpan)
-import Model (runQuery, runCode)
+import Model (runQuery, runCode, switchTab, closeControls)
 import Control.Lens.Extras (is)
 
 renderControls
@@ -28,14 +27,15 @@ renderControls termjs iframe state = do
       -- Set the position of the controls.
       div_ $ do
         class_ "controls-bar"
-        renderTab state BuildTab $ text (buildStatusText status)
         renderTab state ConsoleTab "Console"
-        renderTab state DocsTab "Docs"
         renderTab state WebTab "Web"
-      renderTabContent state BuildTab $ buildTab status
+        renderTab state DocsTab "Docs"
+        renderTab state BuildTab $ text (buildStatusText status)
+        renderCloseButton
       renderTabContent state ConsoleTab $ consoleTab termjs
       renderTabContent state DocsTab $ docsTab state
       renderTabContent state WebTab $ buildIFrame iframe stateWeb Nothing
+      renderTabContent state BuildTab $ buildTab status
 
 --------------------------------------------------------------------------------
 -- Editor
@@ -67,6 +67,7 @@ renderEditor ace termjs iframe sid initialValue inlineControls state = div_ $ do
     typePopup typs 300 100
   when (isCurrent && inlineControls) $ div_ $ do
     id_ "soh-controls"
+    class_ "soh-inline-controls"
     div_ $ renderControls termjs iframe state
 
 handleSelectionChange :: TVar State -> SnippetId -> IO ()
@@ -115,3 +116,8 @@ tabClass BuildTab = "build-tab"
 tabClass ConsoleTab = "console-tab"
 tabClass DocsTab = "docs-tab"
 tabClass WebTab = "web-tab"
+
+renderCloseButton :: React ()
+renderCloseButton = div_ $ do
+  class_ "soh-close-btn"
+  onClick $ \_ -> closeControls
