@@ -3,83 +3,84 @@ $newline text
 <script src="//cdn.rawgit.com/chjj/term.js/v0.0.4/src/term.js"></script>
 
 <div .content>
-  <h1>2: Algebraic Data Types
-  <p>By Brent Yorgey
-  <p>(from <a href=https://www.fpcomplete.com/school/starting-with-haskell/introduction-to-haskell/2-algebraic-data-types>here</a>)
-  <h2>Enumeration Types
-  <p>Like many programming languages, Haskell allows programmers to create their own enumeration types. Here’s a simple example:
+  <h1>Calculator
+  <h2>Console Version
+  <p>How would we write a calculator program in Haskell? A simple calculator should be able to perform the basic arithmetic operations on two numbers.
   <div .soh-code>
-    data Thing = Shoe
-    \       | Ship
-    \       | SealingWax
-    \       | Cabbage
-    \       | King
-    \deriving Show
-  <p>This declares a new type called Thing with five data constructors Shoe, Ship, etc which are the (only) values of type Thing. [The deriving Show is a magical incantation which tells GHC to automatically generate default code for converting Things to Strings. This is what GHCi uses when printing the value of an expression of type Thing.]
+    data Operator = Add | Subtract | Multiply | Divide
+    \  deriving Read
+    \
+    eval l o r = case o of
+    \  Add      -> l + r
+    \  Subtract -> l - r
+    \  Multiply -> l * r
+    \  Divide   -> l / r
+    \
+    prompt txt = do
+    \  putStrLn txt
+    \  readLn
+    \
+    main = do
+    \  l <- prompt "Left operand?"
+    \  o <- prompt "Which operator?"
+    \  r <- prompt "Right operand?"
+    \  putStrLn $ "The result is " ++ show (eval l o r)
+  <h2>Yesod Version
+  <p>Let's make our calculator program into a website!
   <div .soh-code>
-    shoe :: Thing
-    shoe = Shoe
-
-    listO'Things :: [Thing]
-    listO'Things = [Shoe, SealingWax, King, Cabbage, King]
-  <p>We can write functions on Things by pattern matching:
-  <div .soh-code>
-    isSmall :: Thing -> Bool
-    isSmall Shoe       = True
-    isSmall Ship       = False
-    isSmall SealingWax = True
-    isSmall Cabbage    = True
-    isSmall King       = False
-
-    main = print (isSmall Cabbage)
-  <p>Recalling how function clauses are tried in order from top to bottom, we could also make the definition of isSmall a bit shorter like so:
-  <div .soh-code>
-    isSmall2 :: Thing -> Bool
-    isSmall2 Ship       = False
-    isSmall2 King       = False
-    isSmall2 _          = True
-
-    main = print (isSmall2 Cabbage)
-  <h2>Beyond Enumerations
-  <p>Thing is an enumeration type, similar to those provided by other languages such as Java or C++. However, enumerations are actually only a special case of Haskell’s more general algebraic data types. As a first example of a data type which is not just an enumeration, consider the definition of FailableDouble:
-  <div .soh-code>
-    data FailableDouble = Failure
-    \                    | OK Double
-    \  deriving Show
-  <p>This says that the FailableDouble type has two data constructors. The first one, OK, takes an argument of type Double. So OK by itself is not a value of type FailableDouble; we need to give it a Double. For example, OK 3.4 is a value of type FailableDouble.
-  <div .soh-code>
-    a = Failure
-    b = OK 3.4
-
-    main = print (a,b)
-  <p>Here's one way we might use our new FailableDouble type:
-  <div .soh-code>
-    safeDiv :: Double -> Double -> FailableDouble
-    safeDiv _ 0 = Failure
-    safeDiv x y = OK (x / y)
-
-    main = print (safeDiv 2 0, safeDiv 3 4)
-  <p>More pattern matching! Notice how in the OK case we can give a name to the Double that comes along with it. For some applications, we might consider mapping a failed computation to a value of zero:
-  <div .soh-code>
-    failureToZero :: FailableDouble -> Double
-    failureToZero Failure = 0
-    failureToZero (OK d) = d
-
-    main = print (failureToZero Failure, failureToZero (OK 3.4))
-  <p>Data constructors can have more than one argument:
-  <div .soh-code>
-    -- Store a person's name, age, and favorite Thing
-    data Person = Person String Int Thing
-    \  deriving Show
-
-    brent :: Person
-    brent = Person "Brent" 30 SealingWax
-
-    stan :: Person
-    stan = Person "Stan" 94 Cabbage
-
-    getAge :: Person -> Int
-    getAge (Person _ a _) = a
-
-    main = print (getAge brent)
-  <p>Notice how the type constructor and data constructor are both named Person, but they inhabit different namespaces and are different things. This idiom (giving the type and data constructor of a one-constructor type the same name) is common, but can be confusing until you get used to it.
+    {-# LANGUAGE TypeFamilies, QuasiQuotes, MultiParamTypeClasses,
+    \         TemplateHaskell, OverloadedStrings #-}
+    import Yesod hiding (Add, Subtract, Multiply, Divide)
+    import Yesod.Form
+    import Control.Applicative
+    \
+    data Calculator = Calculator
+    \
+    instance Yesod Calculator
+    \
+    instance RenderMessage Calculator FormMessage where
+    \    renderMessage _ _ = defaultFormMessage
+    \
+    mkYesod "Calculator" [parseRoutes|
+    / HomeR GET
+    |]
+    \
+    main = warpEnv Calculator
+    \
+    data Calculation = Calculation Double Operator Double
+    \
+    form = renderDivs $ Calculation
+    \    <$> areq doubleField               "Left operand"  Nothing
+    \    <*> areq (selectField optionsEnum) "Operator"      Nothing
+    \    <*> areq doubleField               "Right operand" Nothing
+    \
+    getHomeR = do
+    \    ((result, widget), enctype) <- runFormGet form
+    \
+    \    let resultText = "Result: " ++ case result of
+    \          FormSuccess (Calculation l o r) -> show (eval l o r)
+    \          _ -> ""
+    \
+    \    defaultLayout $ do
+    \        [whamlet|
+    \            &lt;h1&gt; Calculator &lt;/h1&gt;
+    \            &lt;form enctype=&#x23;{enctype}&gt;
+    \                &#x5E;{widget}
+    \                &lt;input #button type="submit" value="Calculate!"&gt;
+    \            &lt;h2&gt; &#x23;{toHtml resultText}
+    \          |]
+    \        toWidget [cassius|
+    \            body          { width: 15em; margin: 0em auto; }
+    \            #button       { width: 10em; }
+    \            input, select { width: 4em; margin: 0.5em; }
+    \            .required     { text-align: right; }
+    \          |]
+    \
+    data Operator = Add | Subtract | Multiply | Divide
+    \  deriving (Eq, Enum, Bounded, Show)
+    \
+    eval l o r = case o of
+    \    Add      -> l + r
+    \    Subtract -> l - r
+    \    Multiply -> l * r
+    \    Divide   -> l / r
