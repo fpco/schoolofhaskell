@@ -45,6 +45,7 @@ buildStatusText (Building _ (Just progress)) =
 buildStatusText (Building _ Nothing) = "Fetching"
 buildStatusText (Built _ info) = infoStatusText info
 buildStatusText (QueryRequested _ info _) = infoStatusText info
+buildStatusText (KillRequested _ _) = "Killing"
 
 infoStatusText :: BuildInfo -> Text
 infoStatusText BuildInfo {..}
@@ -64,6 +65,7 @@ buildTab (Building _ (Just progress)) = forM_ (progressParsedMsg progress) text
 buildTab (Building _ Nothing) = "Build done.  Requesting compile info.."
 buildTab (Built sid info) = buildInfo sid info
 buildTab (QueryRequested sid info _) = buildInfo sid info
+buildTab (KillRequested sid info) = buildInfo sid info
 
 buildInfo :: SnippetId -> BuildInfo -> React ()
 buildInfo sid info =

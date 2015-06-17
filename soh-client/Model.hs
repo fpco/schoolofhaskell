@@ -72,9 +72,10 @@ mainLoop
   -> [RequestSessionUpdate]
   -> IO void
 mainLoop backend state br extraUpdates = do
-  success <- buildSuccess <$> compileCode backend state br extraUpdates
-  when success $ runConsole backend state
-  --FIXME: Kill the running process
+  (sid, bi) <- compileCode backend state br extraUpdates
+  -- Kill the running process, if there is one.
+  killProcess backend state sid bi
+  when (buildSuccess bi) $ runConsole backend state
   br' <- runQueries backend state
   mainLoop backend state br' []
 
@@ -89,7 +90,7 @@ compileCode
   -> TVar State
   -> BuildRequest
   -> [RequestSessionUpdate]
-  -> IO BuildInfo
+  -> IO (SnippetId, BuildInfo)
 compileCode backend state (BuildRequest sid files) extraUpdates = do
   --TODO: clear ide-backend state before the rest of the updates.
   let requestUpdate (fp, txt) = RequestUpdateSourceFile fp $
@@ -109,7 +110,7 @@ compileCode backend state (BuildRequest sid files) extraUpdates = do
         , buildServerDieds = serverDieds
         }
   setTVarIO state stateStatus $ Built sid buildInfo
-  return buildInfo
+  return (sid, buildInfo)
 
 -- | Runs the user's program and directs stdout to the console.
 runConsole :: Backend -> TVar State -> IO ()
@@ -167,6 +168,18 @@ runQueries backend state = do
     backToIdle x = x
     getIdInfo (SpanId x) = x
     getIdInfo (SpanQQ x) = x
+
+-- | Send process kill request, and wait for the process to stop.
+--
+-- Note: the status on invoking this ought to be 'Built'.  The fields
+-- of 'Built' are passed in to the function.
+killProcess :: Backend -> TVar State -> SnippetId -> BuildInfo -> IO ()
+killProcess backend state sid bi = do
+  sendProcessKill backend
+  setTVarIO state stateStatus (KillRequested sid bi)
+  waitForTVarIO state $ \s ->
+    if (s ^. stateRunning) == NotRunning then Just () else Nothing
+  setTVarIO state stateStatus (Built sid bi)
 
 --------------------------------------------------------------------------------
 -- Mutation functions invoked by View (a.k.a. "the controller")

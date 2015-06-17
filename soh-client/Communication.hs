@@ -89,8 +89,10 @@ withUrl backendHost port (ContainerReceipt uuid) f =
                   readIORef backendProcessHandler >>= ($ ProcessOutput bs)
                 ResponseProcessDone rr ->
                   readIORef backendProcessHandler >>= ($ ProcessDone rr)
+                -- This is expected to happen due to always requesting
+                -- kill before running.
                 ResponseNoProcessError ->
-                  consoleErrorText "No running process"
+                  consoleWarnText "No running process"
                 _ -> atomically (writeTChan backendResponseChan response')
     result <- receiveThread `race` sendThread `race` f Backend {..}
     case result of

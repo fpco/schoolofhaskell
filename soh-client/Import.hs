@@ -85,3 +85,4 @@ currentSnippet state =
     Building sid _ -> Just sid
     Built sid _ -> Just sid
     QueryRequested sid _ _ -> Just sid
+    KillRequested sid _ -> Just sid

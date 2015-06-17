@@ -46,7 +46,7 @@ data State = State
     -- it, and querying information about it.
   } deriving (Eq, Show, Typeable)
 
--- |
+-- | State of a SoH editor.
 data Snippet = Snippet
   { _snippetEditor :: !(Unmanaged Editor)
     -- ^ Ace editor component for this snippet.
@@ -74,6 +74,8 @@ data Status
   | QueryRequested !SnippetId !BuildInfo !Query
     -- ^ After the build has completed, 'Model.runQueries' waits for
     -- this status, and then sends the query to the backend.
+  | KillRequested !SnippetId !BuildInfo
+    -- ^ Status while we're waiting for the process to be killed.
   deriving (Eq, Show, Typeable)
 
 -- | Errors and warnings which result from a compile.
