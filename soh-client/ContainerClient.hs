@@ -8,9 +8,11 @@ module ContainerClient
   , getContainerDetailByReceipt
   , stopContainerById
   , stopContainerByReceipt
+  , pollForContainerAddress
   , AjaxException(..)
   ) where
 
+import           Control.Concurrent (threadDelay)
 import           Control.Exception (throwIO, Exception)
 import           Control.Lens
 import qualified Data.Aeson as Aeson
@@ -57,6 +59,18 @@ stopContainerById bu cid =
 stopContainerByReceipt :: BaseUrl -> ContainerReceipt -> IO ()
 stopContainerByReceipt bu cr =
   stopContainer bu (pack (UUID.toString (cr ^. crID)))
+
+pollForContainerAddress :: Int -> IO ContainerDetail -> IO (Text, Int)
+pollForContainerAddress n getContainer
+  | n <= 0 = fail "Ran out of retries while initializing soh-runner container"
+  | otherwise = do
+      detail <- getContainer
+      case detail ^. cdAddress of
+        Nothing -> do
+          -- Container is pending - wait a bit and try again.
+          threadDelay (1000 * 1000)
+          pollForContainerAddress (n - 1) getContainer
+        Just address -> return address
 
 sendRequestJsonResponse :: Aeson.FromJSON a => BaseUrl -> Text -> JSString -> JQ.Method -> IO a
 sendRequestJsonResponse bu route body method =
