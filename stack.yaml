@@ -4,9 +4,10 @@ flags:
     use-cabal: false
   wai-cors:
     transformers-3: true
-extra-deps: [ airship-0.3.0.0
-            , wai-cors-0.2.3
-            ]
+extra-deps:
+  - airship-0.3.0.0
+  - wai-cors-0.2.3
+  - shakespeare-2.0.5
 docker:
   enable: true
   repo: fpco/stack-ghcjs-build
@@ -24,4 +25,3 @@ packages:
   - ./soh-runner-api
   - ./soh-scheduler
   - ./soh-scheduler-api
-  - ./soh-server

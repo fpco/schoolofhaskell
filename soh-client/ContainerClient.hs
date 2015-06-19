@@ -74,13 +74,13 @@ pollForContainerAddress n getContainer
         Just address -> return address
 
 mschedulerUrl :: Maybe Text
-mschedulerUrl
-  | devMode = Nothing
-  | otherwise = Just "http://soh-scheduler-1627848338.us-east-1.elb.amazonaws.com"
+mschedulerUrl = Just "http://localhost:3000"
+-- mschedulerUrl = Just "http://soh-scheduler-1627848338.us-east-1.elb.amazonaws.com"
+
 -- TODO: allow page to determine scheduler URL.
 -- | isNull schedulerUrl' || isUndefined schedulerUrl' =
 -- | otherwise = Just (fromJSString schedulerUrl')
-
+--
 -- foreign import javascript unsafe
 --   "window['schedulerUrl']"
 --   schedulerUrl' :: JSString

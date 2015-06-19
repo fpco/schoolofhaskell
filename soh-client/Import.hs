@@ -30,7 +30,6 @@ module Import
     , getEditor
     , readEditor
     , currentSnippet
-    , devMode
     , positionControlsOnResize
     ) where
 
@@ -86,15 +85,6 @@ currentSnippet state =
     Built sid _ -> Just sid
     QueryRequested sid _ _ -> Just sid
     KillRequested sid _ -> Just sid
-
--- NOTE: when adding additional usages of this, also add to README.md
--- about `-fdev`.
-devMode :: Bool
-devMode = fromJSBool devMode'
-
-foreign import javascript unsafe
-  "window['devMode']"
-  devMode' :: JSBool
 
 foreign import javascript unsafe
   "positionControlsOnResize"

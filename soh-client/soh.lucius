@@ -1,24 +1,3 @@
-/* For demo */
-
-body {
-  font-family: "Lato", sans-serif;
-}
-
-.content {
-  margin-left: auto;
-  margin-right: auto;
-  width: 800px;
-}
-
-.soh-code, code {
-  white-space: pre;
-}
-
-#soh-controls {
-  z-index: 1000;
-}
-
-
 /* Theme CSS */
 
 .soh-snippet, #soh-controls > div {

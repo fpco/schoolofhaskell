@@ -22,3 +22,4 @@ cabal-ghcjs-config
 .stack-work/
 dev-scripts/container-docker/ide-backend-server
 dev-scripts/container-docker/soh-runner
+soh-scheduler/static/soh.js

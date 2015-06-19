@@ -1,0 +1,130 @@
+<html>
+<head>
+<script src="https://fb.me/react-0.12.0.min.js"></script>
+<script src="https://cdn.rawgit.com/ajaxorg/ace-builds/v1.1.9/src-noconflict/ace.js"></script>
+<script src="https://cdn.rawgit.com/chjj/term.js/v0.0.4/src/term.js"></script>
+<script src="http://localhost:3000/static/soh.js"></script>
+<link href="http://localhost:3000/static/soh.css" rel="stylesheet" type="text/css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=Lato:400,700" rel="stylesheet" type="text/css">
+<style>
+body {
+  font-family: "Lato", sans-serif;
+}
+
+.content {
+  margin-left: auto;
+  margin-right: auto;
+  width: 800px;
+}
+
+.soh-code, code {
+  white-space: pre;
+}
+
+#soh-controls {
+  z-index: 1000;
+}
+
+/* copied from bootstrap */
+.glyphicon {
+  position: relative;
+  top: 1px;
+  display: inline-block;
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+</style>
+</head>
+<body>
+<div class="content">
+<h1>Calculator</h1>
+<h2>Console Version</h2>
+<p>How would we write a calculator program in Haskell? A simple
+  calculator should be able to perform the basic arithmetic operations
+  on two numbers.</p>
+<div class="soh-code">data Operator = Add | Subtract | Multiply | Divide
+  deriving Read
+
+eval l o r = case o of
+  Add      -> l + r
+  Subtract -> l - r
+  Multiply -> l * r
+  Divide   -> l / r
+
+prompt txt = do
+  putStrLn txt
+  readLn
+
+main = do
+  l <- prompt "Left operand?"
+  o <- prompt "Which operator?"
+  r <- prompt "Right operand?"
+  putStrLn $ "The result is " ++ show (eval l o r)
+</div>
+<h2>Yesod Version</h2>
+<p>Let's make our calculator program into a website!</p>
+<div class="soh-code">{-# LANGUAGE TypeFamilies, QuasiQuotes, MultiParamTypeClasses,
+         TemplateHaskell, OverloadedStrings #-}
+import Yesod hiding (Add, Subtract, Multiply, Divide)
+import Yesod.Form
+import Control.Applicative
+
+data Calculator = Calculator
+
+instance Yesod Calculator
+
+instance RenderMessage Calculator FormMessage where
+    renderMessage _ _ = defaultFormMessage
+
+mkYesod "Calculator" [parseRoutes|
+/ HomeR GET
+|]
+
+main = warpEnv Calculator
+
+data Calculation = Calculation Double Operator Double
+
+form = renderDivs $ Calculation
+    <$> areq doubleField               "Left operand"  Nothing
+    <*> areq (selectField optionsEnum) "Operator"      Nothing
+    <*> areq doubleField               "Right operand" Nothing
+
+getHomeR = do
+    ((result, widget), enctype) <- runFormGet form
+
+    let resultText = "Result: " ++ case result of
+          FormSuccess (Calculation l o r) -> show (eval l o r)
+          _ -> ""
+
+    defaultLayout $ do
+        [whamlet|
+            &lt;h1&gt; Calculator &lt;/h1&gt;
+            &lt;form enctype=&#x23;{enctype}&gt;
+                &#x5E;{widget}
+                &lt;input #button type="submit" value="Calculate!"&gt;
+            &lt;h2&gt; &#x23;{toHtml resultText}
+          |]
+        toWidget [cassius|
+            body          { width: 15em; margin: 0em auto; }
+            #button       { width: 10em; }
+            input, select { width: 4em; margin: 0.5em; }
+            .required     { text-align: right; }
+          |]
+
+data Operator = Add | Subtract | Multiply | Divide
+  deriving (Eq, Enum, Bounded, Show)
+
+eval l o r = case o of
+    Add      -> l + r
+    Subtract -> l - r
+    Multiply -> l * r
+    Divide   -> l / r
+</div>
+</div>
+</body>
+</html>

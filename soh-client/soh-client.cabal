@@ -1,0 +1,61 @@
+name:                soh-client
+version:             0.0.1
+license:             MIT
+license-file:        LICENSE
+author:              FP Complete Developers
+maintainer:          dev@fpcomplete.com
+copyright:           2015 FP Complete Corporation
+category:            Development
+build-type:          Simple
+cabal-version:       >=1.10
+
+executable soh-client
+  js-sources:          util.js
+  ghc-options:         -Wall
+  default-language:    Haskell2010
+  main-is:             main.hs
+  extensions:          CPP
+                       DeriveDataTypeable
+                       DeriveGeneric
+                       FlexibleInstances
+                       ForeignFunctionInterface
+                       GeneralizedNewtypeDeriving
+                       JavaScriptFFI
+                       LambdaCase
+                       MultiParamTypeClasses
+                       OverloadedStrings
+                       ParallelListComp
+                       RankNTypes
+                       RecordWildCards
+                       ScopedTypeVariables
+                       StandaloneDeriving
+                       TemplateHaskell
+                       TypeFamilies
+                       ViewPatterns
+  build-depends:       base >=4.7 && <5
+                     , aeson
+                     , async
+                     , JsonGrammar
+                     , base
+                     , bytestring
+                     , ghcjs-ace
+                     , ghcjs-base
+                     , ghcjs-dom
+                     , ghcjs-jquery
+                     , ghcjs-prim
+                     , ghcjs-react
+                     , ghcjs-websockets
+                     , ide-backend-common
+                     , ide-backend-json
+                     , language-typescript
+                     , lens
+                     , mtl
+                     , soh-runner-api
+                     , soh-scheduler-api
+                     , stack-prism
+                     , stm
+                     , text
+                     , transformers
+                     , uuid-types
+                     , vector
+                     , void

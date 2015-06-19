@@ -4,6 +4,21 @@ School of Haskell
 The School of Haskell is a service providing interactive Haskell
 tutorials and documentation.
 
+How to use SoH on your site
+---------------------------
+
+Add the following script tags:
+
+    <script src="//fb.me/react-0.12.0.min.js"></script>
+    <script src="//cdn.rawgit.com/ajaxorg/ace-builds/v1.1.9/src-noconflict/ace.js"></script>
+    <script src="//cdn.rawgit.com/chjj/term.js/v0.0.4/src/term.js"></script>
+    <script src="http://soh-scheduler-1627848338.us-east-1.elb.amazonaws.com/static/soh.js"></script>
+
+FIXME: it isn't so ideal to use git cdn.  These should be served by
+our server.
+
+FIXME: more description here.
+
 How to build
 ------------
 
@@ -23,8 +38,8 @@ commands you need:
   `deps/` folder except `deps/ide-backend/`), then you need to run
   `./dev-scripts/install-ghcjs-deps.sh`.
 
-* If you change anything but `soh-client/`, then `stack build --flag
-  soh-server:dev` is necessary.
+* If you change `soh-client/`, then you need to run
+  `dev-scripts/build-client.sh`.
 
 * If you change `soh-runner/`, `deps/ide-backend-client/`, or
   `deps/ide-backend`, then next, you need to run
@@ -34,29 +49,11 @@ commands you need:
 This can be a bit tricky to remember, so maybe it's best to just stick
 with `./dev-scripts/build-all.sh`!
 
-Note that `--flag soh-server:dev` enables dev mode for the server.
-This is described below.
-
-About `-fdev` mode
-------------------
-
-`--flag soh-server:dev` enables the following:
-
-* Sets default Yesod dev settings (see Settings.hs).
-
-* Enables dev mode for the client code, which has the following
-  effects:
-
-  - Instead of connecting to soh-scheduler to request a container, it
-    expects that a container is already running on `localhost:4000`,
-    with a predetermined container receipt.
-
-A different flag, `--flag soh-server:runtime-ghcjs` enables
-recompiling the Client JS for every request.  This allows the
-`soh-client/` code to be edited without doing rebuilding the server.
-
 How to run locally
 ------------------
+
+FIXME: this section is out of date because now soh-scheduler serves
+the client.
 
 Assuming it's built with `--flag soh-server:dev`, run the
 following scripts in separate terminals:

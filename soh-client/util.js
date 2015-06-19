@@ -1,5 +1,3 @@
-var devMode = #{devMode};
-
 // Based on https://github.com/ajaxorg/ace/blob/master/lib/ace/ext/static_highlight.js
 
 var EditSession = ace.require("ace/edit_session").EditSession;
