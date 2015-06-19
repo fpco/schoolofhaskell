@@ -74,15 +74,16 @@ pollForContainerAddress n getContainer
         Just address -> return address
 
 mschedulerUrl :: Maybe Text
-mschedulerUrl = Nothing
-  -- | devMode = Nothing
+mschedulerUrl =
+  | devMode = Nothing
+  | otherwise = Just "http://soh-scheduler-1627848338.us-east-1.elb.amazonaws.com"
+  -- TODO: allow page to determine scheduler URL.
   -- | isNull schedulerUrl' || isUndefined schedulerUrl' =
-    -- Just "http://localhost:3001"
   -- | otherwise = Just (fromJSString schedulerUrl')
 
-foreign import javascript unsafe
-  "window['schedulerUrl']"
-  schedulerUrl' :: JSString
+-- foreign import javascript unsafe
+--   "window['schedulerUrl']"
+--   schedulerUrl' :: JSString
 
 sendRequestJsonResponse :: Aeson.FromJSON a => BaseUrl -> Text -> JSString -> JQ.Method -> IO a
 sendRequestJsonResponse bu route body method =
