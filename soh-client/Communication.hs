@@ -42,8 +42,7 @@ import           Data.Aeson (eitherDecodeStrict, encode)
 import           Data.ByteString.Lazy (toStrict)
 import           Data.Function (fix)
 import           Data.IORef
-import qualified Data.Text as T
-import           Data.Text.Encoding (encodeUtf8, decodeUtf8, decodeASCII)
+import           Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import qualified Data.UUID.Types as UUID
 import           Data.Void (absurd)
 import           Import
@@ -60,7 +59,7 @@ withUrl backendHost port (ContainerReceipt uuid) f =
   WS.withUrl url $ \conn -> do
     -- Send the receipt to the backend.  If it's rejected, then an
     -- exception is thrown.
-    let receiptText = decodeASCII (UUID.toASCIIBytes uuid)
+    let receiptText = decodeUtf8 (UUID.toASCIIBytes uuid)
     sendJson conn (RunnerRequestAuth receiptText)
     authResponse <- receiveJson conn
     case authResponse of

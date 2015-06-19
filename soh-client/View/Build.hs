@@ -6,9 +6,7 @@ module View.Build
   ) where
 
 import qualified Ace
-import qualified Data.Text as T
 import           Import
-import           Model (runCode)
 import           PosMap (spanToSelection)
 import           View.Annotation
 

@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Import.Util where
 
 import           Control.Concurrent.STM
@@ -13,7 +15,6 @@ import           Data.Monoid
 import           Data.Text (Text, pack)
 import qualified Data.Text as T
 import           Data.Typeable (Typeable, typeRep)
-import           GHCJS.DOM.Element (Element)
 import           GHCJS.DOM.HTMLElement (HTMLElement)
 import           GHCJS.Foreign
 import           GHCJS.Marshal
@@ -210,8 +211,8 @@ cleanPackageVersion x@(T.stripPrefix "-" . T.takeEnd 33 -> Just hash)
   | T.all isHexDigit hash = T.dropEnd 33 x
 cleanPackageVersion x = x
 
+$(makePrisms ''Response)
+
 -- Orphans
 
 deriving instance Typeable Element
-
-$(makePrisms ''Response)

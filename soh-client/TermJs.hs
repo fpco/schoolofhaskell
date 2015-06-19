@@ -52,13 +52,13 @@ foreign import javascript
   "$1.open($2)"
   openTerminal :: TermJs -> HTMLElement -> IO ()
 
-foreign import javascript
-  "$1.destroy()"
-  destroyTerminal :: TermJs -> IO ()
+-- foreign import javascript
+--   "$1.destroy()"
+--   destroyTerminal :: TermJs -> IO ()
 
-foreign import javascript
-  "$1.focus()"
-  focusTerminal :: TermJs -> IO ()
+-- foreign import javascript
+--   "$1.focus()"
+--   focusTerminal :: TermJs -> IO ()
 
 foreign import javascript
   "$1.write($2)"

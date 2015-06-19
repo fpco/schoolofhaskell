@@ -1,13 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import qualified Ace
-import           ContainerClient
-import           Control.Concurrent
-import           GHCJS.DOM.HTMLElement (htmlElementGetInnerText, castToHTMLElement)
-import           Import
-import           Model
-import           SchoolOfHaskell.Scheduler.API
-import           View (renderControls, renderEditor)
+import ContainerClient
+import Control.Concurrent
+import GHCJS.DOM.HTMLElement (htmlElementGetInnerText, castToHTMLElement)
+import Import
+import Model
+import SchoolOfHaskell.Scheduler.API
+import View (renderControls, renderEditor)
 
 -- | Main function of the School of Haskell client.
 main :: IO ()
@@ -45,7 +44,7 @@ main = do
         pollForContainerAddress 60 (getContainerDetailByReceipt bu receipt)
       runApp host port receipt app
 
-clearContainers :: BaseUrl -> IO ()
-clearContainers bu = do
-  containers <- listContainers bu
-  forM_ containers (stopContainerById bu)
+-- clearContainers :: BaseUrl -> IO ()
+-- clearContainers bu = do
+--   containers <- listContainers bu
+--   forM_ containers (stopContainerById bu)
