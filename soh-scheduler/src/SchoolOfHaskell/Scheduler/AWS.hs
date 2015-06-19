@@ -19,6 +19,7 @@ import Control.Monad.Trans.Resource
 import Data.Conduit
 import qualified Data.Conduit.List as Conduit
 import Data.Text (Text)
+import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
 import Data.UUID (UUID)
 import qualified Data.UUID as UUID
@@ -90,6 +91,10 @@ createContainer settings spec =
                (send (runTask (spec ^. csImageName) &
                       (rtStartedBy ?~
                        fromString (UUID.toString ident)) &
+                      (rtOverrides ?~
+                       (taskOverride & toContainerOverrides .~
+                        [containerOverride & coCommand .~
+                         [T.pack (UUID.toString ident)]])) &
                       (rtCount ?~ 1)))
      return (either (Left . ContainerProviderErr)
                     (\r ->
