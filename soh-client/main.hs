@@ -39,7 +39,13 @@ main = do
     Just schedulerUrl -> do
       let spec = ContainerSpec "soh-runner"
           bu = BaseUrl schedulerUrl
+      -- clearContainers bu
       receipt <- createContainer bu spec
       (host, port) <-
         pollForContainerAddress 60 (getContainerDetailByReceipt bu receipt)
       runApp host port receipt app
+
+clearContainers :: BaseUrl -> IO ()
+clearContainers bu = do
+  containers <- listContainers bu
+  forM_ containers (stopContainerById bu)
