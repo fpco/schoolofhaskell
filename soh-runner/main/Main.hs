@@ -16,7 +16,7 @@ main = id . snd =<<
     (addCommand
       "run"
       "Run the soh-runner server"
-      (\settings -> runner settings)
+      runner
       settingsParser)
 
 settingsParser :: Parser Settings
