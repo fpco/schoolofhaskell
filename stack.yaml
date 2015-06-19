@@ -13,7 +13,7 @@ docker:
   repo: fpco/stack-ghcjs-build
 packages:
   - ./deps/JsonGrammar2
-  - ./deps/ide-backend-client
+  - ./deps/ide-backend-client/ide-backend-client
   - ./deps/ide-backend-client/ide-backend-json
   - ./deps/ide-backend/ide-backend
   - ./deps/ide-backend/ide-backend-common
