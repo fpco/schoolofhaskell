@@ -67,3 +67,23 @@ following scripts in separate terminals:
 ```
 
 Then, point your browser at `localhost:5000`.
+
+Resolving build issues
+----------------------
+
+I've run into an issue where an error like this occurs while
+installing ghcjs deps:
+
+```
+IdeSession/RPC/Server.hs:94:22:
+    Exception when trying to run compile-time code:
+      exported function not found: Fun {funPackage = Package {unPackage = "ide-backend-common-0.9.1.2"}, funModule = "IdeSession.RPC.Stream", funSymbol = "h$idezmbackendzmcommonzm0zi9zi1zi2ZCIdeSessionziRPCziStreamzinextInStream2"}
+    Code: waitAny
+    In the splice: $waitAny
+```
+
+It seems probable that it's
+[this ghcjs bug](https://github.com/ghcjs/ghcjs/issues/349) which has
+to do with using an older `.js_a` with a newer `.js_o`.  That bug has
+been fixed, but the fix is not in our version of ghcjs.  I've found
+that a good way to resolve this is to do a `stack docker reset`.
