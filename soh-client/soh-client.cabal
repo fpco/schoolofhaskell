@@ -33,29 +33,29 @@ executable soh-client
                        TypeFamilies
                        ViewPatterns
   build-depends:       base >=4.7 && <5
-                     , aeson
-                     , async
-                     , JsonGrammar
-                     , base
-                     , bytestring
+                     , aeson >= 0.8
+                     , async >= 2.0
+                     , JsonGrammar >= 1.0.1
+                     , base >= 4.7
+                     , bytestring >= 0.10
                      , ghcjs-ace
-                     , ghcjs-base
-                     , ghcjs-dom
-                     , ghcjs-jquery
-                     , ghcjs-prim
+                     , ghcjs-base >= 0.1
+                     , ghcjs-dom >= 0.1
+                     , ghcjs-jquery >= 0.1
+                     , ghcjs-prim >= 0.1
                      , ghcjs-react
-                     , ghcjs-websockets
+                     , ghcjs-websockets >= 0.3.0.4
                      , ide-backend-common
                      , ide-backend-json
-                     , language-typescript
-                     , lens
-                     , mtl
+                     , language-typescript >= 0.0.4
+                     , lens >= 4.7
+                     , mtl >= 2.1
                      , soh-runner-api
                      , soh-scheduler-api
-                     , stack-prism
-                     , stm
-                     , text
+                     , stack-prism >= 0.1.3
+                     , stm >= 2.4
+                     , text >= 1.2
                      , transformers
-                     , uuid-types
-                     , vector
-                     , void
+                     , uuid-types >= 1.0
+                     , vector >= 0.10
+                     , void >= 0.7
