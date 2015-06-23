@@ -19,8 +19,6 @@ packages:
   - ./deps/ide-backend/ide-backend-common
   - ./deps/ide-backend/ide-backend-server
   - ./deps/ide-backend/vendor/cabal/Cabal
-  - ./deps/language-typescript
-  - ./deps/stack-prism
   - ./soh-runner
   - ./soh-runner-api
   - ./soh-scheduler

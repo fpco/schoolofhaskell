@@ -4,21 +4,12 @@
 [submodule "deps/ide-backend-client"]
 	path = deps/ide-backend-client
 	url = git@github.com:mgsloan/ide-backend-client.git
-[submodule "deps/stack-prism"]
-	path = deps/stack-prism
-	url = git://github.com/MedeaMelana/stack-prism.git
 [submodule "deps/JsonGrammar2"]
 	path = deps/JsonGrammar2
 	url = git://github.com/mgsloan/JsonGrammar2.git
-[submodule "deps/language-typescript"]
-	path = deps/language-typescript
-	url = git://github.com/paf31/language-typescript.git
 [submodule "deps/ghcjs-react"]
 	path = deps/ghcjs-react
 	url = git@github.com:fpco/ghcjs-react.git
-[submodule "deps/ghcjs-websockets"]
-	path = deps/ghcjs-websockets
-	url = git://github.com/mstksg/ghcjs-websockets.git
 [submodule "deps/ghcjs-from-typescript"]
 	path = deps/ghcjs-from-typescript
 	url = git://github.com/fpco/ghcjs-from-typescript.git
