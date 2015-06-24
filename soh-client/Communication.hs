@@ -36,6 +36,7 @@ module Communication
   , requestPortListening
   ) where
 
+import           ContainerClient (lookupPort)
 import           Control.Concurrent.Async (race)
 import           Control.Concurrent.STM
 import           Data.Aeson (eitherDecodeStrict, encode)
@@ -49,13 +50,14 @@ import           Import
 import qualified JavaScript.WebSockets as WS
 import           Language.JsonGrammar (Json)
 import           SchoolOfHaskell.RunnerAPI
-import           SchoolOfHaskell.Scheduler.API (ContainerReceipt(..))
+import           SchoolOfHaskell.Scheduler.API
 
 -- | Given the URL of the SoH container, this creates a websockets
 -- connection to it.
-withUrl :: Text -> Int -> ContainerReceipt -> (Backend -> IO a) -> IO a
-withUrl backendHost port (ContainerReceipt uuid) f =
-  let url = "ws://" <> backendHost <> ":" <> tshow port in
+withUrl :: Text -> PortMappings -> ContainerReceipt -> (Backend -> IO a) -> IO a
+withUrl backendHost backendPortMappings (ContainerReceipt uuid) f =
+  let port = lookupPort backendPort backendPortMappings
+      url = "ws://" <> backendHost <> ":" <> tshow port in
   WS.withUrl url $ \conn -> do
     -- Send the receipt to the backend.  If it's rejected, then an
     -- exception is thrown.

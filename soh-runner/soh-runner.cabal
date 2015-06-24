@@ -40,4 +40,5 @@ executable soh-runner
   build-depends:       base >=4.7 && <5
                      , optparse-simple
                      , soh-runner
+                     , soh-runner-api
                      , text

@@ -14,6 +14,7 @@ import IdeSession.Types.Public
 import React.IFrame
 import React.Unmanaged (Unmanaged)
 import SchoolOfHaskell.RunnerAPI (RunnerRequest)
+import SchoolOfHaskell.Scheduler.API (PortMappings)
 import TermJs (TermJs)
 
 -- | The application state.  Ideally, this would entirely consist of
@@ -112,6 +113,7 @@ data BuildRequest = BuildRequest !SnippetId [(FilePath, Text)]
 -- | State of the connection with the backend.  See "Communication".
 data Backend = Backend
   { backendHost :: Text
+  , backendPortMappings :: PortMappings
   , backendRequestChan :: TChan RunnerRequest
   , backendResponseChan :: TChan Response
   , backendProcessHandler :: IORef (ProcessOutput -> IO ())

@@ -3,7 +3,8 @@
 module SchoolOfHaskell.RunnerAPI
   ( RunnerRequest (..)
   , RunnerResponse (..)
-  , runnerMessagePrefix
+  , webServerPort
+  , backendPort
   ) where
 
 import Control.Category
@@ -66,5 +67,13 @@ instance Json RunnerResponse where
     , fromPrism _RunnerResponseClient . grammar
     ]
 
-runnerMessagePrefix :: IsString a => a
-runnerMessagePrefix = "soh-runner: "
+------------------------------------------------------------------------------
+-- Constants
+
+-- | Internal port used for the user's web server.
+webServerPort :: Int
+webServerPort = 3000
+
+-- | Internal port used for the websocket connection.
+backendPort :: Int
+backendPort = 4000

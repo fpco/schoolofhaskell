@@ -220,7 +220,7 @@ addrPortForTask :: forall (m :: * -> *).
                 => Settings
                 -> Task
                 -> Text
-                -> m (Either Err (Maybe (Text,Int)))
+                -> m (Either Err (Maybe (Text,PortMappings)))
 addrPortForTask settings task' ident =
   do results <-
        runAWST (settings ^. ssEnv ^. env)
@@ -247,17 +247,13 @@ addrPortForTask settings task' ident =
                    ($logWarn ("More than 1 AWS ECS EC2 Instance" <>
                               "for SoH container " <> ident <> " " <>
                               fromString (show (host : hosts))))
-            case (toListOf ((tContainers . folded) .
-                            (cNetworkBindings . folded))
-                           task') of
-              [] -> return (Right Nothing)
-              (binding:bindings) ->
-                do unless (null bindings)
-                          ($logWarn ("More than 1 AWS ECS Instance Network Binding " <>
-                                     "for SoH container " <> ident <> " " <>
-                                     fromString (show (binding : bindings))))
-                   return (Right (fmap (host,)
-                                       (binding ^. nbHostPort)))
+            let bs = toListOf ((tContainers . folded) .
+                               (cNetworkBindings . folded))
+                              task'
+                pms = mapMaybe (\x -> (,) <$> x ^. nbHostPort
+                                          <*> x ^. nbContainerPort)
+                               bs
+            return (Right (Just (host, PortMappings pms)))
 
 hoistFromText :: forall (m :: * -> *) a.
                  (Applicative m,AWS.FromText a)

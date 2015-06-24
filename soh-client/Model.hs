@@ -3,6 +3,7 @@
 module Model where
 
 import           Communication
+import           ContainerClient (lookupPort)
 import           Control.Exception (catch, throwIO, SomeException)
 import qualified Data.ByteString.Lazy as BL
 import           Data.Function (on)
@@ -15,7 +16,8 @@ import           Import
 import           PosMap (emptyPosMap)
 import           React.IFrame (setIFrameUrl)
 import           React.Internal (appState)
-import           SchoolOfHaskell.Scheduler.API (ContainerReceipt)
+import           SchoolOfHaskell.RunnerAPI (webServerPort)
+import           SchoolOfHaskell.Scheduler.API (ContainerReceipt, PortMappings)
 import           TermJs (writeTerminal)
 
 -- | Given the number of snippets on the page, this creates the
@@ -45,15 +47,15 @@ getApp cnt = do
   makeApp state id
 
 -- | Runs the SoH client application.
-runApp :: Text -> Int -> ContainerReceipt -> App -> IO void
-runApp host port receipt app = withUrl host port receipt $ \backend -> do
+runApp :: Text -> PortMappings -> ContainerReceipt -> App -> IO void
+runApp host ports receipt app = withUrl host ports receipt $ \backend -> do
   setTVarIO (appState app) stateBackend (Just backend)
   version <- expectWelcome backend
   putStrLn $ "Connection established with ide-backend " ++ show version
   let state = appState app
       -- TODO: Other env variables from old SoH?  APPROOT,
       -- FP_ENVIRONMENT_NAME, FP_ENVIRONMENT_TYPE, IMAGE_DIR, and etc
-      initialUpdates = [RequestUpdateEnv [("PORT", Just (show webPort))]]
+      initialUpdates = [RequestUpdateEnv [("PORT", Just (show webServerPort))]]
   br <- waitForTVarIO state (^? (stateStatus . _BuildRequested))
   mainLoop backend state br initialUpdates `catch` \ex -> do
     consoleErrorText $
@@ -126,19 +128,11 @@ runConsole backend state = do
     ProcessListening -> do
       webFrame <- readUnmanagedOrFail state (^? stateWeb)
       let url = "http://" <> backendHost backend <> ":" <>
-#if LOCAL_SOH_RUNNER
-            "3001" -- Port gets remapped by soh-runner.sh
-#else
-            "FIXME - need to pass port from soh-scheduler"
-#endif
+            tshow (lookupPort webServerPort (backendPortMappings backend))
       setIFrameUrl webFrame url
       switchTab state WebTab
   requestRun backend "Main" "main"
-  requestPortListening backend webPort
-
--- | Which port is used to serve websites from snippets.
-webPort :: Int
-webPort = 3000
+  requestPortListening backend webServerPort
 
 -- | Waits for queries and performs them.  Once a build is requested
 -- this stops waiting for queries and yields the 'BuildRequest'.

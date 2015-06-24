@@ -10,6 +10,7 @@ module ContainerClient
   , stopContainerByReceipt
   , pollForContainerAddress
   , mschedulerUrl
+  , lookupPort
   , AjaxException(..)
   ) where
 
@@ -18,6 +19,7 @@ import           Control.Exception (throwIO, Exception)
 import           Control.Lens
 import qualified Data.Aeson as Aeson
 import           Data.ByteString.Lazy (toStrict)
+import           Data.List (find)
 import           Data.Text (pack)
 import           Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import           Data.Typeable (Typeable)
@@ -61,7 +63,7 @@ stopContainerByReceipt :: BaseUrl -> ContainerReceipt -> IO ()
 stopContainerByReceipt bu cr =
   stopContainer bu (pack (UUID.toString (cr ^. crID)))
 
-pollForContainerAddress :: Int -> IO ContainerDetail -> IO (Text, Int)
+pollForContainerAddress :: Int -> IO ContainerDetail -> IO (Text, PortMappings)
 pollForContainerAddress n getContainer
   | n <= 0 = fail "Ran out of retries while initializing soh-runner container"
   | otherwise = do
@@ -89,6 +91,18 @@ mschedulerUrl = Just "http://soh-scheduler-1627848338.us-east-1.elb.amazonaws.co
 -- foreign import javascript unsafe
 --   "window['schedulerUrl']"
 --   schedulerUrl' :: JSString
+
+-- FIXME: when looking up the backend port, there is no reasonable
+-- recovery if it isn't in the association list.  So, once we have
+-- logic for connection retry, this will need to be a variety of
+-- exception which aborts retry.
+--
+-- (Not a big deal though, it shouldn't occur).
+lookupPort :: Int -> PortMappings -> Int
+lookupPort innerPort (PortMappings xs) =
+  fromMaybe (error ("Couldn't find port mapping for " ++ show innerPort))
+            (snd <$> find ((innerPort ==) . fst) xs)
+
 
 sendRequestJsonResponse :: Aeson.FromJSON a => BaseUrl -> Text -> JSString -> JQ.Method -> IO a
 sendRequestJsonResponse bu route body method =
