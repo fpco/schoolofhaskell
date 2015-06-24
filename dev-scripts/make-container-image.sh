@@ -1,11 +1,11 @@
 #!/bin/sh
 
-set -x
+set -xe
 
 cd dev-scripts/container-docker
 
-rm soh-runner
-rm ide-backend-server
+rm -f soh-runner
+rm -f ide-backend-server
 
 ln -P ../../.stack-work/install/x86_64-linux/lts-2.14/7.8.4/bin/soh-runner soh-runner
 ln -P ../../.stack-work/install/x86_64-linux/lts-2.14/7.8.4/bin/ide-backend-server ide-backend-server

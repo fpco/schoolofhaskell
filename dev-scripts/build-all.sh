@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -xe
+
 # Build and install required GHCJS packages.
 ./dev-scripts/install-ghcjs-deps.sh
 # Build the SoH client.

@@ -2,7 +2,7 @@
 
 # This is an internal script used by dev-scripts/build-client.sh.
 
-set -x
+set -xe
 
 cabal --config-file=cabal-ghcjs-config install --ghcjs soh-client/
 
