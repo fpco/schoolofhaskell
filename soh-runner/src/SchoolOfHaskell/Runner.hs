@@ -29,7 +29,7 @@ import qualified Network.Wai.Handler.Warp as Warp
 import qualified Network.Wai.Handler.WebSockets as WaiWS
 import qualified Network.WebSockets as WS
 import           Numeric (showHex)
-import           SchoolOfHaskell.RunnerAPI
+import           SchoolOfHaskell.Runner.API
 import           System.Directory (createDirectoryIfMissing)
 import qualified System.IO as IO
 import           System.Timeout (timeout)

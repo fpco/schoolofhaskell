@@ -16,7 +16,7 @@ import           Import
 import           PosMap (emptyPosMap)
 import           React.IFrame (setIFrameUrl)
 import           React.Internal (appState)
-import           SchoolOfHaskell.RunnerAPI (webServerPort)
+import           SchoolOfHaskell.Runner.API (webServerPort)
 import           SchoolOfHaskell.Scheduler.API (ContainerReceipt, PortMappings)
 import           TermJs (writeTerminal)
 

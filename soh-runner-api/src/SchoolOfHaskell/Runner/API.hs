@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
-module SchoolOfHaskell.RunnerAPI
+module SchoolOfHaskell.Runner.API
   ( RunnerRequest (..)
   , RunnerResponse (..)
   , webServerPort

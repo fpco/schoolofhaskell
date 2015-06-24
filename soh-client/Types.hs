@@ -13,7 +13,7 @@ import IdeSession.Types.Progress
 import IdeSession.Types.Public
 import React.IFrame
 import React.Unmanaged (Unmanaged)
-import SchoolOfHaskell.RunnerAPI (RunnerRequest)
+import SchoolOfHaskell.Runner.API (RunnerRequest)
 import SchoolOfHaskell.Scheduler.API (PortMappings)
 import TermJs (TermJs)
 

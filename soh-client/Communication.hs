@@ -49,7 +49,7 @@ import           Data.Void (absurd)
 import           Import
 import qualified JavaScript.WebSockets as WS
 import           Language.JsonGrammar (Json)
-import           SchoolOfHaskell.RunnerAPI
+import           SchoolOfHaskell.Runner.API
 import           SchoolOfHaskell.Scheduler.API
 
 -- | Given the URL of the SoH container, this creates a websockets
