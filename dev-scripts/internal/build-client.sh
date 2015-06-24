@@ -4,7 +4,7 @@
 
 set -xe
 
-cabal --config-file=cabal-ghcjs-config install --ghcjs soh-client/
+cabal --config-file=cabal-ghcjs-config install --ghcjs soh-client/ $@
 
 # Replace the old soh.js with the newly built one.
 mkdir -p soh-scheduler/static

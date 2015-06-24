@@ -125,7 +125,12 @@ runConsole backend state = do
       appendConsole $ "\r\nProcess done: " <> T.pack (show result) <> "\r\n"
     ProcessListening -> do
       webFrame <- readUnmanagedOrFail state (^? stateWeb)
-      let url = "http://" <> backendHost backend <> ":" <> tshow webPort
+      let url = "http://" <> backendHost backend <> ":" <>
+#if LOCAL_SOH_RUNNER
+            "3001" -- Port gets remapped by soh-runner.sh
+#else
+            "FIXME - need to pass port from soh-scheduler"
+#endif
       setIFrameUrl webFrame url
       switchTab state WebTab
   requestRun backend "Main" "main"

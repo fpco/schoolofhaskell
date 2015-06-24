@@ -74,8 +74,13 @@ pollForContainerAddress n getContainer
         Just address -> return address
 
 mschedulerUrl :: Maybe Text
+#if LOCAL_SOH_SCHEDULER
 mschedulerUrl = Just "http://localhost:3000"
--- mschedulerUrl = Just "http://soh-scheduler-1627848338.us-east-1.elb.amazonaws.com"
+#elif LOCAL_SOH_RUNNER
+mschedulerUrl = Nothing
+#else
+mschedulerUrl = Just "http://soh-scheduler-1627848338.us-east-1.elb.amazonaws.com"
+#endif
 
 -- TODO: allow page to determine scheduler URL.
 -- | isNull schedulerUrl' || isUndefined schedulerUrl' =
