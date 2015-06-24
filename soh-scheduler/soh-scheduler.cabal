@@ -9,6 +9,10 @@ category:            System
 build-type:          Simple
 cabal-version:       >=1.10
 
+Flag no-cache
+    Description:   Disable caching of static files
+    Default:       False
+
 library
   default-language:    Haskell2010
   hs-source-dirs:      src
@@ -17,6 +21,8 @@ library
                        SchoolOfHaskell.Scheduler.AWS
                        SchoolOfHaskell.Scheduler.Types
   ghc-options:         -Wall
+  if flag(no-cache)
+    cpp-options:       -DNO_CACHE
   build-depends:       aeson
                      , airship
                      , amazonka

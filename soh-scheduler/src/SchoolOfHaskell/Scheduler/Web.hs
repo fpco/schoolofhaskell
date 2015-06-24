@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -61,7 +62,7 @@ startSessionEnv access secret token region cluster =
 
 start :: Text -> Env -> IO ()
 start ecs env' =
-  do static <- staticResource Cache "static"
+  do static <- staticResource staticOptions "static"
      let state =
            State (mkSettings ecs env')
      runSettings
@@ -206,3 +207,11 @@ withReceiptOrId forReceipt forId =
        Nothing -> forId (ContainerId id')
        Just rcpt ->
          forReceipt (ContainerReceipt rcpt)
+
+staticOptions :: StaticOptions
+staticOptions =
+#if NO_CACHE
+  NoCache
+#else
+  Cache
+#endif
