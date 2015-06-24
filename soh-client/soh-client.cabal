@@ -14,8 +14,7 @@ Flag local-soh-runner
     Default:       False
 
 Flag local-soh-scheduler
-    Description:   Use local soh-scheduler (which will use AWS soh-runners).
-                   When this flag is set, 'local-soh-runner' has no effect.
+    Description:   Use local soh-scheduler (which will use AWS soh-runners)
     Default:       False
 
 executable soh-client

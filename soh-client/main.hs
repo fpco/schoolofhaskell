@@ -32,21 +32,20 @@ main = do
     let renderer = renderEditor ace termjs iframe sid code inlineControls
     void $ forkIO $ react app renderer el
   -- Run the application
-  case mschedulerUrl of
-    Nothing -> runApp "localhost" devMappings devReceipt app
-      where
-        -- soh-runner.sh maps port 3000 to 3001
-        devMappings = PortMappings [(4000, 4000), (3000, 3001)]
-    Just schedulerUrl -> do
-      let spec = ContainerSpec "soh-runner"
-          bu = BaseUrl schedulerUrl
-      -- clearContainers bu
-      receipt <- createContainer bu spec
-      (host, ports) <-
-        pollForContainerAddress 60 (getContainerDetailByReceipt bu receipt)
-      runApp host ports receipt app
+#if LOCAL_SOH_RUNNER
+  -- soh-runner.sh maps port 3000 to 3001
+  let devMappings = PortMappings [(4000, 4000), (3000, 3001)]
+  runApp "localhost" devMappings devReceipt app
+#else
+  let spec = ContainerSpec "soh-runner"
+  -- clearContainers
+  receipt <- createContainer spec
+  (host, ports) <- pollForContainerAddress 60 $
+    getContainerDetailByReceipt receipt
+  runApp host ports receipt app
+#endif
 
--- clearContainers :: BaseUrl -> IO ()
--- clearContainers bu = do
---   containers <- listContainers bu
---   forM_ containers (stopContainerById bu)
+-- clearContainers :: IO ()
+-- clearContainers = do
+--   containers <- listContainers
+--   forM_ containers stopContainerById

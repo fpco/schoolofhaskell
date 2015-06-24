@@ -1,15 +1,14 @@
 -- | Handles communicating with the server, to initialize the SoH
 -- container.
 module ContainerClient
-  ( BaseUrl(..)
-  , listContainers
+  ( listContainers
   , createContainer
   , getContainerDetailById
   , getContainerDetailByReceipt
   , stopContainerById
   , stopContainerByReceipt
   , pollForContainerAddress
-  , mschedulerUrl
+  , schedulerHost
   , lookupPort
   , AjaxException(..)
   ) where
@@ -29,39 +28,37 @@ import qualified JavaScript.JQuery as JQ
 import qualified JavaScript.JQuery.Internal as JQ
 import           SchoolOfHaskell.Scheduler.API
 
-newtype BaseUrl = BaseUrl Text
+listContainers :: IO [ContainerId]
+listContainers =
+  sendRequestJsonResponse "containers" "" JQ.GET
 
-listContainers :: BaseUrl -> IO [ContainerId]
-listContainers bu =
-  sendRequestJsonResponse bu "containers" "" JQ.GET
+createContainer :: ContainerSpec -> IO ContainerReceipt
+createContainer spec =
+  sendRequestJsonResponse "containers" (encode spec) JQ.POST
 
-createContainer :: BaseUrl -> ContainerSpec -> IO ContainerReceipt
-createContainer bu spec =
-  sendRequestJsonResponse bu "containers" (encode spec) JQ.POST
+getContainerDetail :: Text -> IO ContainerDetail
+getContainerDetail k =
+  sendRequestJsonResponse ("containers/" <> encodeURIComponent k) "" JQ.GET
 
-getContainerDetail :: BaseUrl -> Text -> IO ContainerDetail
-getContainerDetail bu k =
-  sendRequestJsonResponse bu ("containers/" <> encodeURIComponent k) "" JQ.GET
+stopContainer :: Text -> IO ()
+stopContainer k =
+  sendRequestJsonResponse ("containers/" <> encodeURIComponent k) "" JQ.DELETE
 
-stopContainer :: BaseUrl -> Text -> IO ()
-stopContainer bu k =
-  sendRequestJsonResponse bu ("containers/" <> encodeURIComponent k) "" JQ.DELETE
+getContainerDetailById :: ContainerId -> IO ContainerDetail
+getContainerDetailById cid =
+  getContainerDetail (cid ^. ciID)
 
-getContainerDetailById :: BaseUrl -> ContainerId -> IO ContainerDetail
-getContainerDetailById bu cid =
-  getContainerDetail bu (cid ^. ciID)
+getContainerDetailByReceipt :: ContainerReceipt -> IO ContainerDetail
+getContainerDetailByReceipt cr =
+  getContainerDetail (pack (UUID.toString (cr ^. crID)))
 
-getContainerDetailByReceipt :: BaseUrl -> ContainerReceipt -> IO ContainerDetail
-getContainerDetailByReceipt bu cr =
-  getContainerDetail bu (pack (UUID.toString (cr ^. crID)))
+stopContainerById :: ContainerId -> IO ()
+stopContainerById cid =
+  stopContainer (cid ^. ciID)
 
-stopContainerById :: BaseUrl -> ContainerId -> IO ()
-stopContainerById bu cid =
-  stopContainer bu (cid ^. ciID)
-
-stopContainerByReceipt :: BaseUrl -> ContainerReceipt -> IO ()
-stopContainerByReceipt bu cr =
-  stopContainer bu (pack (UUID.toString (cr ^. crID)))
+stopContainerByReceipt :: ContainerReceipt -> IO ()
+stopContainerByReceipt cr =
+  stopContainer (pack (UUID.toString (cr ^. crID)))
 
 pollForContainerAddress :: Int -> IO ContainerDetail -> IO (Text, PortMappings)
 pollForContainerAddress n getContainer
@@ -75,22 +72,13 @@ pollForContainerAddress n getContainer
           pollForContainerAddress (n - 1) getContainer
         Just address -> return address
 
-mschedulerUrl :: Maybe Text
-#if LOCAL_SOH_SCHEDULER
-mschedulerUrl = Just "http://localhost:3000"
-#elif LOCAL_SOH_RUNNER
-mschedulerUrl = Nothing
-#else
-mschedulerUrl = Just "http://soh-scheduler-1627848338.us-east-1.elb.amazonaws.com"
-#endif
-
--- TODO: allow page to determine scheduler URL.
--- | isNull schedulerUrl' || isUndefined schedulerUrl' =
--- | otherwise = Just (fromJSString schedulerUrl')
+-- TODO: allow page to determine scheduler Host.
+-- | isNull schedulerHost' || isUndefined schedulerHost' =
+-- | otherwise = Just (fromJSString schedulerHost')
 --
 -- foreign import javascript unsafe
---   "window['schedulerUrl']"
---   schedulerUrl' :: JSString
+--   "window['schedulerHost']"
+--   schedulerHost' :: JSString
 
 -- FIXME: when looking up the backend port, there is no reasonable
 -- recovery if it isn't in the association list.  So, once we have
@@ -104,13 +92,13 @@ lookupPort innerPort (PortMappings xs) =
             (snd <$> find ((innerPort ==) . fst) xs)
 
 
-sendRequestJsonResponse :: Aeson.FromJSON a => BaseUrl -> Text -> JSString -> JQ.Method -> IO a
-sendRequestJsonResponse bu route body method =
-  decode <$> sendRequest bu route body method
+sendRequestJsonResponse :: Aeson.FromJSON a => Text -> JSString -> JQ.Method -> IO a
+sendRequestJsonResponse route body method =
+  decode <$> sendRequest route body method
 
-sendRequest :: BaseUrl -> Text -> JSString -> JQ.Method -> IO JSString
-sendRequest (BaseUrl bu) route body method =
-    ajax (bu <> "/" <> route) body settings
+sendRequest :: Text -> JSString -> JQ.Method -> IO JSString
+sendRequest route body method =
+    ajax (schedulerHost <> "/" <> route) body settings
   where
     settings =  JQ.AjaxSettings
       { JQ.asContentType = "application/json"

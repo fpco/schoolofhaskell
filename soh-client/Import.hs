@@ -32,6 +32,7 @@ module Import
     , readEditor
     , currentSnippet
     , positionControlsOnResize
+    , schedulerHost
     ) where
 
 import           Ace (Editor)
@@ -91,3 +92,10 @@ currentSnippet state =
 foreign import javascript unsafe
   "positionControlsOnResize"
   positionControlsOnResize :: Element -> Element -> IO ()
+
+schedulerHost :: Text
+#if LOCAL_SOH_SCHEDULER
+schedulerHost = "http://localhost:3000"
+#else
+schedulerHost = "http://soh-scheduler-1627848338.us-east-1.elb.amazonaws.com"
+#endif
