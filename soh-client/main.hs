@@ -2,7 +2,6 @@
 
 import ContainerClient
 import Control.Concurrent
-import GHCJS.DOM.HTMLElement (htmlElementGetInnerText, castToHTMLElement)
 import Import
 import Model
 import SchoolOfHaskell.Scheduler.API
@@ -29,7 +28,7 @@ main = do
     _ -> return True
   -- Substitute the code elements with editors
   forM_ (zip els [SnippetId 0..]) $ \(el, sid) -> do
-    code <- htmlElementGetInnerText (castToHTMLElement el)
+    code <- getElementText el
     let renderer = renderEditor ace termjs iframe sid code inlineControls
     void $ forkIO $ react app renderer el
   -- Run the application

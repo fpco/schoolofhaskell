@@ -5,7 +5,7 @@ module Import.Util where
 import           Control.Concurrent.STM
 import           Control.Exception (SomeException, catch, throwIO)
 import           Control.Lens hiding (coerce)
-import           Control.Monad (unless)
+import           Control.Monad (unless, (<=<))
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 import           Data.Char (isHexDigit)
 import           Data.Coerce (coerce)
@@ -15,13 +15,15 @@ import           Data.Monoid
 import           Data.Text (Text, pack)
 import qualified Data.Text as T
 import           Data.Typeable (Typeable, typeRep)
+import           GHCJS.DOM.Types (IsElement)
 import           GHCJS.DOM.HTMLElement (HTMLElement)
 import           GHCJS.Foreign
 import           GHCJS.Marshal
 import           GHCJS.Types
 import           IdeSession.Client.JsonAPI
 import           IdeSession.Types.Public
-import           JavaScript.JQuery (JQuery)
+import           JavaScript.JQuery (JQuery, selectElement)
+import           JavaScript.JQuery.Internal (jq_getText)
 import           React
 import           React.Lucid
 import           System.IO.Unsafe (unsafePerformIO)
@@ -112,15 +114,18 @@ getElementsByClassName :: JSString -> IO [Element]
 getElementsByClassName name =
   mapM fromJSRefOrFail =<< fromArray =<< getElementsByClassName' name
 
+foreign import javascript unsafe "document.getElementsByClassName($1)"
+  getElementsByClassName' :: JSString -> IO (JSArray Element)
+
 getElementById :: JSString -> IO (Maybe Element)
 getElementById name =
   fromJSRef =<< getElementById' name
 
-foreign import javascript unsafe "document.getElementsByClassName($1)"
-  getElementsByClassName' :: JSString -> IO (JSArray Element)
-
 foreign import javascript unsafe "document.getElementById($1)"
   getElementById' :: JSString -> IO (JSRef Element)
+
+getElementText :: IsElement e => e -> IO JSString
+getElementText = jq_getText <=< selectElement
 
 --------------------------------------------------------------------------------
 -- Tvar/lens helpers
