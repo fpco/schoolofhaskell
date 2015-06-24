@@ -2,6 +2,7 @@
 -- handles updating the state based on responses from the backend, and
 module Model where
 
+import           Ace (getCharPosition, end)
 import           Communication
 import           ContainerClient (lookupPort)
 import           Control.Exception (catch, throwIO, SomeException)
@@ -13,7 +14,7 @@ import qualified Data.Text as T
 import           Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import qualified Data.Vector as V
 import           Import
-import           PosMap (emptyPosMap)
+import           PosMap (emptyPosMap, spanToRange)
 import           React.IFrame (setIFrameUrl)
 import           React.Internal (appState)
 import           SchoolOfHaskell.Runner.API (webServerPort)
@@ -142,16 +143,11 @@ runQueries backend state = do
     case req of
       Left br -> return br
       Right (sid, QueryInfo ss) -> do
-        infos <- getSpanInfo backend ss
-        navigateDoc state $
-          fmap (\(ResponseSpanInfo si _) -> getIdInfo si)
-               (listToMaybe infos)
+        runDocQuery backend state ss
+        mtys <- runTypeQuery backend state sid ss
+        update $ set (ixSnippet sid . snippetTypeInfo) mtys
         -- TODO: allow the client to restrict their ide-backend-client
         -- request to just the innermost type info.
-        tys <- getAnnExpTypes backend ss
-        update $ set (ixSnippet sid . snippetTypeInfo) $
-          listToMaybe $
-          L.groupBy ((==) `on` (\(ResponseAnnExpType _ ss') -> ss')) tys
         runQueries backend state
   where
     waitForUserRequest :: IO (Either BuildRequest (SnippetId, Query))
@@ -165,8 +161,35 @@ runQueries backend state = do
     backToIdle :: Status -> Status
     backToIdle (QueryRequested sid info _) = Built sid info
     backToIdle x = x
+
+runDocQuery :: Backend -> TVar State -> SourceSpan -> IO ()
+runDocQuery backend state ss = do
+    infos <- getSpanInfo backend ss
+    navigateDoc state $
+      fmap (\(ResponseSpanInfo si _) -> getIdInfo si)
+           (listToMaybe infos)
+  where
     getIdInfo (SpanId x) = x
     getIdInfo (SpanQQ x) = x
+
+runTypeQuery :: Backend -> TVar State -> SnippetId -> SourceSpan -> IO (Maybe ([ResponseAnnExpType], Int))
+runTypeQuery backend state sid ss = do
+    tys <- getAnnExpTypes backend ss
+    addTyPos $
+      listToMaybe $
+      L.groupBy ((==) `on` (\(ResponseAnnExpType _ ss') -> ss')) tys
+  where
+    addTyPos Nothing = return Nothing
+    addTyPos (Just tys@((ResponseAnnExpType _ ss):_)) = do
+      s <- atomically $ readTVar state
+      -- Note: this means that if there has been an edit within the
+      -- span, then the type info won't show for it.  Lets see if this
+      -- is bothersome.
+      forM (spanToRange s sid ss) $ \range -> do
+        editor <- getEditor s sid
+        -- TODO: also pick a good x position
+        (x, y) <- getCharPosition editor (end range)
+        return (tys, y + 12)
 
 -- | Send process kill request, and wait for the process to stop.
 --

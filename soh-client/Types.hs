@@ -55,7 +55,7 @@ data Snippet = Snippet
   , _snippetPosMap :: !PosMap
     -- ^ Tracks how edits affect source positions, since the last
     -- compile.
-  , _snippetTypeInfo :: !(Maybe [ResponseAnnExpType])
+  , _snippetTypeInfo :: !(Maybe ([ResponseAnnExpType], Int))
     -- ^ When this is set to a 'Just' value, type info is displayed
     -- inline in the snippet.
   } deriving (Eq, Show, Typeable)

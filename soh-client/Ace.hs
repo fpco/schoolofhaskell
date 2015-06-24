@@ -6,6 +6,7 @@ module Ace
     -- * Queries
   , getValue
   , getSelection
+  , getCharPosition
     -- * Mutations
   , setValue
   , setSelection
@@ -38,6 +39,7 @@ import           Data.Coerce (coerce)
 import           Data.Text (Text)
 import           Data.Typeable (Typeable)
 import           GHC.Generics (Generic)
+import           GHCJS.DOM.Types (HTMLElement(..))
 import           GHCJS.Foreign
 import           GHCJS.Marshal
 import           GHCJS.Types
@@ -85,6 +87,38 @@ getSelection editor = do
   lead <- Selection.getSelectionLead s
   anchor <- Selection.getSelectionAnchor s
   Selection <$> fromRef lead <*> fromRef anchor
+
+getCharPosition :: Editor -> Pos -> IO (Int, Int)
+getCharPosition editor pos = do
+  renderer <- Editor.renderer editor
+  obj <- Renderer.textToScreenCoordinates
+      renderer
+      (intToJSNumber (row pos))
+      (intToJSNumber (column pos))
+  (cx, cy) <- convertPagePosition obj
+  (ex, ey) <-
+    convertPagePosition =<<
+    getPagePosition . coerce =<<
+    Renderer.scroller renderer
+  print (cx, cy, ex, ey)
+  return (cx - ex, cy - ey)
+
+convertPagePosition :: JSRef obj -> IO (Int, Int)
+convertPagePosition obj =
+  maybe (fail "Failed to convert page position") return =<<
+  runMaybeT ((,) <$> mtprop obj "pageX" <*> mtprop obj "pageY")
+
+--FIXME: switch to using GHCJS.DOM.ClientRect once we update to a sufficient version
+--
+-- foreign import unsafe "$1.getBoundingClientRect()"
+--   getBoundingClientRect :: Element -> IO ClientRect
+
+foreign import javascript unsafe
+  "function(el) {\
+     var rect = el.getBoundingClientRect();\
+     return { pageX: rect.left, pageY: rect.top };\
+  }($1)"
+  getPagePosition :: HTMLElement -> IO (JSRef obj)
 
 --------------------------------------------------------------------------------
 -- Mutations
