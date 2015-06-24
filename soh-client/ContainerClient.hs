@@ -138,7 +138,12 @@ ajax url d s = do
   status <- fromMaybe 0 <$> (fromJSRef =<< getProp ("status"::JSString) arr)
   if status >= 300
     then do
-      statusText <- fromMaybe "" <$> (fromJSRef =<< getProp ("statusText"::JSString) arr)
+      statusTextRef <- getProp ("statusText"::JSString) arr
+      -- NOTE: without these checks, I get weird runtime exceptions
+      -- for some statuses (e.g. 502)..
+      statusText <- if isNull statusTextRef || isUndefined statusTextRef
+        then return ""
+        else fromMaybe "" <$> fromJSRef statusTextRef
       throwIO (AjaxException status statusText)
     else getProp ("data"::JSString) arr
 
