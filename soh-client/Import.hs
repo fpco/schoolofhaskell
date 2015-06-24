@@ -11,6 +11,7 @@ module Import
     , module IdeSession.Types.Progress
     , module IdeSession.Types.Public
     , module Import.Util
+    , module Prelude
     , module React
     , module React.Lucid
     , module React.Unmanaged
@@ -39,11 +40,11 @@ import           Control.Concurrent.STM
 import           Control.Lens
 import           Control.Monad (void, join, when, unless, forever, (>=>), (<=<))
 import           Data.ByteString (ByteString)
-import           Data.Foldable (forM_)
+import           Data.Foldable (forM_, mapM_)
 import           Data.Maybe
 import           Data.Monoid
 import           Data.Text (Text)
-import           Data.Traversable (forM)
+import           Data.Traversable (forM, mapM)
 import           GHCJS.Foreign
 import           GHCJS.Marshal
 import           GHCJS.Types
@@ -51,6 +52,7 @@ import           IdeSession.Client.JsonAPI
 import           IdeSession.Types.Progress
 import           IdeSession.Types.Public
 import           Import.Util
+import           Prelude hiding (mapM, mapM_)
 import           React hiding (App, getElementById)
 import qualified React.Internal
 import           React.Lucid

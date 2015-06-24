@@ -15,8 +15,8 @@ import           Data.Monoid
 import           Data.Text (Text, pack)
 import qualified Data.Text as T
 import           Data.Typeable (Typeable, typeRep)
-import           GHCJS.DOM.Types (IsElement)
 import           GHCJS.DOM.HTMLElement (HTMLElement)
+import           GHCJS.DOM.Types (IsElement)
 import           GHCJS.Foreign
 import           GHCJS.Marshal
 import           GHCJS.Types
@@ -24,6 +24,7 @@ import           IdeSession.Client.JsonAPI
 import           IdeSession.Types.Public
 import           JavaScript.JQuery (JQuery, selectElement)
 import           JavaScript.JQuery.Internal (jq_getText)
+import           Prelude
 import           React
 import           React.Lucid
 import           System.IO.Unsafe (unsafePerformIO)

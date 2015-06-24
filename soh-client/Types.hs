@@ -11,6 +11,7 @@ import Data.Vector (Vector)
 import IdeSession.Client.JsonAPI
 import IdeSession.Types.Progress
 import IdeSession.Types.Public
+import Prelude
 import React.IFrame
 import React.Unmanaged (Unmanaged)
 import SchoolOfHaskell.Runner.API (RunnerRequest)

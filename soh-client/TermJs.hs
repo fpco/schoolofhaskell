@@ -16,6 +16,7 @@ import GHCJS.Marshal
 import GHCJS.Types
 import Import.Util (getElement)
 import JavaScript.JQuery (JQuery)
+import Prelude
 
 newtype TermJs = TermJs (JSRef TermJs)
   deriving (ToJSRef, FromJSRef, Typeable)

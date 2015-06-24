@@ -49,6 +49,7 @@ import qualified JavaScript.AceAjax.Raw.Selection as Selection
 import           JavaScript.AceAjax.Raw.Types hiding (Selection, Range)
 import qualified JavaScript.AceAjax.Raw.VirtualRenderer as Renderer
 import           JavaScript.JQuery (JQuery)
+import           Prelude
 
 --------------------------------------------------------------------------------
 -- Construction

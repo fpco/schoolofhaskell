@@ -18,6 +18,7 @@ module React.Unmanaged
 import Control.Concurrent.STM
 import Control.Lens
 import Control.Monad.IO.Class (MonadIO)
+import Control.Monad.Reader (ask)
 import Data.Proxy (Proxy(Proxy))
 import Data.Typeable (Typeable, typeRep)
 import GHCJS.Foreign
@@ -25,10 +26,10 @@ import GHCJS.Marshal
 import GHCJS.Types
 import Import.Util (expectProp)
 import JavaScript.JQuery (JQuery)
+import Prelude
 import React hiding (onClick)
 import React.Builder (refAttr)
 import React.Internal
-import Control.Monad.Reader (ask)
 
 newtype Unmanaged a = Unmanaged (JSRef a)
 

@@ -17,6 +17,7 @@ import Import.Util (getElement)
 import React.Internal (Component, ReactT)
 import React.Unmanaged (Unmanaged, buildUnmanaged)
 import GHCJS.Marshal (ToJSRef, FromJSRef)
+import Prelude
 
 newtype IFrame = IFrame Element
   deriving (Typeable,  ToJSRef, FromJSRef)
