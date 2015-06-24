@@ -7,12 +7,17 @@ tutorials and documentation.
 How to use SoH on your site
 ---------------------------
 
-Add the following script tags:
+Add the following tags to your `<head>`:
 
-    <script src="//fb.me/react-0.12.0.min.js"></script>
-    <script src="//cdn.rawgit.com/ajaxorg/ace-builds/v1.1.9/src-noconflict/ace.js"></script>
-    <script src="//cdn.rawgit.com/chjj/term.js/v0.0.4/src/term.js"></script>
-    <script src="http://soh-scheduler-1627848338.us-east-1.elb.amazonaws.com/static/soh.js"></script>
+```
+<script src="https://fb.me/react-0.12.0.min.js"></script>
+<script src="https://cdn.rawgit.com/ajaxorg/ace-builds/v1.1.9/src-noconflict/ace.js"></script>
+<script src="https://cdn.rawgit.com/chjj/term.js/v0.0.4/src/term.js"></script>
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="https://fonts.googleapis.com/css?family=Lato:400,700" rel="stylesheet" type="text/css">
+<script src="http://soh-scheduler-1627848338.us-east-1.elb.amazonaws.com/static/soh.js"></script>
+<link href="http://soh-scheduler-1627848338.us-east-1.elb.amazonaws.com/static/soh.css" rel="stylesheet" type="text/css">
+```
 
 FIXME: it isn't so ideal to use git cdn.  These should be served by
 our server.
@@ -35,16 +40,19 @@ Often, you can avoid doing a full rebuild, and only invoke the
 commands you need:
 
 * If you change any of the GHCJS dependencies (everything in the
-  `deps/` folder except `deps/ide-backend/`), then you need to run
-  `./dev-scripts/install-ghcjs-deps.sh`.
+  `deps/` folder except `deps/ide-backend/` and `deps/airship`), then
+  you need to run `./dev-scripts/install-ghcjs-deps.sh`.
 
 * If you change `soh-client/`, then you need to run
   `dev-scripts/build-client.sh`.
 
+* If you cahnge anything but `soh-client/`, then you need to run
+  `stack build`.
+
 * If you change `soh-runner/`, `deps/ide-backend-client/`, or
   `deps/ide-backend`, then next, you need to run
-  `./dev-scripts/make-container-image.sh`.  This creates the docker
-  image used for the runner.
+  `./dev-scripts/make-container-image.sh` after the stack build.  This
+  creates the docker image used for the runner.
 
 This can be a bit tricky to remember, so maybe it's best to just stick
 with `./dev-scripts/build-all.sh`!
