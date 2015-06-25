@@ -184,15 +184,17 @@
   .tab-content-focused {
     display: block;
   }
-  .docs-link:hover {
-    cursor: pointer;
-    text-decoration: underline;
-  }
   .hide-mark {
     display: none;
   }
 }
 
+.docs-link {
+  cursor: pointer;
+}
+.docs-link:hover {
+  text-decoration: underline;
+}
 .highlighted-haskell {
   font-size: 15px !important;
   white-space: pre-wrap;
