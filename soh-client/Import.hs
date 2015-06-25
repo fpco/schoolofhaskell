@@ -33,6 +33,7 @@ module Import
     , currentSnippet
     , positionControlsOnResize
     , schedulerHost
+    , noDocsUrl
     ) where
 
 import           Ace (Editor)
@@ -99,3 +100,6 @@ schedulerHost = "http://localhost:3000"
 #else
 schedulerHost = "http://soh-scheduler-1627848338.us-east-1.elb.amazonaws.com"
 #endif
+
+noDocsUrl :: Text
+noDocsUrl = schedulerHost <> "/static/no-docs-available.html"

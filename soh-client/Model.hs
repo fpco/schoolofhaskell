@@ -35,14 +35,15 @@ getApp cnt = do
       }
   termjs <- getDefUnmanaged
   web <- getDefUnmanaged
+  docs <- getDefUnmanaged
   let state = State
         { _stateSnippets = snippets
         , _stateConsole = termjs
         , _stateWeb = web
+        , _stateDocs = docs
         , _stateStatus = InitialStatus
         , _stateRunning = NotRunning
         , _stateTab = BuildTab
-        , _stateDocs = Nothing
         , _stateBackend = Nothing
         }
   makeApp state id
@@ -227,7 +228,35 @@ runQuery state sid query =
 
 -- | Sets the id-info which the haddock iframe should use for its url.
 navigateDoc :: TVar State -> Maybe IdInfo -> IO ()
-navigateDoc state = setTVarIO state stateDocs
+navigateDoc state minfo = do
+  docs <- readUnmanagedOrFail state (^? stateDocs)
+  setIFrameUrl docs (fromMaybe noDocsUrl (hackageLink =<< minfo))
+
+hackageLink :: IdInfo -> Maybe Text
+hackageLink (IdInfo IdProp{..} idScope) =
+  if idScope == Binder || idScope == Local
+    then Nothing
+    else Just $
+      "http://hackage.haskell.org/package/" <>
+      packageName <>
+      maybe "" ("-" <>) (fmap cleanPackageVersion packageVersion) <>
+      "/docs/" <>
+      dotToDash moduleName <>
+      ".html#" <>
+      haddockSpaceMarks idSpace <>
+      ":" <>
+      idName
+  where
+    ModuleId {..} = fromMaybe idDefinedIn idHomeModule
+    PackageId {..} = modulePackage
+    dotToDash = T.map (\c -> if c == '.' then '-' else c)
+
+-- | Show approximately what Haddock adds to documentation URLs.
+haddockSpaceMarks :: IdNameSpace -> Text
+haddockSpaceMarks VarName   = "v"
+haddockSpaceMarks DataName  = "v"
+haddockSpaceMarks TvName    = "t"
+haddockSpaceMarks TcClsName = "t"
 
 -- | Switches which tab is currently focused.
 switchTab :: TVar State -> Tab -> IO ()

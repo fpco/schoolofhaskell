@@ -33,6 +33,8 @@ data State = State
     -- and GHCI.
   , _stateWeb :: !(Unmanaged IFrame)
     -- ^ IFrame component used for snippet web output.
+  , _stateDocs :: !(Unmanaged IFrame)
+    -- ^ IFrame component used for browsing documentation.
   , _stateStatus :: !Status
     -- ^ Status of the backend - whether it's building, idle, or
     -- performing a query.
@@ -40,9 +42,6 @@ data State = State
     -- ^ Whether or not a process is running.
   , _stateTab :: !Tab
     -- ^ Which tab is currently focused.
-  , _stateDocs :: !(Maybe IdInfo)
-    -- ^ The id info associated with the most recently selected span.
-    -- Changes to this update the url of the documentation iframe.
   , _stateBackend :: !(Maybe Backend)
     -- ^ Connection to the backend, used for compiling code, running
     -- it, and querying information about it.

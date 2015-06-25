@@ -7,7 +7,6 @@ import React.IFrame
 import TermJs
 import View.Build
 import View.Console
-import View.Docs
 import View.TypeInfo
 import PosMap (handleChange, selectionToSpan)
 import Model (runQuery, runCode, switchTab, closeControls)
@@ -34,7 +33,7 @@ renderControls termjs iframe state = do
           text (buildStatusText status)
         renderCloseButton
       renderTabContent state ConsoleTab $ consoleTab termjs
-      renderTabContent state DocsTab $ docsTab state
+      renderTabContent state DocsTab $ buildIFrame iframe stateDocs (Just noDocsUrl)
       renderTabContent state WebTab $ buildIFrame iframe stateWeb Nothing
       renderTabContent state BuildTab $ buildTab status
 

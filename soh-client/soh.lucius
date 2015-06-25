@@ -255,9 +255,6 @@
   display: block !important;
   position: fixed;
   visibility: hidden;
-  .soh-no-docs-available {
-    padding: 0.25em;
-  }
 }
 
 .docs-tab-content.tab-content-focused {
