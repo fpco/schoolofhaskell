@@ -1,7 +1,9 @@
 This is just a braindump wishlist:
 
-Type Info Wishlist
-------------------
+# Type Info Wishlist
+
+* Dequalify qualified names, and somehow visually make it apparent that this
+  happened? Hovering over the portion would tell you the full name.
 
 * Explanations for builtin type syntax.  For example, explanations of
 forall, (=>), tuples, lists, etc.  These could also be made into links
@@ -30,3 +32,8 @@ I think the best implementation strategy for the items above is to
 expose annotated ASTs from ide-backend, possibly involving
 modifications of GHC itself.  Until then, we'll stick to the
 haskell-src-exts / autocomplete map annotation of type info.
+
+# Identifier info
+
+* Fall back on hoogle when identifier info fails.  Might be best to implement
+this at the stack-ide level so that all clients can benefit.
