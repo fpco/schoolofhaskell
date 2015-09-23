@@ -11,18 +11,14 @@ import           Control.Concurrent.Async (async, cancel)
 import           Control.Exception (SomeException, catch, finally)
 import           Control.Monad (void)
 import           Data.Aeson (encode, eitherDecode)
-import qualified Data.ByteString.Lazy as LBS
 import           Data.Foldable (forM_)
 import           Data.IORef
-import           Data.Maybe (fromMaybe)
-import           Data.Monoid ((<>))
 import           Data.Text (Text)
 import qualified Data.Text as T
 import           Data.Text.Encoding (decodeUtf8)
 import           IdeSession (defaultSessionInitParams, defaultSessionConfig)
-import           IdeSession.Client (ClientIO(..), startEmptySession)
-import           IdeSession.Client.CmdLine
-import           IdeSession.Client.JsonAPI (toJSON, fromJSON)
+import           Stack.Ide (ClientIO(..), startEmptySession)
+import           Stack.Ide.CmdLine
 import qualified Network.HTTP.Types as H
 import qualified Network.Wai as W
 import qualified Network.Wai.Handler.Warp as Warp
@@ -43,7 +39,6 @@ data Settings = Settings
 
 runner :: Settings -> IO ()
 runner Settings {..} = do
-  logStdio settingsReceipt
   let -- Halts the server after a duration of time, if we have a
       -- lifetime limit.  This is a temporary solution to the problem
       -- of garbage collecting containers.
@@ -67,10 +62,10 @@ runnerApp receipt pending = do
   conn <- WS.acceptRequest pending
   WS.forkPingThread conn 30
   putStrLn "Accepted connection and forked ping thread"
-  let send = WS.sendTextData conn . encode . toJSON
+  let send = WS.sendTextData conn . encode
       receive = do
         input <- WS.receiveData conn
-        return $ fromJSON =<< eitherDecode input
+        return $ eitherDecode input
   initial <- receive
   case initial of
     Right (RunnerRequestAuth receipt')
@@ -96,15 +91,18 @@ runnerApp receipt pending = do
                   receiveRequest
                 Right req -> return $ Left $
                   "Didn't expect runner request: " ++ show req
-        startEmptySession ClientIO {..} clientOpts EmptyOptions
+            logMessage _ _ _ _ = return ()
+        startEmptySession ClientIO {..} clientOpts
           `finally` do
             mthread <- readIORef listenThreadRef
             forM_ mthread cancel
+    _ -> send RunnerResponseAuthFailure
   where
     clientOpts = Options
       { optInitParams = defaultSessionInitParams
       , optConfig = defaultSessionConfig
-      , optCommand = StartEmptySession EmptyOptions
+      , optVerbose = False
+      , optVersion = False
       }
 
 -- | Returns when some process is listening to the port.

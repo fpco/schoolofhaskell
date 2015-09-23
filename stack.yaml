@@ -1,25 +1,19 @@
-resolver: lts-2.14
-flags:
-  ide-backend-client:
-    use-cabal: false
-  wai-cors:
-    transformers-3: true
+resolver: lts-3.6
 extra-deps:
-  - airship-0.3.0.0
-  - wai-cors-0.2.3
-  - shakespeare-2.0.5
-docker:
-  enable: true
-  repo: fpco/stack-ghcjs-build
+   - wai-cors-0.2.3
+   - shakespeare-2.0.6
 packages:
-  - ./deps/JsonGrammar2
-  - ./deps/ide-backend-client/ide-backend-client
-  - ./deps/ide-backend-client/ide-backend-json
-  - ./deps/ide-backend/ide-backend
-  - ./deps/ide-backend/ide-backend-common
-  - ./deps/ide-backend/ide-backend-server
-  - ./deps/ide-backend/vendor/cabal/Cabal
+  - ./deps/stack-ide/stack-ide
+  - ./deps/stack-ide/stack-ide-api
+  - ./deps/stack-ide/ide-backend/ide-backend
+  - ./deps/stack-ide/ide-backend/ide-backend-server
+  - ./deps/stack-ide/ide-backend/ide-backend-common
   - ./soh-runner
   - ./soh-runner-api
   - ./soh-scheduler
   - ./soh-scheduler-api
+  # FIXME: turn this into an extra-dep once
+  # https://github.com/helium/airship/pull/47 is merged and released to hackage.
+  - location:
+      git: git@github.com:mgsloan/airship
+      commit: 8dd9d28ae3cce4dee27aa751b98762e22df3aaec

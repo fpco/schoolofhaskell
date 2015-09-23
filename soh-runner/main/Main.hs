@@ -12,7 +12,7 @@ main = id . snd =<<
   simpleOptions
     $(simpleVersion version)
     "soh-runner"
-    "School of Haskell ide-backend-client runner"
+    "School of Haskell stack runner"
     (pure ())
     (addCommand
       "run"

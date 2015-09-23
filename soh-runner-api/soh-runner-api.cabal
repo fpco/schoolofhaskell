@@ -15,7 +15,6 @@ library
   exposed-modules:     SchoolOfHaskell.Runner.API
   ghc-options:         -Wall
   build-depends:       base >= 4.5 && < 5,
-                       JsonGrammar,
-                       ide-backend-json,
-                       stack-prism,
+                       stack-ide-api,
+                       aeson,
                        text

@@ -23,9 +23,9 @@ library
                      , directory
                      , http-types
                      , ide-backend
-                     , ide-backend-client
-                     , ide-backend-json
                      , soh-runner-api
+                     , stack-ide
+                     , stack-ide-api
                      , text
                      , wai
                      , wai-websockets
