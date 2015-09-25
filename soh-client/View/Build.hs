@@ -8,7 +8,6 @@ module View.Build
 import qualified Ace
 import           Import
 import           PosMap (spanToSelection)
-import           View.Annotation
 
 -- TODO: bring this back
 -- ghciButton :: React ()
@@ -34,13 +33,15 @@ import           View.Annotation
 buildStatusText :: Status -> Text
 buildStatusText InitialStatus = "Unbuilt"
 buildStatusText (BuildRequested _) = "Sending"
-buildStatusText (Building _ (Just progress)) =
+buildStatusText (Building _ (UpdateStatusProgress progress)) =
   "Building (" <>
   tshow (progressStep progress) <>
   "/" <>
   tshow (progressNumSteps progress) <>
   ")"
-buildStatusText (Building _ Nothing) = "Fetching"
+buildStatusText (Building _ UpdateStatusDone) = "Fetching"
+buildStatusText (Building _ UpdateStatusRequiredRestart) = "Restarting"
+buildStatusText (Building _ _) = "Backend Error"
 buildStatusText (Built _ info) = infoStatusText info
 buildStatusText (QueryRequested _ info _) = infoStatusText info
 buildStatusText (KillRequested _ _) = "Killing"
@@ -68,8 +69,12 @@ infoStatusText BuildInfo {..}
 buildTab :: Status -> React ()
 buildTab InitialStatus = return ()
 buildTab (BuildRequested _) = return ()
-buildTab (Building _ (Just progress)) = forM_ (progressParsedMsg progress) text
-buildTab (Building _ Nothing) = "Build done.  Requesting compile info.."
+buildTab (Building _ (UpdateStatusProgress progress)) = forM_ (progressParsedMsg progress) text
+buildTab (Building _ UpdateStatusDone) = "Build done.  Requesting compile info.."
+buildTab (Building _ (UpdateStatusFailed err)) = text $ "Build failed: " <> err
+buildTab (Building _ UpdateStatusRequiredRestart) = "Required a backend restart.."
+buildTab (Building _ (UpdateStatusCrashRestart err)) = text $ "Backend error: " <> err <> "\nRestarting..."
+buildTab (Building _ (UpdateStatusServerDied err)) = text $ "Fatal backend error: " <> err
 buildTab (Built sid info) = buildInfo sid info
 buildTab (QueryRequested sid info _) = buildInfo sid info
 buildTab (KillRequested sid info) = buildInfo sid info
@@ -80,16 +85,15 @@ buildInfo sid info
   | null (sourceErrors info) =
   text "Successful build - no errors or warnings!"
   | otherwise =
-  forM_ (sourceErrors info) $ \AnnSourceError{..} -> div_ $ do
+  forM_ (sourceErrors info) $ \SourceError{..} -> div_ $ do
     -- FIXME: have some explanatory text or victory picture when there
     -- are no errors or warnings.
-    class_ $ "message " <> case annErrorKind of
+    class_ $ "message " <> case errorKind of
       KindError -> "kind-error"
       KindServerDied -> "kind-error"
       KindWarning -> "kind-warning"
     span_ $ do
-      text $ tshow annErrorSpan
-      case annErrorSpan of
+      case errorSpan of
         TextSpan {} -> class_ "error-text-span"
         ProperSpan ss -> do
           class_ "error-proper-span"
@@ -112,21 +116,9 @@ buildInfo sid info
                 Ace.focus editor
     span_ $ do
       class_ "error-msg"
-      renderAnn [] annErrorMsg renderMsgAnn
+      text errorMsg
 
-renderMsgAnn :: MsgAnn -> React a -> React a
-renderMsgAnn MsgAnnModule f = spanClass "msg-ann-module" f
-renderMsgAnn (MsgAnnCode _) f = spanClass "msg-ann-code" f
-renderMsgAnn (MsgAnnCodeAnn x) f = renderCodeAnn x f
--- TODO: add support for this
---   divClass "msg-ann-refactor" f
-renderMsgAnn MsgAnnRefactor{} f = f
-renderMsgAnn MsgAnnCollapse f = f
--- TODO: add support for this
---   spanClass "msg-ann-collapse" $ return ()
---   span_ f
-
-sourceErrors :: BuildInfo -> [AnnSourceError]
+sourceErrors :: BuildInfo -> [SourceError]
 sourceErrors info =
   buildServerDieds info ++
   buildErrors info ++

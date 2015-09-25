@@ -33,8 +33,7 @@ main = do
     void $ forkIO $ react app renderer el
   -- Run the application
 #if LOCAL_SOH_RUNNER
-  -- soh-runner.sh maps port 3000 to 3001
-  let devMappings = PortMappings [(4000, 4000), (3000, 3001)]
+  let devMappings = PortMappings [(4000, 4000), (3000, 3000)]
   runApp "localhost" devMappings devReceipt app
 #else
   let spec = ContainerSpec "soh-runner"

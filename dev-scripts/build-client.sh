@@ -4,10 +4,13 @@
 #
 # ./dev-scripts/build-client.sh
 #
-# You can pass cabal arguments in as arguments to this script.  For example:
+# You can pass stack arguments in as arguments to this script.  For example:
 #
-# ./dev-scripts/build-client.sh -flocal-soh-runner
+# ./dev-scripts/build-client.sh --flag soh-client:local-soh-runner
 
 set -x
 
-stack exec -- $PWD/dev-scripts/internal/build-client.sh $@
+stack --stack-yaml ghcjs-stack.yaml build $@
+rm -f demo/soh.js
+cp $(stack --stack-yaml ghcjs-stack.yaml path --local-install-root)/bin/soh-client.jsexe/all.js demo/soh.js
+stack runghc --package shakespeare-2.0.6 dev-scripts/internal/CompileLucius.hs

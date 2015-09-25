@@ -32,7 +32,6 @@ import qualified Data.Text as T
 import           GHCJS.Foreign
 import           GHCJS.Marshal
 import           GHCJS.Types
-import           IdeSession.Client.JsonAPI.Common (sliceSpans)
 import           Import hiding (ix, to)
 import           Model (switchTab, navigateDoc)
 

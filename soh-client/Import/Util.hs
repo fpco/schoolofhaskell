@@ -20,7 +20,7 @@ import           GHCJS.DOM.Types (IsElement)
 import           GHCJS.Foreign
 import           GHCJS.Marshal
 import           GHCJS.Types
-import           IdeSession.Client.JsonAPI
+import           Stack.Ide.JsonAPI
 import           IdeSession.Types.Public
 import           JavaScript.JQuery (JQuery, selectElement)
 import           JavaScript.JQuery.Internal (jq_getText)

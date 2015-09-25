@@ -8,7 +8,6 @@ import Data.IORef (IORef)
 import Data.Text (Text)
 import Data.Typeable (Typeable)
 import Data.Vector (Vector)
-import IdeSession.Client.JsonAPI
 import IdeSession.Types.Progress
 import IdeSession.Types.Public
 import Prelude
@@ -16,6 +15,7 @@ import React.IFrame
 import React.Unmanaged (Unmanaged)
 import SchoolOfHaskell.Runner.API (RunnerRequest)
 import SchoolOfHaskell.Scheduler.API (PortMappings)
+import Stack.Ide.JsonAPI
 import TermJs (TermJs)
 
 -- | The application state.  Ideally, this would entirely consist of
@@ -66,7 +66,7 @@ data Status
     -- ^ A build has been requested.  'Model.mainLoop' /
     -- 'Model.runQueries' waits for this status and then sends off the
     -- request to the backend.
-  | Building !SnippetId !(Maybe Progress)
+  | Building !SnippetId !UpdateStatus
     -- ^ This indicates progress on the build, which occurs after the
     -- build request.
   | Built !SnippetId !BuildInfo
@@ -81,9 +81,9 @@ data Status
 
 -- | Errors and warnings which result from a compile.
 data BuildInfo = BuildInfo
-  { buildErrors :: ![AnnSourceError]
-  , buildWarnings :: ![AnnSourceError]
-  , buildServerDieds :: ![AnnSourceError]
+  { buildErrors :: ![SourceError]
+  , buildWarnings :: ![SourceError]
+  , buildServerDieds :: ![SourceError]
   }
   deriving (Eq, Show, Typeable)
 
@@ -126,7 +126,7 @@ instance Show Backend where
   showsPrec _ _ = showString "Backend conn waiter"
 
 data ProcessOutput
-  = ProcessOutput ByteString
+  = ProcessOutput String
   | ProcessDone RunResult
   | ProcessListening
 

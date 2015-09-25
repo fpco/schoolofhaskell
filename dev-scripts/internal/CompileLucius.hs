@@ -6,4 +6,4 @@ main = do
   input <- LT.readFile "soh-client/soh.lucius"
   case luciusRT input [] of
     Left err -> fail err
-    Right res -> LT.writeFile "soh-scheduler/static/soh.css" res
+    Right res -> LT.writeFile "demo/soh.css" res

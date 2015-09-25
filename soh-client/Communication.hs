@@ -22,7 +22,6 @@ module Communication
   , requestRun
   -- * Queries
   , getSourceErrors
-  , getAnnSourceErrors
   , getSpanInfo
   , getExpTypes
   , getAnnExpTypes
@@ -39,7 +38,7 @@ module Communication
 import           ContainerClient (lookupPort)
 import           Control.Concurrent.Async (race)
 import           Control.Concurrent.STM
-import           Data.Aeson (eitherDecodeStrict, encode)
+import           Data.Aeson (ToJSON, FromJSON, eitherDecodeStrict, encode)
 import           Data.ByteString.Lazy (toStrict)
 import           Data.Function (fix)
 import           Data.IORef
@@ -48,7 +47,6 @@ import qualified Data.UUID.Types as UUID
 import           Data.Void (absurd)
 import           Import
 import qualified JavaScript.WebSockets as WS
-import           Language.JsonGrammar (Json)
 import           SchoolOfHaskell.Runner.API
 import           SchoolOfHaskell.Scheduler.API
 
@@ -84,7 +82,7 @@ withUrl backendHost backendPortMappings (ContainerReceipt uuid) f =
               fail "Didn't expect to receive auth response while running"
             RunnerResponsePortIsListening ->
               readIORef backendProcessHandler >>= ($ ProcessListening)
-            RunnerResponseClient response' ->
+            RunnerResponseClient (NoSeq response') ->
               case response' of
                 ResponseProcessOutput bs ->
                   readIORef backendProcessHandler >>= ($ ProcessOutput bs)
@@ -95,6 +93,8 @@ withUrl backendHost backendPortMappings (ContainerReceipt uuid) f =
                 ResponseNoProcessError ->
                   consoleWarnText "No running process"
                 _ -> atomically (writeTChan backendResponseChan response')
+            RunnerResponseClient HasSeq{} ->
+              consoleErrorText "Didn't expect sequenced response from server."
     result <- receiveThread `race` sendThread `race` f Backend {..}
     case result of
       Left (Left x) -> absurd x
@@ -109,15 +109,17 @@ withUrl backendHost backendPortMappings (ContainerReceipt uuid) f =
 -- updates are provided to the callback function.  Once compilation is
 -- finished, 'Nothing' is sent to the callback and this function
 -- returns.
-updateSession :: Backend -> [RequestSessionUpdate] -> (Maybe Progress -> IO ()) -> IO ()
+updateSession :: Backend -> [RequestSessionUpdate] -> (UpdateStatus -> IO ()) -> IO ()
 updateSession backend updates f = do
   sendRequest backend (RequestUpdateSession updates)
   fix $ \loop -> do
-    mx <- expectResponse backend
-                         (^? _ResponseUpdateSession)
-                         "ResponseUpdateSession"
-    f mx
-    when (isJust mx) loop
+    x <- expectResponse backend
+                        (^? _ResponseUpdateSession)
+                        "ResponseUpdateSession"
+    f x
+    case x of
+      UpdateStatusProgress _ -> loop
+      _ -> return ()
 
 -- | Requests that the backend run the user's code.  The module nad
 -- identifier to run are taken as parameters.
@@ -134,16 +136,6 @@ getSourceErrors backend =
                RequestGetSourceErrors
                _ResponseGetSourceErrors
                "ResponseGetSourceErrors"
-
--- | Gets the annotated source errors of the last compilation.  These
--- annotations add more structure and info to the error messages, so
--- they can be presented in nicer, more informative ways.
-getAnnSourceErrors :: Backend ->  IO [AnnSourceError]
-getAnnSourceErrors backend =
-  queryBackend backend
-               RequestGetAnnSourceErrors
-               _ResponseGetAnnSourceErrors
-               "ResponseGetAnnSourceErrors"
 
 -- | Gets the span info of the last __error-free__ compile.  Span info
 -- tells you where an identifier came from.
@@ -190,7 +182,7 @@ setProcessHandler :: Backend -> (ProcessOutput -> IO ()) -> IO ()
 setProcessHandler = atomicWriteIORef . backendProcessHandler
 
 -- | Sends stdin to the process.
-sendProcessInput :: Backend -> ByteString -> IO ()
+sendProcessInput :: Backend -> String -> IO ()
 sendProcessInput backend = sendRequest backend . RequestProcessInput
 
 -- | Sends a SIGINT signal to the process, equivalent of using Ctrl-C.
@@ -216,7 +208,7 @@ requestPortListening backend = sendRequest' backend . RunnerRequestPortListening
 -- Backend IO
 
 sendRequest :: Backend -> Request -> IO ()
-sendRequest backend = sendRequest' backend . RunnerRequestClient
+sendRequest backend = sendRequest' backend . RunnerRequestClient . NoSeq
 
 sendRequest' :: Backend -> RunnerRequest -> IO ()
 sendRequest' backend = atomically . writeTChan (backendRequestChan backend)
@@ -237,20 +229,17 @@ expectResponse backend f expected = do
 -- Sending and receiving JSON
 
 -- TODO: fewer conversions...
-sendJson :: Json a => WS.Connection -> a -> IO ()
-sendJson conn = sendText conn . decodeUtf8 . toStrict . encode . toJSON
+sendJson :: ToJSON a => WS.Connection -> a -> IO ()
+sendJson conn = sendText conn . decodeUtf8 . toStrict . encode
 
 sendText :: WS.Connection -> Text -> IO ()
 sendText conn req = do
   connected <- WS.sendText conn req
   when (not connected) $ fail "Websocket disconnected"
 
-receiveJson :: Json a => WS.Connection -> IO a
+receiveJson :: FromJSON a => WS.Connection -> IO a
 receiveJson conn = do
   t <- WS.receiveText conn
   case eitherDecodeStrict (encodeUtf8 t) of
     Left err -> fail $ "JSON decode error: " ++ err
-    Right json ->
-      case fromJSON json of
-        Left err -> fail $ "JSON deserialization error: " ++ err
-        Right x -> return x
+    Right x -> return x

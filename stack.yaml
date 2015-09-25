@@ -1,7 +1,6 @@
 resolver: lts-3.6
 extra-deps:
    - wai-cors-0.2.3
-   - shakespeare-2.0.6
 packages:
   - ./deps/stack-ide/stack-ide
   - ./deps/stack-ide/stack-ide-api

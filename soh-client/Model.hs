@@ -98,14 +98,14 @@ compileCode
 compileCode backend state (BuildRequest sid files) extraUpdates = do
   -- TODO: clear ide-backend state before the rest of the updates?
   let requestUpdate (fp, txt) = RequestUpdateSourceFile fp $
-        BL.fromStrict (encodeUtf8 txt)
+        ByteString64 (encodeUtf8 txt)
   -- Show the build's progress and wait for it to finish.
   updateSession backend
     (extraUpdates ++ map requestUpdate files)
     (setTVarIO state stateStatus . Building sid)
   -- Retrieve the errors
-  sourceErrors <- getAnnSourceErrors backend
-  let partitionKind k = partition ((==k) . annErrorKind)
+  sourceErrors <- getSourceErrors backend
+  let partitionKind k = partition ((==k) . errorKind)
   let (errors, partitionKind KindWarning -> (warnings, serverDieds)) =
         partitionKind KindError sourceErrors
       buildInfo = BuildInfo
@@ -124,7 +124,7 @@ runConsole backend state = do
         terminal' <- readUnmanagedOrFail state (^? stateConsole)
         writeTerminal terminal' x
   setProcessHandler backend $ \case
-    ProcessOutput output -> appendConsole (decodeUtf8 output)
+    ProcessOutput output -> appendConsole (T.pack output)
     ProcessDone result ->
       appendConsole $ "\r\nProcess done: " <> T.pack (show result) <> "\r\n"
     ProcessListening -> do

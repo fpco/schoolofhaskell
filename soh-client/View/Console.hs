@@ -2,7 +2,7 @@
 module View.Console (consoleTab) where
 
 import Communication (sendProcessInput)
-import Data.Text.Encoding (encodeUtf8)
+import Data.Text (unpack)
 import Import
 import TermJs
 
@@ -13,5 +13,5 @@ consoleTab termJs = do
     onTerminalData terminal $ \input -> do
       mbackend <- viewTVarIO state stateBackend
       forM_ mbackend $ \backend ->
-        sendProcessInput backend (encodeUtf8 input)
+        sendProcessInput backend (unpack input)
     return terminal
