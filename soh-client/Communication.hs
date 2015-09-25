@@ -92,7 +92,10 @@ withUrl backendHost backendPortMappings (ContainerReceipt uuid) f =
                 -- kill before running.
                 ResponseNoProcessError ->
                   consoleWarnText "No running process"
-                _ -> atomically (writeTChan backendResponseChan response')
+                ResponseLog msg ->
+                  consoleLogText msg
+                _ ->
+                  atomically (writeTChan backendResponseChan response')
             RunnerResponseClient HasSeq{} ->
               consoleErrorText "Didn't expect sequenced response from server."
     result <- receiveThread `race` sendThread `race` f Backend {..}

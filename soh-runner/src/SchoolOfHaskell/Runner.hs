@@ -9,7 +9,7 @@ import           Control.Applicative ((<$>))
 import           Control.Concurrent (threadDelay)
 import           Control.Concurrent.Async (async, cancel)
 import           Control.Exception (SomeException, catch, finally)
-import           Control.Monad (void)
+import           Control.Monad (void, when)
 import           Data.Aeson (encode, eitherDecode)
 import           Data.Foldable (forM_)
 import           Data.IORef
@@ -17,7 +17,7 @@ import           Data.Text (Text)
 import qualified Data.Text as T
 import           Data.Text.Encoding (decodeUtf8)
 import           IdeSession (defaultSessionInitParams, defaultSessionConfig)
-import           Stack.Ide (ClientIO(..), startEmptySession)
+import           Stack.Ide
 import           Stack.Ide.CmdLine
 import qualified Network.HTTP.Types as H
 import qualified Network.Wai as W
@@ -35,10 +35,11 @@ data Settings = Settings
   { settingsPort :: Int
   , settingsReceipt :: Text
   , settingsLifetime :: Maybe Int
+  , settingsVerbose :: Bool
   }
 
 runner :: Settings -> IO ()
-runner Settings {..} = do
+runner settings@Settings {..} = do
   let -- Halts the server after a duration of time, if we have a
       -- lifetime limit.  This is a temporary solution to the problem
       -- of garbage collecting containers.
@@ -47,7 +48,7 @@ runner Settings {..} = do
           void . timeout (secs * 1000 * 1000)
         | otherwise = id
       warpSettings = Warp.setPort settingsPort Warp.defaultSettings
-      app = runnerApp settingsReceipt
+      app = runnerApp settings
   lifetime $ Warp.runSettings warpSettings $ \req sendResponse -> sendResponse $
     case WaiWS.websocketsApp WS.defaultConnectionOptions app req of
       Just res -> res
@@ -55,8 +56,8 @@ runner Settings {..} = do
                                [ ("Content-Type", "text/plain") ]
                                "Not Found: expected a websockets connection"
 
-runnerApp :: Text -> WS.PendingConnection -> IO ()
-runnerApp receipt pending = do
+runnerApp :: Settings -> WS.PendingConnection -> IO ()
+runnerApp Settings{..} pending = do
   putStrLn $ "Accepting connection from client: " ++
     show (WS.pendingRequest pending)
   conn <- WS.acceptRequest pending
@@ -69,7 +70,7 @@ runnerApp receipt pending = do
   initial <- receive
   case initial of
     Right (RunnerRequestAuth receipt')
-      | receipt' /= receipt -> do
+      | receipt' /= settingsReceipt -> do
         putStrLn "Authentication failed"
         send RunnerResponseAuthFailure
       | otherwise -> do
@@ -91,8 +92,10 @@ runnerApp receipt pending = do
                   receiveRequest
                 Right req -> return $ Left $
                   "Didn't expect runner request: " ++ show req
-            logMessage _ _ _ _ = return ()
-        startEmptySession ClientIO {..} clientOpts
+            logMessage loc source level str =
+              when settingsVerbose $ sendLog clientIO loc source level str
+            clientIO = ClientIO {..}
+        sendExceptions clientIO $ startEmptySession clientIO clientOpts
           `finally` do
             mthread <- readIORef listenThreadRef
             forM_ mthread cancel

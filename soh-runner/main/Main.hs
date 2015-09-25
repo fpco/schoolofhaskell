@@ -26,3 +26,4 @@ settingsParser =
     <$> option auto (long "port" <> short 'p' <> metavar "PORT" <> value backendPort)
     <*> option (fmap pack str) (long "receipt" <> short 'r' <> metavar "RECEIPT")
     <*> optional (option auto (long "lifetime-seconds" <> metavar "SECONDS"))
+    <*> switch (long "verbose" <> short 'v')

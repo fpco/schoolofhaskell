@@ -156,6 +156,9 @@ foreign import javascript "console.warn($1)" consoleWarn :: JSRef a -> IO ()
 
 foreign import javascript "console.error($1)" consoleError :: JSRef a -> IO ()
 
+consoleLogText :: Text -> IO ()
+consoleLogText = consoleLog . toJSString
+
 consoleWarnText :: Text -> IO ()
 consoleWarnText = consoleWarn . toJSString
 
