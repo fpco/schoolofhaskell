@@ -23,7 +23,7 @@ executable soh-client
   if flag(local-soh-scheduler)
     cpp-options:       -DLOCAL_SOH_SCHEDULER
   if flag(local-soh-runner)
-    cpp-options:     -DLOCAL_SOH_RUNNER
+    cpp-options:       -DLOCAL_SOH_RUNNER
   default-language:    Haskell2010
   main-is:             main.hs
   extensions:          CPP
