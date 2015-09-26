@@ -57,6 +57,22 @@
      */
   }
 }
+.soh-inline-controls {
+  margin-top: 1em;
+}
+
+.build-tab-content {
+  .kind-error {
+    color: #b94a48;
+  }
+  .kind-warning {
+    color: #9a7a43;
+    background: #fcf8e3;
+  }
+}
+
+
+/* Main CSS */
 
 #soh-controls > div {
   display: none;
@@ -65,34 +81,6 @@
 #soh-controls > div.soh-visible {
   display: block;
 }
-
-.soh-inline-controls {
-  margin-top: 1em;
-}
-
-.build-tab-content {
-  .message {
-    border-bottom: 0.05em solid #ccc;
-  }
-  .kind-error {
-    color: #b94a48;
-  }
-  .kind-warning {
-    color: #9a7a43;
-    background: #fcf8e3;
-    border-bottom: 0.05em solid #efeace;
-  }
-  .kind-warning {
-    background: #f1eed9;
-  }
-  .msg-ann-refactor, .msg-ann-code {
-    border: 1px solid #ddd;
-    border-radius: 0.2em;
-  }
-}
-
-
-/* Main CSS */
 
 .soh-snippet, #soh-controls > div {
   font-family: 'Ubuntu', sans-serif;
@@ -215,18 +203,6 @@
     padding-left: 0.5em;
     white-space: pre-wrap;
     font-family: 'Ubuntu Mono', monospace;
-  }
-  .msg-ann-refactor, .msg-ann-code {
-    padding: 0.1em 0.5em;
-  }
-  .msg-ann-collapse {
-    font-size: 200%;
-    line-height: 0;
-    position: relative;
-    top: -0.1em;
-  }
-  .msg-ann-collapse:before {
-    content: " …";
   }
 }
 
