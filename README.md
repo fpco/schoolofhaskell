@@ -16,7 +16,7 @@ Here's how to build, assuming local usage:
 # Build the serverside code
 stack build
 # Build the client code
-./dev-scripts/build-client.sh --flag soh-client:local-soh-runner
+./dev-scripts/build-client.sh
 ```
 
 How to run the local demo
