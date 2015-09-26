@@ -4,7 +4,7 @@ module Import.Util where
 
 import           Control.Concurrent.STM
 import           Control.Exception (SomeException, catch, throwIO)
-import           Control.Lens hiding (coerce)
+import           Control.Lens
 import           Control.Monad (unless, (<=<))
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 import           Data.Char (isHexDigit)

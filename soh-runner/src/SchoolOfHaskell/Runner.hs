@@ -5,7 +5,6 @@
 module SchoolOfHaskell.Runner (Settings(..), runner) where
 
 import           Conduit (foldC, sourceHandle, ($$))
-import           Control.Applicative ((<$>))
 import           Control.Concurrent (threadDelay)
 import           Control.Concurrent.Async (async, cancel)
 import           Control.Exception (SomeException, catch, finally)
@@ -26,10 +25,8 @@ import qualified Network.Wai.Handler.WebSockets as WaiWS
 import qualified Network.WebSockets as WS
 import           Numeric (showHex)
 import           SchoolOfHaskell.Runner.API
-import           System.Directory (createDirectoryIfMissing)
 import qualified System.IO as IO
 import           System.Timeout (timeout)
-import qualified GHC.IO.Handle as IO
 
 data Settings = Settings
   { settingsPort :: Int
@@ -143,16 +140,3 @@ processListening port =
         (_sl:(T.stripPrefix ":" . T.dropWhile (/= ':') -> Just portHex):_) ->
           portHex == goalPortHex
         _ -> False
-
-logStdio :: Text -> IO ()
-logStdio receipt = do
-  createDirectoryIfMissing False "logs"
-  let fp = "logs/" ++ T.unpack receipt
-  stdoutFile <- IO.openFile (fp ++ ".stdout") IO.WriteMode
-  stderrFile <- IO.openFile (fp ++ ".stderr") IO.WriteMode
-  IO.hDuplicateTo stdoutFile IO.stdout
-  IO.hDuplicateTo stderrFile IO.stderr
-  IO.hClose stdoutFile
-  IO.hClose stderrFile
-  IO.hSetBuffering IO.stdout IO.NoBuffering
-  IO.hSetBuffering IO.stderr IO.NoBuffering

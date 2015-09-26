@@ -5,7 +5,7 @@ import SchoolOfHaskell.Runner (runner, Settings(Settings))
 import Options.Applicative.Simple
 import Paths_soh_runner (version)
 import Data.Text (pack)
-import SchoolOfHaskell.Runner.API (backendPort, webServerPort)
+import SchoolOfHaskell.Runner.API (backendPort)
 
 main :: IO ()
 main = id . snd =<<

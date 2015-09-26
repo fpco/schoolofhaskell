@@ -32,7 +32,6 @@ module Ace
   , shiftRange
   ) where
 
-import           Control.Applicative ((<$>), (<*>))
 import           Control.Monad (void, join, (<=<))
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 import           Data.Coerce (coerce)

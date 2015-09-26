@@ -3,12 +3,10 @@ module Types where
 import Ace (Editor, Range)
 import Control.Concurrent.STM (TChan)
 import Control.Lens (makeLenses, makePrisms, makeWrapped)
-import Data.ByteString (ByteString)
 import Data.IORef (IORef)
 import Data.Text (Text)
 import Data.Typeable (Typeable)
 import Data.Vector (Vector)
-import IdeSession.Types.Progress
 import IdeSession.Types.Public
 import Prelude
 import React.IFrame

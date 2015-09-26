@@ -6,12 +6,11 @@ import           Ace (getCharPosition, end)
 import           Communication
 import           ContainerClient (lookupPort)
 import           Control.Exception (catch, throwIO, SomeException)
-import qualified Data.ByteString.Lazy as BL
 import           Data.Function (on)
 import           Data.List (partition)
 import qualified Data.List as L
 import qualified Data.Text as T
-import           Data.Text.Encoding (encodeUtf8, decodeUtf8)
+import           Data.Text.Encoding (encodeUtf8)
 import qualified Data.Vector as V
 import           Import
 import           PosMap (emptyPosMap, spanToRange)
@@ -181,15 +180,16 @@ runTypeQuery backend state sid ss = do
       L.groupBy ((==) `on` (\(ResponseAnnExpType _ ss') -> ss')) tys
   where
     addTyPos Nothing = return Nothing
-    addTyPos (Just tys@((ResponseAnnExpType _ ss):_)) = do
+    addTyPos (Just []) = return Nothing
+    addTyPos (Just tys@((ResponseAnnExpType _ ss'):_)) = do
       s <- atomically $ readTVar state
       -- Note: this means that if there has been an edit within the
       -- span, then the type info won't show for it.  Lets see if this
       -- is bothersome.
-      forM (spanToRange s sid ss) $ \range -> do
+      forM (spanToRange s sid ss') $ \range -> do
         editor <- getEditor s sid
         -- TODO: also pick a good x position
-        (x, y) <- getCharPosition editor (end range)
+        (_x, y) <- getCharPosition editor (end range)
         return (tys, y + 12)
 
 -- | Send process kill request, and wait for the process to stop.
