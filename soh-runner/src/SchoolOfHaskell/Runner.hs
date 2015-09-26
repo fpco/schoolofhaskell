@@ -7,7 +7,7 @@ module SchoolOfHaskell.Runner (Settings(..), runner) where
 import           Conduit (foldC, sourceHandle, ($$))
 import           Control.Concurrent (threadDelay)
 import           Control.Concurrent.Async (async, cancel)
-import           Control.Exception (SomeException, catch, finally)
+import           Control.Exception (SomeException, AsyncException(ThreadKilled), catch, finally, fromException)
 import           Control.Monad (void, when)
 import           Data.Aeson (encode, eitherDecode)
 import           Data.Foldable (forM_)
@@ -112,10 +112,13 @@ waitForProcessListening port = loop 120
     loop :: Int -> IO ()
     loop gen = do
       isListening <- processListening port `catch` \e -> do
-        --FIXME: some better error logging than this.
-        putStrLn $ "Exception while listening for port: " ++
-          show (e :: SomeException)
-        return False
+        case e of
+          (fromException -> Just ThreadKilled) -> return False
+          _ -> do
+            -- FIXME: some better error logging than this.
+            putStrLn $ "Exception while listening for port: " ++
+              show (e :: SomeException)
+            return False
       if isListening
         then return ()
         else do
