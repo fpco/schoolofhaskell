@@ -102,4 +102,6 @@ schedulerHost = "http://soh-scheduler-1627848338.us-east-1.elb.amazonaws.com"
 #endif
 
 noDocsUrl :: Text
-noDocsUrl = schedulerHost <> "/static/no-docs-available.html"
+--FIXME
+-- noDocsUrl = schedulerHost <> "/static/no-docs-available.html"
+noDocsUrl = "no-docs-available.html"
