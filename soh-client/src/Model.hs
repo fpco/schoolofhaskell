@@ -113,6 +113,7 @@ compileCode backend state (BuildRequest sid files) extraUpdates = do
         , buildServerDieds = serverDieds
         }
   setTVarIO state stateStatus $ Built sid buildInfo
+  when (not (buildSuccess buildInfo)) $ switchTab state BuildTab
   return (sid, buildInfo)
 
 -- | Runs the user's program and directs stdout to the console.
