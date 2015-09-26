@@ -146,8 +146,8 @@ runQueries backend state = do
         runDocQuery backend state ss
         mtys <- runTypeQuery backend state sid ss
         update $ set (ixSnippet sid . snippetTypeInfo) mtys
-        -- TODO: allow the client to restrict their ide-backend-client
-        -- request to just the innermost type info.
+        -- TODO: allow the client to restrict their stack-ide request to
+        -- just the innermost type info.
         runQueries backend state
   where
     waitForUserRequest :: IO (Either BuildRequest (SnippetId, Query))

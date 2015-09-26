@@ -1,16 +1,15 @@
 -- | This module provides utilities for rendering the 'Ann' type of the
--- ide-backend-client API.  'Ann' gives extra structure to textual
--- information provided by the backend, by adding nested annotations
--- atop the text.
+-- API. 'Ann' gives extra structure to textual information provided by
+-- the backend, by adding nested annotations atop the text.
 --
 -- In the current School of Haskell code, 'Ann' is used for source
--- errors and type info.  This allows things like links to docs for
+-- errors and type info. This allows things like links to docs for
 -- identifiers, and better styling for source errors.
 --
--- This module also provides utilities for getting highlight spans
--- from code, via Ace.  This allows the display of annotated info to
--- highlight the involved expressions / types, and pass these
--- 'ClassSpans' into 'renderAnn'.
+-- This module also provides utilities for getting highlight spans from
+-- code, via Ace. This allows the display of annotated info to highlight
+-- the involved expressions / types, and pass these 'ClassSpans' into
+-- 'renderAnn'.
 module View.Annotation
   ( -- * Annotations
     renderAnn

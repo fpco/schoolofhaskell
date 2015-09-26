@@ -194,8 +194,8 @@ sendProcessKill backend = sendRequest backend RequestProcessKill
 --------------------------------------------------------------------------------
 -- Misc
 
--- | Expects the welcome message which is sent by ide-backend-client
--- once the connection is established.
+-- | Expects the welcome message which is sent by stack-ide once the
+-- connection is established.
 expectWelcome :: Backend -> IO VersionInfo
 expectWelcome backend =
   expectResponse backend (^? _ResponseWelcome) "ResponseWelcome"
