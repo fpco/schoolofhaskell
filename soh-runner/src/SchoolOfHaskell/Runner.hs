@@ -15,7 +15,7 @@ import           Data.IORef
 import           Data.Text (Text)
 import qualified Data.Text as T
 import           Data.Text.Encoding (decodeUtf8)
-import           IdeSession (defaultSessionInitParams, defaultSessionConfig)
+import           IdeSession (defaultSessionInitParams, sessionConfigFromEnv, SessionConfig(..))
 import           Stack.Ide
 import           Stack.Ide.CmdLine
 import qualified Network.HTTP.Types as H
@@ -37,7 +37,9 @@ data Settings = Settings
 
 runner :: Settings -> IO ()
 runner settings@Settings {..} = do
-  let -- Halts the server after a duration of time, if we have a
+  sessionConfig' <- sessionConfigFromEnv
+  let sessionConfig = sessionConfig' { configLocalWorkingDir = Nothing }
+      -- Halts the server after a duration of time, if we have a
       -- lifetime limit.  This is a temporary solution to the problem
       -- of garbage collecting containers.
       lifetime
@@ -45,7 +47,7 @@ runner settings@Settings {..} = do
           void . timeout (secs * 1000 * 1000)
         | otherwise = id
       warpSettings = Warp.setPort settingsPort Warp.defaultSettings
-      app = runnerApp settings
+      app = runnerApp settings sessionConfig
   lifetime $ Warp.runSettings warpSettings $ \req sendResponse -> sendResponse $
     case WaiWS.websocketsApp WS.defaultConnectionOptions app req of
       Just res -> res
@@ -53,8 +55,8 @@ runner settings@Settings {..} = do
                                [ ("Content-Type", "text/plain") ]
                                "Not Found: expected a websockets connection"
 
-runnerApp :: Settings -> WS.PendingConnection -> IO ()
-runnerApp Settings{..} pending = do
+runnerApp :: Settings -> SessionConfig -> WS.PendingConnection -> IO ()
+runnerApp Settings{..} sessionConfig pending = do
   putStrLn $ "Accepting connection from client: " ++
     show (WS.pendingRequest pending)
   conn <- WS.acceptRequest pending
@@ -92,18 +94,17 @@ runnerApp Settings{..} pending = do
             logMessage loc source level str =
               when settingsVerbose $ sendLog clientIO loc source level str
             clientIO = ClientIO {..}
+            clientOpts = Options
+              { optInitParams = defaultSessionInitParams
+              , optConfig = sessionConfig
+              , optVerbose = False
+              , optVersion = False
+              }
         sendExceptions clientIO $ startEmptySession clientIO clientOpts
           `finally` do
             mthread <- readIORef listenThreadRef
             forM_ mthread cancel
     _ -> send RunnerResponseAuthFailure
-  where
-    clientOpts = Options
-      { optInitParams = defaultSessionInitParams
-      , optConfig = defaultSessionConfig
-      , optVerbose = False
-      , optVersion = False
-      }
 
 -- | Returns when some process is listening to the port.
 waitForProcessListening :: Int -> IO ()
