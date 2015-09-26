@@ -7,18 +7,18 @@ module Import
     , module Data.Maybe
     , module Data.Monoid
     , module Data.Traversable
-    , module IdeSession.Types.Progress
-    , module IdeSession.Types.Public
-    , module Import.Util
-    , module Prelude
-    , module React
-    , module React.Lucid
-    , module React.Unmanaged
-    , module Stack.Ide.JsonAPI
-    , module Types
     , module GHCJS.Foreign
     , module GHCJS.Marshal
     , module GHCJS.Types
+    , module IdeSession.Types.Progress
+    , module IdeSession.Types.Public
+    , module Import.Util
+    , module JavaScript.Unmanaged
+    , module Prelude
+    , module React
+    , module React.Lucid
+    , module Stack.Ide.JsonAPI
+    , module Types
     , ByteString
     , Text
     -- * Simplified types
@@ -36,7 +36,6 @@ module Import
     , noDocsUrl
     ) where
 
-import           Ace (Editor)
 import           Control.Applicative ((<$>), (<*>))
 import           Control.Concurrent.STM
 import           Control.Lens hiding (Sequenced)
@@ -53,11 +52,12 @@ import           GHCJS.Types
 import           IdeSession.Types.Progress
 import           IdeSession.Types.Public
 import           Import.Util
+import           JavaScript.Ace (Editor)
+import           JavaScript.Unmanaged
 import           Prelude hiding (mapM, mapM_)
 import           React hiding (App, getElementById)
 import qualified React.Internal
 import           React.Lucid
-import           React.Unmanaged
 import           Stack.Ide.JsonAPI
 import           Types
 

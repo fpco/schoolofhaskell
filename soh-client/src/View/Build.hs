@@ -5,9 +5,9 @@ module View.Build
   , buildTab
   ) where
 
-import qualified Ace
+import qualified JavaScript.Ace as Ace
 import           Import
-import           PosMap (spanToSelection)
+import           View.PosMap (spanToSelection)
 
 -- TODO: bring this back
 -- ghciButton :: React ()

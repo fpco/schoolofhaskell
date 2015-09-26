@@ -1,9 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import ContainerClient
 import Control.Concurrent
 import Import
 import Model
+import Model.Server
 import SchoolOfHaskell.Scheduler.API
 import View (renderControls, renderEditor)
 

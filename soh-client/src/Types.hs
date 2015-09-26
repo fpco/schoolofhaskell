@@ -1,6 +1,5 @@
 module Types where
 
-import Ace (Editor, Range)
 import Control.Concurrent.STM (TChan)
 import Control.Lens (makeLenses, makePrisms, makeWrapped)
 import Data.IORef (IORef)
@@ -8,13 +7,14 @@ import Data.Text (Text)
 import Data.Typeable (Typeable)
 import Data.Vector (Vector)
 import IdeSession.Types.Public
+import JavaScript.Ace (Editor, Range)
+import JavaScript.IFrame
+import JavaScript.TermJs (TermJs)
+import JavaScript.Unmanaged (Unmanaged)
 import Prelude
-import React.IFrame
-import React.Unmanaged (Unmanaged)
 import SchoolOfHaskell.Runner.API (RunnerRequest)
 import SchoolOfHaskell.Scheduler.API (PortMappings)
 import Stack.Ide.JsonAPI
-import TermJs (TermJs)
 
 -- | The application state.  Ideally, this would entirely consist of
 -- pure data.
@@ -108,7 +108,7 @@ data Tab
 data BuildRequest = BuildRequest !SnippetId [(FilePath, Text)]
   deriving (Eq, Show, Typeable)
 
--- | State of the connection with the backend.  See "Communication".
+-- | State of the connection with the backend.  See "Model.Protocol".
 data Backend = Backend
   { backendHost :: Text
   , backendPortMappings :: PortMappings
@@ -128,7 +128,7 @@ data ProcessOutput
   | ProcessDone RunResult
   | ProcessListening
 
--- | Stores a list of source code location changes.  See "PosMap".
+-- | Stores a list of source code location changes.  See "View.PosMap".
 --
 -- Note: Newer changes are towards the front of the list.
 newtype PosMap = PosMap { unPosMap :: [PosChange] }

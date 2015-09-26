@@ -1,6 +1,5 @@
 -- | This module provides an API for interacting with
--- ide-backend-client over the websocket interface provided by
--- soh-runner.
+-- stack-ide over the websocket interface provided by soh-runner.
 --
 -- This API wraps up the different patterns of sending requests and
 -- expecting responses, such that the code which uses it mostly does
@@ -14,7 +13,7 @@
 --
 -- In the future, a runtime check for this might be added.  However,
 -- for now this is enforced by the single-threaded nature of "Model".
-module Communication
+module Model.Protocol
   ( Backend
   , withUrl
   -- * Commands
@@ -35,7 +34,6 @@ module Communication
   , requestPortListening
   ) where
 
-import           ContainerClient (lookupPort)
 import           Control.Concurrent.Async (race)
 import           Control.Concurrent.STM
 import           Data.Aeson (ToJSON, FromJSON, eitherDecodeStrict, encode)
@@ -47,6 +45,7 @@ import qualified Data.UUID.Types as UUID
 import           Data.Void (absurd)
 import           Import
 import qualified JavaScript.WebSockets as WS
+import           Model.Server (lookupPort)
 import           SchoolOfHaskell.Runner.API
 import           SchoolOfHaskell.Scheduler.API
 

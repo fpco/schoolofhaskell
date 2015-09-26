@@ -3,7 +3,7 @@
 -- component is mounted.  Particularly useful for using widgets
 -- written in javascript which do not have react bindings, or when
 -- react's model does not match well with the domain.
-module React.Unmanaged
+module JavaScript.Unmanaged
   ( Unmanaged(..)
   , getDefUnmanaged
   , newUnmanaged

@@ -1,10 +1,10 @@
 -- | This module defines how the console tab is rendered.
 module View.Console (consoleTab) where
 
-import Communication (sendProcessInput)
+import Model.Protocol (sendProcessInput)
 import Data.Text (unpack)
 import Import
-import TermJs
+import JavaScript.TermJs
 
 consoleTab :: UComponent TermJs -> React ()
 consoleTab termJs = do

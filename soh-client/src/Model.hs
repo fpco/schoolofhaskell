@@ -2,9 +2,6 @@
 -- handles updating the state based on responses from the backend, and
 module Model where
 
-import           Ace (getCharPosition, end)
-import           Communication
-import           ContainerClient (lookupPort)
 import           Control.Exception (catch, throwIO, SomeException)
 import           Data.Function (on)
 import           Data.List (partition)
@@ -13,12 +10,15 @@ import qualified Data.Text as T
 import           Data.Text.Encoding (encodeUtf8)
 import qualified Data.Vector as V
 import           Import
-import           PosMap (emptyPosMap, spanToRange)
-import           React.IFrame (setIFrameUrl)
+import           JavaScript.Ace (getCharPosition, end)
+import           JavaScript.IFrame (setIFrameUrl)
+import           JavaScript.TermJs (writeTerminal)
+import           Model.Protocol
+import           Model.Server (lookupPort)
+import           View.PosMap (emptyPosMap, spanToRange)
 import           React.Internal (appState)
 import           SchoolOfHaskell.Runner.API (webServerPort)
 import           SchoolOfHaskell.Scheduler.API (ContainerReceipt, PortMappings)
-import           TermJs (writeTerminal)
 
 -- | Given the number of snippets on the page, this creates the
 -- initial state and App.  It needs to know the number of snippets in

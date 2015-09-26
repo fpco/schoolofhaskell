@@ -20,13 +20,13 @@ import           GHCJS.DOM.Types (IsElement)
 import           GHCJS.Foreign
 import           GHCJS.Marshal
 import           GHCJS.Types
-import           Stack.Ide.JsonAPI
 import           IdeSession.Types.Public
 import           JavaScript.JQuery (JQuery, selectElement)
 import           JavaScript.JQuery.Internal (jq_getText)
 import           Prelude
 import           React
 import           React.Lucid
+import           Stack.Ide.JsonAPI
 import           System.IO.Unsafe (unsafePerformIO)
 
 addWhen :: Bool -> Text -> Text -> Text

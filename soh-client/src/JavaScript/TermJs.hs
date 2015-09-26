@@ -1,5 +1,5 @@
 -- | Bindings to the TermJs terminal emulator.
-module TermJs
+module JavaScript.TermJs
   ( TermJs(..)
   , initTerminal
   , writeTerminal

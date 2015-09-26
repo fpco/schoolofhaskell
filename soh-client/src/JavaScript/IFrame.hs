@@ -1,4 +1,4 @@
-module React.IFrame
+module JavaScript.IFrame
   ( IFrame(..)
   , buildIFrame
   , setIFrameUrl
@@ -15,7 +15,7 @@ import GHCJS.DOM.Node (nodeAppendChild)
 import GHCJS.Types (JSString)
 import Import.Util (getElement)
 import React.Internal (Component, ReactT)
-import React.Unmanaged (Unmanaged, buildUnmanaged)
+import JavaScript.Unmanaged (Unmanaged, buildUnmanaged)
 import GHCJS.Marshal (ToJSRef, FromJSRef)
 import Prelude
 

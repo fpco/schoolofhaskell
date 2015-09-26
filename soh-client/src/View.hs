@@ -1,16 +1,16 @@
 -- | This module defines how the SoH editor and controls are rendered.
 module View (renderControls, renderEditor) where
 
-import qualified Ace
-import Import
-import React.IFrame
-import TermJs
-import View.Build
-import View.Console
-import View.TypeInfo
-import PosMap (handleChange, selectionToSpan)
-import Model (runQuery, runCode, switchTab, closeControls)
-import Control.Lens.Extras (is)
+import           Control.Lens.Extras (is)
+import           Import
+import qualified JavaScript.Ace as Ace
+import           JavaScript.IFrame
+import           JavaScript.TermJs
+import           Model (runQuery, runCode, switchTab, closeControls)
+import           View.Build
+import           View.Console
+import           View.PosMap (handleChange, selectionToSpan)
+import           View.TypeInfo
 
 renderControls
   :: UComponent TermJs

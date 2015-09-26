@@ -1,5 +1,5 @@
 -- | Bindings to the Ace editor.
-module Ace
+module JavaScript.Ace
   ( Editor
     -- * Construction
   , makeEditor

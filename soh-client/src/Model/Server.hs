@@ -1,6 +1,6 @@
 -- | Handles communicating with the server, to initialize the SoH
 -- container.
-module ContainerClient
+module Model.Server
   ( listContainers
   , createContainer
   , getContainerDetailById
