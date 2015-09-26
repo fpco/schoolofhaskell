@@ -1,39 +1,36 @@
-School of Haskell
-=================
+# School of Haskell
 
 The School of Haskell is a service providing interactive Haskell
 tutorials and documentation.
 
-How to build
-------------
+## How to setup
+
+Run `./dev-scripts/setup-environment.sh` to install the correct GHC and GHCJS.
+Note that GHCJS is currently installed from source, and will take quite a while
+to compile and boot.
+
+## How to build
 
 Installation requires stack [stack](https://github.com/commercialhaskell/stack)
 0.1.6 or newer.
 
-Here's how to build, assuming local usage:
+To build the serverside code: `stack build`
 
-```
-# Build the serverside code
-stack build
-# Build the client code
-./dev-scripts/build-client.sh
-```
+To build the client code and CSS: `./dev-scripts/build-client.sh`
 
-How to run the local demo
-------------------
+## How to run the local demo
 
-FIXME: this section is out of date because now soh-scheduler serves
-the client.
+`/dev-scripts/run-demo.sh` will run `soh-runner` and open up a browser window
+with the demo. The web snippet in the demo requires Yesod. Install Yesod with
+`stack build Yesod` in order for it to work.
 
-Assuming it's built with `--flag soh-server:dev`, run the
-following scripts in separate terminals:
+## Development tips
 
-```
-./dev-scripts/soh-server.sh
-```
+I like to rebuild the client whenever any files change. This is what
+`dev-scripts/client-file-watch.sh` does. It requires the
+[entr](http://entrproject.org/) file watcher program, which can be installed
+with `sudo apt-get install entr`.
 
-```
-./dev-scripts/soh-runner.sh
-```
-
-Then, point your browser at `localhost:5000`.
+If you just change the lucius file, you can run `./dev-scripts/generate-css.sh`
+to regenerate the CSS. `dev-scripts/css-file-watch.sh` is similar to
+client-file-watch, but it only rebuilds the CSS.
