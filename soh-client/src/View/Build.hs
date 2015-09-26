@@ -97,6 +97,7 @@ buildInfo sid info
         TextSpan {} -> class_ "error-text-span"
         ProperSpan ss -> do
           class_ "error-proper-span"
+          text $ tshow errorSpan
           onClick $ \_ stateVar -> do
             -- FIXME: use a more lenient version of spanToSelection
             -- which allows for removals within the span.  Possibly
