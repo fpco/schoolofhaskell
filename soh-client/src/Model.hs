@@ -125,7 +125,8 @@ runConsole backend state = do
         writeTerminal terminal' x
   setProcessHandler backend $ \case
     ProcessOutput output -> appendConsole (T.pack output)
-    ProcessDone result ->
+    ProcessDone result -> do
+      setTVarIO state stateRunning NotRunning
       appendConsole $ "\r\nProcess done: " <> T.pack (show result) <> "\r\n"
     ProcessListening -> do
       webFrame <- readUnmanagedOrFail state (^? stateWeb)
@@ -134,6 +135,7 @@ runConsole backend state = do
       setIFrameUrl webFrame url
       switchTab state WebTab
   requestRun backend "Main" "main"
+  setTVarIO state stateRunning Running
   requestPortListening backend webServerPort
 
 -- | Waits for queries and performs them.  Once a build is requested
