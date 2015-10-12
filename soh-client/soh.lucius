@@ -58,7 +58,7 @@
   }
 }
 .soh-inline-controls {
-  margin-top: 1em;
+  margin-top: -1px;
 }
 
 .build-tab-content {
@@ -94,12 +94,15 @@
   border-color: #e1c1c1;
 }
 
+.soh-container {
+  margin: 0.25em 0 0.75em 0;
+}
+
 .soh-snippet {
   width: 800px;
   /* same background color as the editor theme */
   position: relative;
   padding: 0.2em;
-  margin: 0.25em 0 0.75em 0;
   .ace_editor {
     margin: 0.25em;
     height: 300px;

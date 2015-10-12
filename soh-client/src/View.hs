@@ -6,7 +6,7 @@ import           Import
 import qualified JavaScript.Ace as Ace
 import           JavaScript.IFrame
 import           JavaScript.TermJs
-import           Model (runQuery, runCode, switchTab, closeControls)
+import           Model (runQuery, runCode, switchTab, closeControls, clearTypeInfo)
 import           View.Build
 import           View.Console
 import           View.PosMap (handleChange, selectionToSpan)
@@ -49,28 +49,30 @@ renderEditor
   -> Bool
   -> State
   -> React ()
-renderEditor ace termjs iframe sid initialValue inlineControls state = div_ $ do
+renderEditor ace termjs iframe sid initialValue inlineControls state = do
   let isCurrent = currentSnippet state == Just sid
-  class_ $ addWhen isCurrent "soh-current"
-         $ addWhen (not inlineControls) "soh-remote-controls"
-         $ "soh-snippet"
-  buildUnmanaged ace (ixSnippet sid . snippetEditor) $ \stateVar q -> do
-    editor <- Ace.makeEditor q
-    Ace.setMaxLinesInfty editor
-    Ace.setValue editor initialValue
-    debounce 100 (handleSelectionChange stateVar sid) >>=
-      Ace.onSelectionChange editor
-    Ace.onChange editor (handleChange stateVar sid)
-    return editor
-  renderRunButton sid isCurrent (state ^. stateStatus)
+  class_ "soh-container"
+  div_ $ do
+    class_ $ addWhen isCurrent "soh-current"
+           $ addWhen (not inlineControls) "soh-remote-controls"
+           $ "soh-snippet"
+    buildUnmanaged ace (ixSnippet sid . snippetEditor) $ \stateVar q -> do
+      editor <- Ace.makeEditor q
+      Ace.setMaxLinesInfty editor
+      Ace.setValue editor initialValue
+      debounce 100 (handleSelectionChange stateVar sid) >>=
+        Ace.onSelectionChange editor
+      Ace.onChange editor (handleChange stateVar sid)
+      return editor
+    renderRunButton sid isCurrent (state ^. stateStatus)
+    forM_ (join (state ^? ixSnippet sid . snippetTypeInfo)) $ \(typs, y) ->
+      -- TODO: remove this ugly hack!  We sometimes get lots of type
+      -- infos for the same span due to TH.
+      when (length typs < 4) $ typePopup typs 100 y
   when (isCurrent && inlineControls) $ div_ $ do
     id_ "soh-controls"
     class_ "soh-inline-controls"
     div_ $ renderControls termjs iframe state
-  forM_ (join (state ^? ixSnippet sid . snippetTypeInfo)) $ \(typs, y) ->
-    -- TODO: remove this ugly hack!  We sometimes get lots of type
-    -- infos for the same span due to TH.
-    when (length typs < 4) $ typePopup typs 100 y
 
 handleSelectionChange :: TVar State -> SnippetId -> IO ()
 handleSelectionChange stateVar sid = do
