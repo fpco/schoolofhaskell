@@ -89,9 +89,10 @@ handleSelectionChange stateVar sid = do
 renderRunButton :: SnippetId -> Bool -> Status -> React ()
 renderRunButton sid isCurrent s = div_ $ do
   let building = is _BuildRequested s || is _Building s
-  class_ $ addWhen (building && isCurrent) "building"
+      working = building && isCurrent
+  class_ $ addWhen working "building"
          $ "run glyphicon"
-  title_ "Compile and run code"
+  title_ $ if working then "Compiling code..." else "Compile and run code"
   onClick $ \_ state -> do
     editor <- readEditor state sid
     code <- Ace.getValue editor
