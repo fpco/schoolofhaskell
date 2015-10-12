@@ -76,15 +76,18 @@ renderEditor ace termjs iframe sid initialValue inlineControls state = do
 
 handleSelectionChange :: TVar State -> SnippetId -> IO ()
 handleSelectionChange stateVar sid = do
-  -- Clear the old type info.
-  setTVarIO stateVar (ixSnippet sid . snippetTypeInfo) Nothing
-  -- Compute the source span of the query at the time of compilation.
   state <- readTVarIO stateVar
   selection <- Ace.getSelection =<< getEditor state sid
-  case selectionToSpan state sid selection of
-    -- FIXME: UI for this.
-    Nothing -> putStrLn "No span for this query"
-    Just ss -> runQuery stateVar sid (QueryInfo ss)
+  -- Only show types for selections that contain multiple chars.
+  if Ace.anchor selection == Ace.lead selection
+    then clearTypeInfo stateVar sid
+   -- Compute the source span of the query at the time of compilation.
+    else case selectionToSpan state sid selection of
+      Nothing -> do
+        clearTypeInfo stateVar sid
+        -- FIXME: UI for this.
+        putStrLn "No span for this query"
+      Just ss -> runQuery stateVar sid (QueryInfo ss)
 
 renderRunButton :: SnippetId -> Bool -> Status -> React ()
 renderRunButton sid isCurrent s = div_ $ do

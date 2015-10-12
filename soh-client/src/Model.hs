@@ -229,6 +229,10 @@ runQuery state sid query =
       Built sid' info | sid' == sid -> QueryRequested sid info query
       _ -> oldStatus
 
+clearTypeInfo :: TVar State -> SnippetId -> IO ()
+clearTypeInfo state sid =
+  atomically $ modifyTVar state (ixSnippet sid . snippetTypeInfo .~ Nothing)
+
 -- | Sets the id-info which the haddock iframe should use for its url.
 navigateDoc :: TVar State -> Maybe IdInfo -> IO ()
 navigateDoc state minfo = do

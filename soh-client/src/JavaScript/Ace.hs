@@ -176,7 +176,7 @@ onSelectionChange e f = do
   parent <- toJSRef =<< Editor.container e
   f' <- syncCallback1 (DomRetain (coerce parent)) True (\_ -> f >> return jsNull)
   s <- Editor.getSelection e
-  Selection.on s "changeSelection" f'
+  Selection.on s "changeCursor" f'
 
 --------------------------------------------------------------------------------
 -- Positions and Ranges
