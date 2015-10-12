@@ -13,6 +13,9 @@ module JavaScript.Ace
   , Editor.focus
   , Editor.blur
   , setMaxLinesInfty
+  , MarkerId(..)
+  , addMarker
+  , removeMarker
     -- * Events
   , onChange
   , ChangeEvent(..)
@@ -137,6 +140,21 @@ setSelection editor Selection{..} = do
     (intToJSNumber (row lead))
     (intToJSNumber (column lead))
 
+newtype MarkerId = MarkerId Int
+  deriving (Eq, Show)
+
+addMarker :: Editor -> Range -> JSString -> JSString -> Bool -> IO MarkerId
+addMarker editor range clazz typ inFront = do
+  s <- Editor.session editor
+  rangeRef <- toJSRef range
+  inFrontRef <- toJSRef inFront
+  MarkerId <$> js_addMarker s rangeRef clazz typ inFrontRef
+
+removeMarker :: Editor -> MarkerId -> IO ()
+removeMarker editor (MarkerId mid) = do
+  s <- Editor.session editor
+  js_removeMarker s mid
+
 --------------------------------------------------------------------------------
 -- Event Handlers
 
@@ -202,12 +220,16 @@ data Selection = Selection
   }
   deriving (Show, Eq, Generic, Typeable)
 
-instance ToJSRef   Pos       where toJSRef   = toJSRef_generic   id
 instance FromJSRef Pos       where fromJSRef = fromJSRef_generic id
-instance ToJSRef   Range     where toJSRef   = toJSRef_generic   id
 instance FromJSRef Range     where fromJSRef = fromJSRef_generic id
-instance ToJSRef   Selection where toJSRef   = toJSRef_generic   id
 instance FromJSRef Selection where fromJSRef = fromJSRef_generic id
+
+instance ToJSRef Range where
+  toJSRef r = js_createRange
+    (row (start r))
+    (column (start r))
+    (row (end r))
+    (column (end r))
 
 selectionToRange :: Selection -> Range
 selectionToRange sel =
@@ -274,3 +296,12 @@ foreign import javascript unsafe "$1.on($2, $3)"
 
 foreign import javascript unsafe "$1.setOption('maxLines', Infinity)"
   setMaxLinesInfty :: Editor -> IO ()
+
+foreign import javascript unsafe "$1.addMarker($2, $3, $4, $5)"
+  js_addMarker :: IEditSession -> JSRef Range -> JSString -> JSString -> JSRef Bool -> IO Int
+
+foreign import javascript unsafe "$1.removeMarker($2)"
+  js_removeMarker :: IEditSession -> Int -> IO ()
+
+foreign import javascript unsafe "function() { var Range = ace.require('ace/range').Range; return new Range($1,$2,$3,$4); }()"
+  js_createRange :: Int -> Int -> Int -> Int -> IO (JSRef Range)

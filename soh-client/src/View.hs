@@ -65,10 +65,10 @@ renderEditor ace termjs iframe sid initialValue inlineControls state = do
       Ace.onChange editor (handleChange stateVar sid)
       return editor
     renderRunButton sid isCurrent (state ^. stateStatus)
-    forM_ (join (state ^? ixSnippet sid . snippetTypeInfo)) $ \(typs, y) ->
+    forM_ (join (state ^? ixSnippet sid . snippetTypeInfo)) $ \(typs, x, y, _) ->
       -- TODO: remove this ugly hack!  We sometimes get lots of type
       -- infos for the same span due to TH.
-      when (length typs < 4) $ typePopup typs 100 y
+      when (length typs < 4) $ typePopup typs x y
   when (isCurrent && inlineControls) $ div_ $ do
     id_ "soh-controls"
     class_ "soh-inline-controls"

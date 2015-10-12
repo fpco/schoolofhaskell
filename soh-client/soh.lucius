@@ -28,12 +28,16 @@
     color: #d44;
   }
   .type-popup {
-    background-color: white;
+    background: #e5f0ff;
     z-index: 1;
     border-color: #d1d1d1;
     .type-info {
+      background: initial;
       border-color: #d1d1d1;
     }
+  }
+  .type-info-expr {
+    background: #e5f0ff;
   }
 }
 
@@ -70,7 +74,6 @@
     background: #fcf8e3;
   }
 }
-
 
 /* Main CSS */
 
@@ -134,12 +137,16 @@
       padding-bottom: 0.2em;
       border-bottom: 1px dashed;
       margin-bottom: 0.2em;
+      background: initial;
     }
     .type-info:last-child {
       padding-bottom: 0;
       border-bottom: none;
       margin-bottom: 0;
     }
+  }
+  .type-info-expr {
+    position: absolute;
   }
 }
 

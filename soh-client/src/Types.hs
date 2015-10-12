@@ -7,7 +7,7 @@ import Data.Text (Text)
 import Data.Typeable (Typeable)
 import Data.Vector (Vector)
 import IdeSession.Types.Public
-import JavaScript.Ace (Editor, Range)
+import JavaScript.Ace (Editor, Range, MarkerId)
 import JavaScript.IFrame
 import JavaScript.TermJs (TermJs)
 import JavaScript.Unmanaged (Unmanaged)
@@ -52,7 +52,7 @@ data Snippet = Snippet
   , _snippetPosMap :: !PosMap
     -- ^ Tracks how edits affect source positions, since the last
     -- compile.
-  , _snippetTypeInfo :: !(Maybe ([ResponseAnnExpType], Int))
+  , _snippetTypeInfo :: !(Maybe ([ResponseAnnExpType], Int, Int, MarkerId))
     -- ^ When this is set to a 'Just' value, type info is displayed
     -- inline in the snippet.
   } deriving (Eq, Show, Typeable)

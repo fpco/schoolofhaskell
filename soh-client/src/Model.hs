@@ -10,7 +10,7 @@ import qualified Data.Text as T
 import           Data.Text.Encoding (encodeUtf8)
 import qualified Data.Vector as V
 import           Import
-import           JavaScript.Ace (getCharPosition, end)
+import           JavaScript.Ace (Editor, getCharPosition, start, end, row, MarkerId, addMarker, removeMarker)
 import           JavaScript.IFrame (setIFrameUrl)
 import           JavaScript.TermJs (writeTerminal)
 import           Model.Protocol
@@ -175,7 +175,7 @@ runDocQuery backend state ss = do
     getIdInfo (SpanId x) = x
     getIdInfo (SpanQQ x) = x
 
-runTypeQuery :: Backend -> TVar State -> SnippetId -> SourceSpan -> IO (Maybe ([ResponseAnnExpType], Int))
+runTypeQuery :: Backend -> TVar State -> SnippetId -> SourceSpan -> IO (Maybe ([ResponseAnnExpType], Int, Int, MarkerId))
 runTypeQuery backend state sid ss = do
     tys <- getAnnExpTypes backend ss
     addTyPos $
@@ -185,15 +185,22 @@ runTypeQuery backend state sid ss = do
     addTyPos Nothing = return Nothing
     addTyPos (Just []) = return Nothing
     addTyPos (Just tys@((ResponseAnnExpType _ ss'):_)) = do
+      -- FIXME: shouldn't have all this view-gnostic stuff..
       s <- atomically $ readTVar state
       -- Note: this means that if there has been an edit within the
       -- span, then the type info won't show for it.  Lets see if this
       -- is bothersome.
       forM (spanToRange s sid ss') $ \range -> do
         editor <- getEditor s sid
-        -- TODO: also pick a good x position
-        (_x, y) <- getCharPosition editor (end range)
-        return (tys, y + 12)
+        removeOldTypeInfoMarker s sid editor
+        -- Add new highlight marker.
+        mid <- addMarker editor range "type-info-expr" "info" False
+        -- Compute its positioning.
+        (sx, _) <- getCharPosition editor (start range)
+        (_, y) <- getCharPosition editor (end range)
+        let multiline = row (start range) /= row (end range)
+            x = if multiline then 12 else sx
+        return (tys, x, y + 12, mid)
 
 -- | Send process kill request, and wait for the process to stop.
 --
@@ -230,8 +237,18 @@ runQuery state sid query =
       _ -> oldStatus
 
 clearTypeInfo :: TVar State -> SnippetId -> IO ()
-clearTypeInfo state sid =
+clearTypeInfo state sid = do
+  s <- atomically $ readTVar state
+  removeOldTypeInfoMarker s sid =<< getEditor s sid
   atomically $ modifyTVar state (ixSnippet sid . snippetTypeInfo .~ Nothing)
+
+-- | Remove the old highlight marker if there is one.
+removeOldTypeInfoMarker :: State -> SnippetId -> Editor -> IO ()
+removeOldTypeInfoMarker s sid editor = do
+  let moldInfo = s ^? ixSnippet sid . snippetTypeInfo . _Just
+  case moldInfo of
+    Nothing -> return ()
+    Just (_, _, _, mid) -> removeMarker editor mid
 
 -- | Sets the id-info which the haddock iframe should use for its url.
 navigateDoc :: TVar State -> Maybe IdInfo -> IO ()
