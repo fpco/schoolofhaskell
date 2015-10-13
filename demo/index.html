@@ -41,9 +41,24 @@ body {
 </style>
 </head>
 <body>
-<div class="content">
-<h1>Calculator</h1>
-<h2>Console Version</h2>
+  <div class="content">
+<h1>Sierpinski Triangle</h1>
+<div class="soh-code">
+import Diagrams.Backend.Cairo (Cairo)
+import Diagrams.Prelude
+import Yesod.Media.Simple
+
+main :: IO ()
+main = serve (sierpinski 4)
+
+sierpinski :: Int -> Diagram Cairo
+sierpinski 1 = triangle 1
+sierpinski n =     s
+                  ===
+               (s ||| s) # centerX
+  where s = sierpinski (n-1)
+</div>
+<h1>Console Calculator</h1>
 <p>How would we write a calculator program in Haskell? A simple
   calculator should be able to perform the basic arithmetic operations
   on two numbers.</p>
@@ -66,7 +81,7 @@ main = do
   r <- prompt "Right operand?"
   putStrLn $ "The result is " ++ show (eval l o r)
 </div>
-<h2>Yesod Version</h2>
+<h1>Web Calculator</h1>
 <p>Let's make our calculator program into a website!</p>
 <div class="soh-code">{-# LANGUAGE TypeFamilies, QuasiQuotes, MultiParamTypeClasses,
          TemplateHaskell, OverloadedStrings #-}

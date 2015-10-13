@@ -21,8 +21,9 @@ To build the client code and CSS: `./dev-scripts/build-client.sh`
 ## How to run the local demo
 
 `/dev-scripts/run-demo.sh` will run `soh-runner` and open up a browser window
-with the demo. The web snippet in the demo requires Yesod. Install Yesod with
-`stack build Yesod` in order for it to work.
+with the demo. The web snippets in the demo requires `yesod` and
+`yesod-media-simple`. Install these with `stack build yesod-media-simple` in
+order for the web snippets to compile.
 
 ## Development tips
 
