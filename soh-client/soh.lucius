@@ -28,7 +28,7 @@
     color: #d44;
   }
   .type-popup {
-    background: #e5f0ff;
+    background: white;
     z-index: 1;
     border-color: #d1d1d1;
     .type-info {
