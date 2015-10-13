@@ -6,7 +6,7 @@ import           Import
 import qualified JavaScript.Ace as Ace
 import           JavaScript.IFrame
 import           JavaScript.TermJs
-import           Model (runQuery, runCode, switchTab, closeControls, clearTypeInfo)
+import           Model (runQuery, runSnippetCode, switchTab, closeControls, clearTypeInfo)
 import           View.Build
 import           View.Console
 import           View.PosMap (handleChange, selectionToSpan)
@@ -63,6 +63,7 @@ renderEditor ace termjs iframe sid initialValue inlineControls state = do
       debounce 100 (handleSelectionChange stateVar sid) >>=
         Ace.onSelectionChange editor
       Ace.onChange editor (handleChange stateVar sid)
+      Ace.addCommand editor "run" "Ctrl-Enter" "Command-Enter" $ runSnippetCode stateVar sid
       return editor
     renderRunButton sid isCurrent (state ^. stateStatus)
     forM_ (join (state ^? ixSnippet sid . snippetTypeInfo)) $ \(typs, x, y, _) ->
@@ -95,11 +96,8 @@ renderRunButton sid isCurrent s = div_ $ do
       working = building && isCurrent
   class_ $ addWhen working "building"
          $ "run glyphicon"
-  title_ $ if working then "Compiling code..." else "Compile and run code"
-  onClick $ \_ state -> do
-    editor <- readEditor state sid
-    code <- Ace.getValue editor
-    runCode state (BuildRequest sid [("main.hs", code)])
+  title_ $ if working then "Compiling code..." else "Compile and run code (Ctrl-Enter / Command-Enter)"
+  onClick $ \_ state -> runSnippetCode state sid
 
 --------------------------------------------------------------------------------
 -- Tabs

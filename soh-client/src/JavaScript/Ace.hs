@@ -20,6 +20,7 @@ module JavaScript.Ace
   , onChange
   , ChangeEvent(..)
   , onSelectionChange
+  , addCommand
     -- * Auxiliary Types
   , Pos(..)
   , Range(..)
@@ -196,6 +197,11 @@ onSelectionChange e f = do
   s <- Editor.getSelection e
   Selection.on s "changeCursor" f'
 
+addCommand :: Editor -> JSString -> JSString -> JSString -> IO () -> IO ()
+addCommand editor name win mac f = do
+  cb <- asyncCallback AlwaysRetain f
+  js_addCommand editor name win mac cb
+
 --------------------------------------------------------------------------------
 -- Positions and Ranges
 --
@@ -305,3 +311,6 @@ foreign import javascript unsafe "$1.removeMarker($2)"
 
 foreign import javascript unsafe "function() { var Range = ace.require('ace/range').Range; return new Range($1,$2,$3,$4); }()"
   js_createRange :: Int -> Int -> Int -> Int -> IO (JSRef Range)
+
+foreign import javascript unsafe "$1.commands.addCommand({name:$2, bindKey:{win:$3, mac:$4, sender:'editor'}, exec:$5})"
+  js_addCommand :: Editor -> JSString -> JSString -> JSString -> JSFun (IO ()) -> IO ()

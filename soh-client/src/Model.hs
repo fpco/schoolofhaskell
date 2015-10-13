@@ -10,7 +10,7 @@ import qualified Data.Text as T
 import           Data.Text.Encoding (encodeUtf8)
 import qualified Data.Vector as V
 import           Import
-import           JavaScript.Ace (Editor, getCharPosition, start, end, row, MarkerId, addMarker, removeMarker)
+import qualified JavaScript.Ace as Ace
 import           JavaScript.IFrame (setIFrameUrl)
 import           JavaScript.TermJs (writeTerminal)
 import           Model.Protocol
@@ -174,7 +174,7 @@ runDocQuery backend state ss = do
     getIdInfo (SpanId x) = x
     getIdInfo (SpanQQ x) = x
 
-runTypeQuery :: Backend -> TVar State -> SnippetId -> SourceSpan -> IO (Maybe ([ResponseAnnExpType], Int, Int, MarkerId))
+runTypeQuery :: Backend -> TVar State -> SnippetId -> SourceSpan -> IO (Maybe ([ResponseAnnExpType], Int, Int, Ace.MarkerId))
 runTypeQuery backend state sid ss = do
     tys <- getAnnExpTypes backend ss
     addTyPos $
@@ -193,11 +193,11 @@ runTypeQuery backend state sid ss = do
         editor <- getEditor s sid
         removeOldTypeInfoMarker s sid editor
         -- Add new highlight marker.
-        mid <- addMarker editor range "type-info-expr" "info" False
+        mid <- Ace.addMarker editor range "type-info-expr" "info" False
         -- Compute its positioning.
-        (sx, _) <- getCharPosition editor (start range)
-        (_, y) <- getCharPosition editor (end range)
-        let multiline = row (start range) /= row (end range)
+        (sx, _) <- Ace.getCharPosition editor (Ace.start range)
+        (_, y) <- Ace.getCharPosition editor (Ace.end range)
+        let multiline = Ace.row (Ace.start range) /= Ace.row (Ace.end range)
             x = if multiline then 12 else sx
         return (tys, x, y + 12, mid)
 
@@ -215,6 +215,12 @@ killProcess backend state sid bi = do
 
 --------------------------------------------------------------------------------
 -- Mutation functions invoked by View (a.k.a. "the controller")
+
+runSnippetCode :: TVar State -> SnippetId -> IO ()
+runSnippetCode state sid = do
+   editor <- readEditor state sid
+   code <- Ace.getValue editor
+   runCode state (BuildRequest sid [("main.hs", code)])
 
 -- | Runs the user's code.
 runCode :: TVar State -> BuildRequest -> IO ()
@@ -242,12 +248,12 @@ clearTypeInfo state sid = do
   atomically $ modifyTVar state (ixSnippet sid . snippetTypeInfo .~ Nothing)
 
 -- | Remove the old highlight marker if there is one.
-removeOldTypeInfoMarker :: State -> SnippetId -> Editor -> IO ()
+removeOldTypeInfoMarker :: State -> SnippetId -> Ace.Editor -> IO ()
 removeOldTypeInfoMarker s sid editor = do
   let moldInfo = s ^? ixSnippet sid . snippetTypeInfo . _Just
   case moldInfo of
     Nothing -> return ()
-    Just (_, _, _, mid) -> removeMarker editor mid
+    Just (_, _, _, mid) -> Ace.removeMarker editor mid
 
 -- | Sets the id-info which the haddock iframe should use for its url.
 navigateDoc :: TVar State -> Maybe IdInfo -> IO ()
