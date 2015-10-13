@@ -115,7 +115,7 @@
     position: absolute;
     right: 0;
     padding: 0.1em;
-    font-size: 150%;
+    font-size: 22px;
     cursor: pointer;
   }
   /* glyphicon-play */
