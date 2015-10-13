@@ -31,6 +31,7 @@ library
                      , wai-websockets
                      , warp
                      , websockets
+                     , unix
 
 executable soh-runner
   ghc-options:         -threaded -O2 -rtsopts -with-rtsopts=-N -Wall

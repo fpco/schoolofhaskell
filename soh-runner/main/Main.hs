@@ -5,7 +5,7 @@ import SchoolOfHaskell.Runner (runner, Settings(Settings))
 import Options.Applicative.Simple
 import Paths_soh_runner (version)
 import Data.Text (pack)
-import SchoolOfHaskell.Runner.API (backendPort)
+import SchoolOfHaskell.Runner.API (defaultBackendPort)
 
 main :: IO ()
 main = id . snd =<<
@@ -23,7 +23,7 @@ main = id . snd =<<
 settingsParser :: Parser Settings
 settingsParser =
   Settings
-    <$> option auto (long "port" <> short 'p' <> metavar "PORT" <> value backendPort)
+    <$> option auto (long "port" <> short 'p' <> metavar "PORT" <> value defaultBackendPort)
     <*> option (fmap pack str) (long "receipt" <> short 'r' <> metavar "RECEIPT")
     <*> optional (option auto (long "lifetime-seconds" <> metavar "SECONDS"))
     <*> switch (long "verbose" <> short 'v')

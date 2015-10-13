@@ -3,8 +3,7 @@
 module SchoolOfHaskell.Runner.API
   ( RunnerRequest (..)
   , RunnerResponse (..)
-  , webServerPort
-  , backendPort
+  , defaultBackendPort
   ) where
 
 import Data.Aeson.TH
@@ -14,6 +13,7 @@ import Prelude hiding ((.), id)
 
 data RunnerRequest =
     RunnerRequestAuth Text
+  | RunnerRequestOpenPort
   | RunnerRequestPortListening Int
   | RunnerRequestClient (Sequenced Request)
   deriving (Show)
@@ -21,6 +21,7 @@ data RunnerRequest =
 data RunnerResponse =
     RunnerResponseAuthFailure
   | RunnerResponseAuthSuccess
+  | RunnerResponseOpenPort Int
   | RunnerResponsePortIsListening
   | RunnerResponseClient (Sequenced Response)
   deriving (Show)
@@ -34,9 +35,5 @@ $(fmap concat $ mapM (deriveJSON defaultOptions)
 -- Constants
 
 -- | Default port used by soh-runner to listen for websocket connections.
-backendPort :: Int
-backendPort = 4000
-
--- | Port used by the user's web server.
-webServerPort :: Int
-webServerPort = 3000
+defaultBackendPort :: Int
+defaultBackendPort = 4000

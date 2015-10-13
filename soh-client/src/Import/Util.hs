@@ -4,7 +4,7 @@ module Import.Util where
 
 import           Control.Concurrent.STM
 import           Control.Exception (SomeException, catch, throwIO)
-import           Control.Lens
+import           Control.Lens hiding (Sequenced)
 import           Control.Monad (unless, (<=<))
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 import           Data.Char (isHexDigit)
@@ -26,6 +26,7 @@ import           JavaScript.JQuery.Internal (jq_getText)
 import           Prelude
 import           React
 import           React.Lucid
+import           SchoolOfHaskell.Runner.API
 import           Stack.Ide.JsonAPI
 import           System.IO.Unsafe (unsafePerformIO)
 
@@ -220,8 +221,8 @@ cleanPackageVersion x@(T.stripPrefix "-" . T.takeEnd 33 -> Just hash)
   | T.all isHexDigit hash = T.dropEnd 33 x
 cleanPackageVersion x = x
 
-$(makePrisms ''Response)
-
 -- Orphans
+
+$(concat <$> mapM makePrisms [''Response, ''RunnerResponse, ''Sequenced])
 
 deriving instance Typeable Element

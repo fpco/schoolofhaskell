@@ -12,7 +12,7 @@ import JavaScript.IFrame
 import JavaScript.TermJs (TermJs)
 import JavaScript.Unmanaged (Unmanaged)
 import Prelude
-import SchoolOfHaskell.Runner.API (RunnerRequest)
+import SchoolOfHaskell.Runner.API (RunnerRequest, RunnerResponse)
 import SchoolOfHaskell.Scheduler.API (PortMappings)
 import Stack.Ide.JsonAPI
 
@@ -113,7 +113,7 @@ data Backend = Backend
   { backendHost :: Text
   , backendPortMappings :: PortMappings
   , backendRequestChan :: TChan RunnerRequest
-  , backendResponseChan :: TChan Response
+  , backendResponseChan :: TChan RunnerResponse
   , backendProcessHandler :: IORef (ProcessOutput -> IO ())
   } deriving (Typeable)
 

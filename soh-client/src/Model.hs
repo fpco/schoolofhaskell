@@ -17,7 +17,6 @@ import           Model.Protocol
 import           Model.Server (lookupPort)
 import           View.PosMap (emptyPosMap, spanToRange)
 import           React.Internal (appState)
-import           SchoolOfHaskell.Runner.API (webServerPort)
 import           SchoolOfHaskell.Scheduler.API (ContainerReceipt, PortMappings)
 
 -- | Given the number of snippets on the page, this creates the
@@ -54,11 +53,8 @@ runApp host ports receipt app = withUrl host ports receipt $ \backend -> do
   version <- expectWelcome backend
   putStrLn $ "Connection established with ide-backend " ++ show version
   let state = appState app
-      -- TODO: Other env variables from old SoH?  APPROOT,
-      -- FP_ENVIRONMENT_NAME, FP_ENVIRONMENT_TYPE, IMAGE_DIR, and etc
-      initialUpdates = [RequestUpdateEnv [("PORT", Just (show webServerPort))]]
   br <- waitForTVarIO state (^? (stateStatus . _BuildRequested))
-  mainLoop backend state br initialUpdates `catch` \ex -> do
+  mainLoop backend state br `catch` \ex -> do
     consoleErrorText $
       "Exited mainLoop with exception " <> tshow (ex :: SomeException)
     throwIO ex
@@ -72,15 +68,14 @@ mainLoop
   :: Backend
   -> TVar State
   -> BuildRequest
-  -> [RequestSessionUpdate]
   -> IO void
-mainLoop backend state br extraUpdates = do
-  (sid, bi) <- compileCode backend state br extraUpdates
+mainLoop backend state br = do
+  (sid, bi) <- compileCode backend state br
   -- Kill the running process, if there is one.
   killProcess backend state sid bi
   when (buildSuccess bi) $ runConsole backend state
   br' <- runQueries backend state
-  mainLoop backend state br' []
+  mainLoop backend state br'
 
 -- | Whether there are no errors in a 'BuildInfo'.
 buildSuccess :: BuildInfo -> Bool
@@ -92,15 +87,14 @@ compileCode
   :: Backend
   -> TVar State
   -> BuildRequest
-  -> [RequestSessionUpdate]
   -> IO (SnippetId, BuildInfo)
-compileCode backend state (BuildRequest sid files) extraUpdates = do
+compileCode backend state (BuildRequest sid files) = do
   -- TODO: clear ide-backend state before the rest of the updates?
   let requestUpdate (fp, txt) = RequestUpdateSourceFile fp $
         ByteString64 (encodeUtf8 txt)
   -- Show the build's progress and wait for it to finish.
   updateSession backend
-    (extraUpdates ++ map requestUpdate files)
+    (map requestUpdate files)
     (setTVarIO state stateStatus . Building sid)
   -- Retrieve the errors
   sourceErrors <- getSourceErrors backend
@@ -120,6 +114,12 @@ compileCode backend state (BuildRequest sid files) extraUpdates = do
 runConsole :: Backend -> TVar State -> IO ()
 runConsole backend state = do
   switchTab state ConsoleTab
+  port <- requestOpenPort backend
+  -- TODO: Other env variables from old SoH? APPROOT,
+  -- FP_ENVIRONMENT_NAME, FP_ENVIRONMENT_TYPE, IMAGE_DIR, and etc
+  updateSession backend
+    [RequestUpdateEnv [("PORT", Just (show port))]]
+    (\_ -> return ())
   let appendConsole x = do
         terminal' <- readUnmanagedOrFail state (^? stateConsole)
         writeTerminal terminal' x
@@ -130,13 +130,12 @@ runConsole backend state = do
       appendConsole $ "\r\nProcess done: " <> T.pack (show result) <> "\r\n"
     ProcessListening -> do
       webFrame <- readUnmanagedOrFail state (^? stateWeb)
-      let url = "http://" <> backendHost backend <> ":" <>
-            tshow (lookupPort webServerPort (backendPortMappings backend))
+      let url = "http://" <> backendHost backend <> ":" <> tshow port
       setIFrameUrl webFrame url
       switchTab state WebTab
   requestRun backend "Main" "main"
   setTVarIO state stateRunning Running
-  requestPortListening backend webServerPort
+  requestPortListening backend port
 
 -- | Waits for queries and performs them.  Once a build is requested
 -- this stops waiting for queries and yields the 'BuildRequest'.

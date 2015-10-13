@@ -31,6 +31,7 @@ module Model.Protocol
   -- * Misc
   , expectWelcome
   -- * Runner commands
+  , requestOpenPort
   , requestPortListening
   ) where
 
@@ -53,7 +54,7 @@ import           SchoolOfHaskell.Scheduler.API
 -- connection to it.
 withUrl :: Text -> PortMappings -> ContainerReceipt -> (Backend -> IO a) -> IO a
 withUrl backendHost backendPortMappings (ContainerReceipt uuid) f =
-  let port = lookupPort backendPort backendPortMappings
+  let port = lookupPort defaultBackendPort backendPortMappings
       url = "ws://" <> backendHost <> ":" <> tshow port in
   WS.withUrl url $ \conn -> do
     -- Send the receipt to the backend.  If it's rejected, then an
@@ -74,6 +75,7 @@ withUrl backendHost backendPortMappings (ContainerReceipt uuid) f =
           atomically (readTChan backendRequestChan) >>= sendJson conn
         receiveThread = showExceptions "receiveThread" $ forever $ do
           response <- receiveJson conn
+          let enqueueResponse = atomically (writeTChan backendResponseChan response)
           case response of
             RunnerResponseAuthSuccess ->
               fail "Didn't expect to receive auth response while running"
@@ -81,6 +83,8 @@ withUrl backendHost backendPortMappings (ContainerReceipt uuid) f =
               fail "Didn't expect to receive auth response while running"
             RunnerResponsePortIsListening ->
               readIORef backendProcessHandler >>= ($ ProcessListening)
+            RunnerResponseOpenPort {} ->
+              enqueueResponse
             RunnerResponseClient (NoSeq response') ->
               case response' of
                 ResponseProcessOutput bs ->
@@ -94,7 +98,7 @@ withUrl backendHost backendPortMappings (ContainerReceipt uuid) f =
                 ResponseLog msg ->
                   consoleLogText msg
                 _ ->
-                  atomically (writeTChan backendResponseChan response')
+                  enqueueResponse
             RunnerResponseClient HasSeq{} ->
               consoleErrorText "Didn't expect sequenced response from server."
     result <- receiveThread `race` sendThread `race` f Backend {..}
@@ -116,7 +120,7 @@ updateSession backend updates f = do
   sendRequest backend (RequestUpdateSession updates)
   fix $ \loop -> do
     x <- expectResponse backend
-                        (^? _ResponseUpdateSession)
+                        (^? _RunnerResponseClient . _NoSeq . _ResponseUpdateSession)
                         "ResponseUpdateSession"
     f x
     case x of
@@ -172,7 +176,7 @@ getAnnExpTypes backend ss =
 queryBackend :: Backend -> Request -> Prism' Response a -> String -> IO a
 queryBackend backend request p expected = do
   sendRequest backend request
-  expectResponse backend (^? p) expected
+  expectResponse backend (^? _RunnerResponseClient . _NoSeq . p) expected
 
 --------------------------------------------------------------------------------
 -- Process IO
@@ -198,10 +202,15 @@ sendProcessKill backend = sendRequest backend RequestProcessKill
 -- connection is established.
 expectWelcome :: Backend -> IO VersionInfo
 expectWelcome backend =
-  expectResponse backend (^? _ResponseWelcome) "ResponseWelcome"
+  expectResponse backend (^? _RunnerResponseClient . _NoSeq . _ResponseWelcome) "ResponseWelcome"
 
 --------------------------------------------------------------------------------
 -- SoH Runner Commands
+
+requestOpenPort :: Backend -> IO Int
+requestOpenPort backend = do
+  sendRequest' backend RunnerRequestOpenPort
+  expectResponse backend (^? _RunnerResponseOpenPort) "RunnerResponseOpenPort"
 
 requestPortListening :: Backend -> Int -> IO ()
 requestPortListening backend = sendRequest' backend . RunnerRequestPortListening
@@ -215,10 +224,10 @@ sendRequest backend = sendRequest' backend . RunnerRequestClient . NoSeq
 sendRequest' :: Backend -> RunnerRequest -> IO ()
 sendRequest' backend = atomically . writeTChan (backendRequestChan backend)
 
-receiveResponse :: Backend -> IO Response
+receiveResponse :: Backend -> IO RunnerResponse
 receiveResponse = atomically . readTChan . backendResponseChan
 
-expectResponse :: Backend -> (Response -> Maybe a) -> String -> IO a
+expectResponse :: Backend -> (RunnerResponse -> Maybe a) -> String -> IO a
 expectResponse backend f expected = do
   response <- receiveResponse backend
   case f response of

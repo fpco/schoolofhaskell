@@ -7,7 +7,7 @@ module SchoolOfHaskell.Runner (Settings(..), runner) where
 import           Conduit (foldC, sourceHandle, ($$))
 import           Control.Concurrent (threadDelay)
 import           Control.Concurrent.Async (async, cancel)
-import           Control.Exception (SomeException, AsyncException(ThreadKilled), catch, finally, fromException)
+import           Control.Exception (SomeException, AsyncException(ThreadKilled), try, finally, fromException)
 import           Control.Monad (void, when)
 import           Data.Aeson (encode, eitherDecode)
 import           Data.Foldable (forM_)
@@ -16,8 +16,6 @@ import           Data.Text (Text)
 import qualified Data.Text as T
 import           Data.Text.Encoding (decodeUtf8)
 import           IdeSession (defaultSessionInitParams, sessionConfigFromEnv, SessionConfig(..))
-import           Stack.Ide
-import           Stack.Ide.CmdLine
 import qualified Network.HTTP.Types as H
 import qualified Network.Wai as W
 import qualified Network.Wai.Handler.Warp as Warp
@@ -25,8 +23,13 @@ import qualified Network.Wai.Handler.WebSockets as WaiWS
 import qualified Network.WebSockets as WS
 import           Numeric (showHex)
 import           SchoolOfHaskell.Runner.API
+import           Stack.Ide
+import           Stack.Ide.CmdLine
 import qualified System.IO as IO
+import           System.Posix.Process (getProcessID)
+import           System.Posix.Types (CPid(..))
 import           System.Timeout (timeout)
+import Data.List (find)
 
 data Settings = Settings
   { settingsPort :: Int
@@ -66,6 +69,7 @@ runnerApp Settings{..} sessionConfig pending = do
       receive = do
         input <- WS.receiveData conn
         return $ eitherDecode input
+  startPort <- getStartPortFromProcessID
   initial <- receive
   case initial of
     Right (RunnerRequestAuth receipt')
@@ -82,6 +86,16 @@ runnerApp Settings{..} sessionConfig pending = do
               case ereq of
                 Left err -> return $ Left err
                 Right (RunnerRequestClient x) -> return $ Right x
+                -- FIXME: The issue with this is that by the time the
+                -- process starts, the port might not be open anymore.
+                Right RunnerRequestOpenPort -> do
+                  ntp <- getProcNetTcp
+                  case findOpenPort ntp startPort of
+                    Nothing -> return $ Left $
+                      "Couldn't find an open port?!? (really shouldn't happen)"
+                    Just port -> do
+                      send $ RunnerResponseOpenPort port
+                      receiveRequest
                 Right (RunnerRequestPortListening port) -> do
                   thread <- async $ do
                     waitForProcessListening port
@@ -112,23 +126,26 @@ waitForProcessListening port = loop 120
   where
     loop :: Int -> IO ()
     loop gen = do
-      isListening <- processListening port `catch` \e -> do
-        case e of
-          (fromException -> Just ThreadKilled) -> return False
-          _ -> do
-            -- FIXME: some better error logging than this.
-            putStrLn $ "Exception while listening for port: " ++
-              show (e :: SomeException)
-            return False
+      epnt <- try getProcNetTcp
+      isListening <- case epnt of
+        Left (fromException -> Just ThreadKilled) -> return False
+        Left err -> do
+          -- FIXME: some better error logging than this.
+          putStrLn $ "Exception while listening for port: " ++
+            show (err :: SomeException)
+          return False
+        Right pnt -> return (isPortListening pnt port)
       if isListening
         then return ()
         else do
           threadDelay $ if gen <= 0 then 5000000 else 250000
           loop (max 0 (gen - 1))
 
-processListening :: Int -> IO Bool
-processListening port =
-    any findPort . T.lines . decodeUtf8 <$>
+newtype ProcNetTcp = ProcNetTcp [Text]
+
+getProcNetTcp :: IO ProcNetTcp
+getProcNetTcp =
+    ProcNetTcp . T.lines . decodeUtf8 <$>
     localReadFile "/proc/net/tcp"
   where
     -- Fun fact: files in the /proc filesystem will often report their
@@ -137,6 +154,27 @@ processListening port =
     localReadFile fp =
       IO.withBinaryFile fp IO.ReadMode $ \h ->
       sourceHandle h $$ foldC
+
+-- This could be faster, but it should rarely do enough iterations to
+-- justify storing ProcNetTcp in a fancier datatype.
+findOpenPort :: ProcNetTcp -> Int -> Maybe Int
+findOpenPort pnt start = find (not . isPortListening pnt) [start..maxDynPort]
+
+getStartPortFromProcessID :: IO Int
+getStartPortFromProcessID = do
+  CPid x <- getProcessID
+  -- Leave a couple slots between consecutive processes. 256 is
+  -- subtracted from the range so that there are still a bunch of ports
+  -- left for 'findOpenPort' to search through.
+  return (minDynPort + ((fromIntegral x * 3) `mod` ((maxDynPort - minDynPort) - 256)))
+
+minDynPort, maxDynPort :: Int
+minDynPort = 49152
+maxDynPort = 65535
+
+isPortListening :: ProcNetTcp -> Int -> Bool
+isPortListening (ProcNetTcp ls) port = any findPort ls
+  where
     goalPortHex =
       T.toUpper $ T.takeEnd 4 $ T.pack ("0000" ++ showHex port "")
     findPort line =
