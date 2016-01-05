@@ -3,4 +3,6 @@
 set -xe
 
 stack setup
-stack --stack-yaml ghcjs-stack.yaml setup
+# FIXME: this is needed due to https://github.com/commercialhaskell/stack/issues/1258
+stack install happy
+(cd soh-client; stack setup)
